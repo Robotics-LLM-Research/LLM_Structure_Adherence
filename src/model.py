@@ -48,9 +48,8 @@ def init_model(MODEL: str):
 
     return model, processor
 
-def get_message(uses_tools, img_path, user_prompt) -> list:
+def get_message(uses_tools: bool, img_path: str | None, user_prompt: str) -> list:
     system_prompt = _build_system_prompt(uses_tools)
-    image = Image.open(img_path).convert("RGB")
     
     messages = [
         {
@@ -58,19 +57,30 @@ def get_message(uses_tools, img_path, user_prompt) -> list:
             "content": [
                 {"type": "text", "text": system_prompt},
             ],
-        },
-        {
+        }
+    ]
+
+    if img_path is None:
+        messages.append({
+            "role": "user",
+            "content": [
+                {"type": "text", "text": user_prompt}
+            ],
+        })
+    else:
+        image = Image.open(img_path).convert("RGB")
+
+        messages.append({
             "role": "user",
             "content": [
                 {"type": "image", "image": image},
                 {"type": "text", "text": user_prompt}
             ],
-        },
-    ]
+        })
 
     return messages
 
-def ask_model(uses_tools, model, processor, messages: list):
+def ask_model(uses_tools: bool, model, processor, messages: list):
     if uses_tools:
         inputs = processor.apply_chat_template(
             messages, 
@@ -91,7 +101,7 @@ def ask_model(uses_tools, model, processor, messages: list):
 
     outputs = model.generate(
         **inputs, 
-        max_new_tokens=128,
+        max_new_tokens=256,
     )
 
     prompt_token_count = inputs["input_ids"].shape[1]
