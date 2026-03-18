@@ -1,38 +1,16 @@
-def get_tool_declarations():
-    return [
-        # ---------- SPOT TOOLS ----------
-        {
-            "type": "function",
-            "function": {
-                "name": "move_spot",
-                "description": "Moves Spot forward or backward by a specified amount of meters.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "meters": {
-                            "type": "number",
-                            "description": "Specified number of meters to move. If meters is positive, Spot moves forward. If meters is negative, Spot moves backward.",
-                        }
-                    },
-                    "required": ["meters"],
-                }
-            }
-        },
-        {
-            "type": "function",
-            "function": {
-                "name": "rotate_spot",
-                "description": "Rotates Spot by a specified amount of degrees.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "degrees": {
-                            "type": "number",
-                            "description": "Specified distance of degrees to rotate. If degrees is positive, Spot rotates clockwise. If degrees is negative, Spot rotates counter-clockwise.",
-                        }
-                    },
-                    "required": ["degrees"],
-                }
-            }
-        },
-    ]
+import json
+from pathlib import Path
+from typing import Any
+
+TOOLS_PATH = Path(__file__).with_name("tools.json")
+
+
+
+def get_tool_declarations() -> list[dict[str, Any]]:
+    with TOOLS_PATH.open("r", encoding="utf-8") as file:
+        return json.load(file)
+
+def get_tools_prompt() -> str:
+    tools = get_tool_declarations()
+
+    return json.dumps(tools, indent=2)
