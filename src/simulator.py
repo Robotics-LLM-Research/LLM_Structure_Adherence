@@ -91,5 +91,4 @@ def simulate_plan(plan: ActionPlan) -> dict:
         "success": success,
         "collided": collided,
         "final_spot": spot,
-        "reason": None if success else "Spot did not reach the target safely.",
     }
