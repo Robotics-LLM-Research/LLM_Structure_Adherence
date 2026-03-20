@@ -104,7 +104,6 @@ def simulate_plan(plan: ActionPlan) -> dict:
                 "success": False,
                 "collided": False,
                 "final_spot": spot,
-                "reason": "Unknown action type.",
             }
 
     success = (not collided) and _check_success(spot)

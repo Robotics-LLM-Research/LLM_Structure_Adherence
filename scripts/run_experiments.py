@@ -74,7 +74,6 @@ def run(
             "plan_success": plan_results.get("success"),
             "plan_collided": plan_results.get("collided"),
             "final_spot": plan_results.get("final_spot"),
-            "reason": plan_results.get("reason"),
         },
     }
 
