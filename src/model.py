@@ -17,24 +17,49 @@ SYSTEM_PROMPT = """
 """
 
 
-
-def init_model(MODEL: str):
-    processor = AutoProcessor.from_pretrained(MODEL)
+# ----- Model Setup -----
+def init_model(model_id: str):
+    processor = AutoProcessor.from_pretrained(model_id)
+    use_cuda = torch.cuda.is_available()
+    device_map = "cuda" if use_cuda else "cpu"
+    torch_dtype = torch.float16 if use_cuda else torch.float32
     model = AutoModelForImageTextToText.from_pretrained(
-        MODEL, 
-        torch_dtype=torch.float16,
-        device_map="cuda"
+        model_id, 
+        torch_dtype=torch_dtype,
+        device_map=device_map,
     )
 
     return model, processor
+
+
+# ----- Prompt -----
+def _build_system_prompt(
+        schema_config: dict,
+        use_native_tools: bool,
+) -> str:
+    schema_sample = schema_config["sample"]
+
+    prompt = (
+        f"{SYSTEM_PROMPT}\n\n"
+        f"REQUIRED OUTPUT SCHEMA EXAMPLE:\n"
+        f"{schema_sample}"
+    )
+
+    if not use_native_tools:
+        tools_json = get_tools_prompt()
+        prompt += f"\n\nAVAILABLE TOOLS:\n{tools_json}"
+
+    return prompt
 
 def get_message(
     uses_tools: bool, 
     img_path: str | None, 
     prompt_config: dict,
     schema_config: dict,
-) -> list:
-    system_prompt = _build_system_prompt(schema_config, uses_tools)
+) -> list[dict]:
+    system_prompt = _build_system_prompt(
+        schema_config=schema_config, 
+        use_native_tools=uses_tools)
     user_prompt = prompt_config["text"]
     
     messages = [
@@ -66,7 +91,13 @@ def get_message(
 
     return messages
 
-def ask_model(uses_tools: bool, model, processor, messages: list) -> str:
+# ----- Inference -----
+def ask_model(
+    uses_tools: bool, 
+    model, 
+    processor,
+    messages: list
+) -> str:
     if uses_tools:
         inputs = processor.apply_chat_template(
             messages, 
@@ -96,20 +127,3 @@ def ask_model(uses_tools: bool, model, processor, messages: list) -> str:
     return processor.decode(generated_tokens, skip_special_tokens=True)
 
 
-def _build_system_prompt(
-        schema_config: dict,
-        use_native_tools: bool,
-) -> str:
-    schema_sample = schema_config["sample"]
-
-    prompt = (
-        f"{SYSTEM_PROMPT}\n\n"
-        f"REQUIRED OUTPUT SCHEMA EXAMPLE:\n"
-        f"{schema_sample}"
-    )
-
-    if not use_native_tools:
-        tools_json = get_tools_prompt()
-        prompt += f"\n\nAVAILABLE TOOLS:\n{tools_json}"
-
-    return prompt
