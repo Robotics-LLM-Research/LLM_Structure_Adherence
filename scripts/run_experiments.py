@@ -1,4 +1,4 @@
-from types import Any
+from typing import Any
 
 from src.prompts import PROMPTS
 from src.schemas import SCHEMAS
@@ -104,13 +104,25 @@ def experiment(exp_config: dict[str, Any]):
     uses_tools = exp_config["uses_tools"]
     model, processor = init_model(model_id)
 
+    total_exp_configs = len(PROMPTS) * len(SCHEMAS)
+
     for uses_image in [False, True]:
+        # "Mode" header for Jupyter output
+        print(
+            f"Mode: model_id={model_id} | uses_tools={uses_tools} | uses_image={uses_image}",
+            flush=True,
+        )
+
+        config_idx = 0
         base_config = dict(exp_config)
         base_config["uses_image"] = uses_image
 
         all_run_results: list[dict[str, Any]] = []
         for prompt_config in PROMPTS:
             for schema_config in SCHEMAS:
+                config_idx += 1
+                print(f"{config_idx}/{total_exp_configs}", flush=True)
+
                 config_for_run = {
                     **base_config,
                     "prompt_config": prompt_config,
