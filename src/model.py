@@ -36,14 +36,23 @@ def init_model(model_id: str):
 def _build_system_prompt(
         schema_config: dict,
         use_native_tools: bool,
+        uses_image: bool,
 ) -> str:
     schema_sample = schema_config["sample"]
 
-    prompt = (
-        f"{SYSTEM_PROMPT}\n\n"
+    prompt = SYSTEM_PROMPT
+
+    if uses_image:
+        prompt += (
+            "\n    - Use the provided image to determine the environment/scene context relevant to the plan."
+        )
+
+    prompt += (
+        "\n\n"
         f"REQUIRED OUTPUT SCHEMA EXAMPLE:\n"
         f"{schema_sample}"
     )
+        
 
     if not use_native_tools:
         tools_json = get_tools_prompt()
@@ -59,7 +68,9 @@ def get_message(
 ) -> list[dict]:
     system_prompt = _build_system_prompt(
         schema_config=schema_config, 
-        use_native_tools=uses_tools)
+        use_native_tools=uses_tools,
+        uses_image=img_path is not None,
+    )
     user_prompt = prompt_config["text"]
     
     messages = [
