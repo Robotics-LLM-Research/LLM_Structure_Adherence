@@ -6,21 +6,42 @@ from src.prompts import PROMPTS
 from src.schemas import SCHEMAS
 from src.simulator import simulate_plan
 from src.parser import parse_path_output
-from src.utils import save_run_config, save_results
 from src.model import init_model, get_message, ask_model
+from src.utils import clean_llm_raw_output, save_run_config, save_results
 
 RUNS_IN_EXP = 10
 IMAGE_PATH = "assets/wall_crossing_env.png"
 
+# Which prompts from src.prompts.PROMPTS to run
+DEFAULT_PROMPT_IDS: list[str] | None = ["p4", "p5", "p6", "p7"]
+
 
 
 # ----- Helper Functions -----
+def _resolve_prompts(exp_config: dict[str, Any]) -> list[dict[str, Any]]:
+    ids = exp_config.get("prompt_ids", DEFAULT_PROMPT_IDS)
+    if ids is None:
+        return list(PROMPTS)
+    if not ids:
+        raise ValueError(
+            "prompt_ids must be a non-empty list of prompt ids, or omit it to run all prompts."
+        )
+    if len(ids) != len(set(ids)):
+        raise ValueError("prompt_ids must not contain duplicate ids.")
+    by_id = {p["id"]: p for p in PROMPTS}
+    resolved: list[dict[str, Any]] = []
+    for pid in ids:
+        if pid not in by_id:
+            known = ", ".join(sorted(by_id))
+            raise ValueError(f"Unknown prompt id {pid!r}. Known ids: {known}")
+        resolved.append(by_id[pid])
+    return resolved
+
 def _expand_llm_output(raw_output: str) -> Any:
     try:
         return json.loads(raw_output)
     except Exception:
         return raw_output
-
 
 def _resolve_uses_image_modes(uses_image_config: Any) -> list[bool]:
     if uses_image_config in (True, False):
@@ -68,7 +89,7 @@ def run(
         return {
             "structure": structure,
             "completion": completion,
-            "llm_output_raw": raw_output,
+            "llm_output_raw": clean_llm_raw_output(raw_output),
             "llm_output_expanded": _expand_llm_output(raw_output),
             "run_summary": {
                 "error_msg": error_msg,
@@ -88,7 +109,7 @@ def run(
     return {
         "structure": structure,
         "completion": completion,
-        "llm_output_raw": raw_output,
+        "llm_output_raw": clean_llm_raw_output(raw_output),
         "llm_output_expanded": _expand_llm_output(raw_output),
         "run_summary": {
             "error_msg": None,
@@ -111,6 +132,7 @@ def run_config(
     uses_image = exp_config["uses_image"]
     prompt_config = exp_config["prompt_config"]
     schema_config = exp_config["schema_config"]
+    run_id = exp_config["run_id"]
 
     img_path = IMAGE_PATH if uses_image else None
 
@@ -179,6 +201,7 @@ def run_config(
     prompt_id = prompt_config["id"]
     schema_id = schema_config["id"]
     save_run_config(
+        run_id=run_id,
         model_id=model_id,
         uses_image=uses_image,
         prompt_id=prompt_id,
@@ -202,10 +225,13 @@ def experiment(exp_config: dict[str, Any]):
     # Unpack config
     model_id = exp_config["model_id"]
     uses_tools = exp_config["uses_tools"]
+    run_id = exp_config["run_id"]
+    print(f"Results run_id: {run_id}", flush=True)
     uses_image_modes = _resolve_uses_image_modes(exp_config.get("uses_image", "both"))
     model, processor = init_model(model_id)
 
-    total_exp_configs = len(PROMPTS) * len(SCHEMAS)
+    prompts_to_run = _resolve_prompts(exp_config)
+    total_exp_configs = len(prompts_to_run) * len(SCHEMAS)
 
     for uses_image in uses_image_modes:
         # "Mode" header for Jupyter output
@@ -221,7 +247,7 @@ def experiment(exp_config: dict[str, Any]):
 
         # Run loop
         all_run_results: list[dict[str, Any]] = []
-        for prompt_config in PROMPTS:
+        for prompt_config in prompts_to_run:
             for schema_config in SCHEMAS:
                 config_idx += 1
 
@@ -243,7 +269,7 @@ def experiment(exp_config: dict[str, Any]):
                 all_run_results.append(result)
 
         # Calculate summary metrics
-        num_prompts = len(PROMPTS)
+        num_prompts = len(prompts_to_run)
         num_schemas = len(SCHEMAS)
         total_runs = num_prompts * num_schemas * RUNS_IN_EXP
         structure_count_total = sum(r.get("structure_count", 0) for r in all_run_results)
@@ -261,6 +287,7 @@ def experiment(exp_config: dict[str, Any]):
             "uses_tools": uses_tools,
             "uses_image": uses_image,
             "runs_per_config": RUNS_IN_EXP,
+            "prompt_ids": [p["id"] for p in prompts_to_run],
             "num_prompts": num_prompts,
             "num_schemas": num_schemas,
             "total_runs": total_runs,
