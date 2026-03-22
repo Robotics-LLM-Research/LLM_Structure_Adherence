@@ -21,12 +21,11 @@ SYSTEM_PROMPT = """
 def init_model(model_id: str):
     processor = AutoProcessor.from_pretrained(model_id)
     use_cuda = torch.cuda.is_available()
-    device_map = "cuda" if use_cuda else "cpu"
-    torch_dtype = torch.float16 if use_cuda else torch.float32
+
     model = AutoModelForImageTextToText.from_pretrained(
         model_id, 
-        torch_dtype=torch_dtype,
-        device_map=device_map,
+        torch_dtype=torch.bfloat16 if use_cuda else torch.float32,
+        device_map="auto" if use_cuda else "cpu",
     )
 
     return model, processor

@@ -1,4 +1,5 @@
 import sys
+import json
 from typing import Any
 
 from src.prompts import PROMPTS
@@ -13,6 +14,23 @@ IMAGE_PATH = "assets/wall_crossing_env.png"
 
 
 
+# ----- Helper Functions -----
+def _expand_llm_output(raw_output: str) -> Any:
+    try:
+        return json.loads(raw_output)
+    except Exception:
+        return raw_output
+
+
+def _resolve_uses_image_modes(uses_image_config: Any) -> list[bool]:
+    if uses_image_config in (True, False):
+        return [uses_image_config]
+    if uses_image_config == "both":
+        return [False, True]
+    raise ValueError("exp_config['uses_image'] must be True, False, or 'both'.")
+
+
+# ----- Experiment Loops -----
 def run(
     model,
     processor,
@@ -50,12 +68,13 @@ def run(
         return {
             "structure": structure,
             "completion": completion,
+            "llm_output_raw": raw_output,
+            "llm_output_expanded": _expand_llm_output(raw_output),
             "run_summary": {
                 "error_msg": error_msg,
                 "plan_success": None,
                 "plan_collided": None,
                 "final_spot": None,
-                "reason": None,
             },
         }
     
@@ -69,6 +88,8 @@ def run(
     return {
         "structure": structure,
         "completion": completion,
+        "llm_output_raw": raw_output,
+        "llm_output_expanded": _expand_llm_output(raw_output),
         "run_summary": {
             "error_msg": None,
             "plan_success": plan_results.get("success"),
@@ -98,9 +119,18 @@ def run_config(
     all_run_details: list[dict[str, Any]] = []
 
     # Set up progress tracking
+    use_notebook_updates = "ipykernel" in sys.modules
     use_inline_updates = bool(getattr(sys.stdout, "isatty", lambda: False)())
     config_width = len(str(total_exp_configs))
     run_width = len(str(RUNS_IN_EXP))
+
+    clear_output = None
+    if use_notebook_updates:
+        try:
+            from IPython.display import clear_output as _clear_output  # pyright: ignore[reportMissingImports]
+            clear_output = _clear_output
+        except Exception:
+            use_notebook_updates = False
 
     # Experiment loop
     for i in range(RUNS_IN_EXP):
@@ -109,7 +139,11 @@ def run_config(
             f"Config {config_idx:0{config_width}d}/{total_exp_configs} | "
             f"Run {i + 1:0{run_width}d}/{RUNS_IN_EXP}"
         )
-        print(status, end=("\r" if use_inline_updates else "\n"), flush=True)
+        if use_notebook_updates and clear_output is not None:
+            clear_output(wait=True)
+            print(status, flush=True)
+        else:
+            print(status, end=("\r" if use_inline_updates else "\n"), flush=True)
 
         run_result = run(
             model=model,
@@ -135,7 +169,11 @@ def run_config(
         f"Config {config_idx:0{config_width}d}/{total_exp_configs} | "
         f"Run {RUNS_IN_EXP:0{run_width}d}/{RUNS_IN_EXP}"
     )
-    print(final_status, flush=True)
+    if use_notebook_updates and clear_output is not None:
+        clear_output(wait=True)
+        print(final_status, flush=True)
+    elif use_inline_updates:
+        print(final_status, flush=True)
 
     # Save run details
     prompt_id = prompt_config["id"]
@@ -164,11 +202,12 @@ def experiment(exp_config: dict[str, Any]):
     # Unpack config
     model_id = exp_config["model_id"]
     uses_tools = exp_config["uses_tools"]
+    uses_image_modes = _resolve_uses_image_modes(exp_config.get("uses_image", "both"))
     model, processor = init_model(model_id)
 
     total_exp_configs = len(PROMPTS) * len(SCHEMAS)
 
-    for uses_image in [False, True]:
+    for uses_image in uses_image_modes:
         # "Mode" header for Jupyter output
         print(
             f"Mode: model_id={model_id} | uses_tools={uses_tools} | uses_image={uses_image}",
