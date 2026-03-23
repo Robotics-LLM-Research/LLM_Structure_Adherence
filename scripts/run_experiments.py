@@ -13,7 +13,7 @@ RUNS_IN_EXP = 10
 IMAGE_PATH = "assets/wall_crossing_env.png"
 
 # Which prompts from src.prompts.PROMPTS to run
-DEFAULT_PROMPT_IDS: list[str] | None = ["p4", "p5", "p6", "p7"]
+DEFAULT_PROMPT_IDS: list[str] | None = ["p4", "p8", "p9", "p10"]
 
 
 
@@ -226,13 +226,18 @@ def experiment(exp_config: dict[str, Any]):
     model_id = exp_config["model_id"]
     uses_tools = exp_config["uses_tools"]
     run_id = exp_config["run_id"]
-    print(f"Results run_id: {run_id}", flush=True)
     uses_image_modes = _resolve_uses_image_modes(exp_config.get("uses_image", "both"))
-    model, processor = init_model(model_id)
+
+    print("Initializing model...", flush=True)
+    model, processor = init_model(
+        model_id=model_id, 
+        token=exp_config["token"]
+    )
 
     prompts_to_run = _resolve_prompts(exp_config)
     total_exp_configs = len(prompts_to_run) * len(SCHEMAS)
 
+    print("Begin Experiments....", flush=True)
     for uses_image in uses_image_modes:
         # "Mode" header for Jupyter output
         print(

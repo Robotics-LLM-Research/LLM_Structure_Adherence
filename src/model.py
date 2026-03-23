@@ -18,13 +18,14 @@ SYSTEM_PROMPT = """
 
 
 # ----- Model Setup -----
-def init_model(model_id: str):
+def init_model(model_id: str, token: str):
     processor = AutoProcessor.from_pretrained(model_id)
     use_cuda = torch.cuda.is_available()
 
     model = AutoModelForImageTextToText.from_pretrained(
         model_id, 
-        torch_dtype=torch.bfloat16 if use_cuda else torch.float32,
+        token=token,
+        dtype=torch.bfloat16 if use_cuda else torch.float32,
         device_map="auto" if use_cuda else "cpu",
     )
 

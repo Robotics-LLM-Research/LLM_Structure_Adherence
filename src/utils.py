@@ -15,7 +15,7 @@ def clean_llm_raw_output(raw: str) -> str:
 
     Behavior:
     1) Strip surrounding whitespace and markdown code fences.
-    2) If the model returned JSON directly, pretty-print it.
+    2) If the model returned JSON directly, compact it to one line.
     3) If the model returned a JSON-encoded string containing JSON, unwrap it.
     4) If parsing still fails, do a best-effort cleanup of escaped characters
        like \\n and \\" without pretending broken JSON is valid.
@@ -27,7 +27,6 @@ def clean_llm_raw_output(raw: str) -> str:
     if not text:
         return ""
 
-    # Remove markdown fences if present.
     if text.startswith("```"):
         lines = text.splitlines()
 
@@ -45,7 +44,9 @@ def clean_llm_raw_output(raw: str) -> str:
         except json.JSONDecodeError:
             return None
 
-    # Unwrap up to a few times in case the model returned a quoted JSON string.
+    def _compact_json(value: Any) -> str:
+        return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+
     for _ in range(3):
         parsed = _try_parse(text)
 
@@ -56,9 +57,8 @@ def clean_llm_raw_output(raw: str) -> str:
             text = parsed.strip()
             continue
 
-        return json.dumps(parsed, indent=2, ensure_ascii=False)
+        return _compact_json(parsed)
 
-    # Try extracting a JSON object/array from surrounding extra text.
     for open_char, close_char in (("{", "}"), ("[", "]")):
         start = text.find(open_char)
         end = text.rfind(close_char)
@@ -68,35 +68,19 @@ def clean_llm_raw_output(raw: str) -> str:
             parsed = _try_parse(candidate)
 
             if parsed is not None:
-                return json.dumps(parsed, indent=2, ensure_ascii=False)
+                return _compact_json(parsed)
 
-    # Best-effort readability cleanup for invalid/truncated JSON.
     text = (
         text
-        .replace("\\r\\n", "\n")
-        .replace("\\n", "\n")
-        .replace("\\r", "\n")
-        .replace("\\t", "    ")
+        .replace("\\r\\n", " ")
+        .replace("\\n", " ")
+        .replace("\\r", " ")
+        .replace("\\t", " ")
         .replace('\\"', '"')
         .replace("\\/", "/")
     )
 
-    cleaned_lines = []
-    previous_blank = False
-
-    for line in text.splitlines():
-        cleaned = line.rstrip()
-
-        if not cleaned.strip():
-            if not previous_blank:
-                cleaned_lines.append("")
-            previous_blank = True
-            continue
-
-        previous_blank = False
-        cleaned_lines.append(cleaned)
-
-    return "\n".join(cleaned_lines).strip()
+    return " ".join(text.split()).strip()
 
 def format_run_timestamp(when: datetime | None = None) -> str:
     """ Run folder name: YYYY-MM-DD_HH-MM-SS """
