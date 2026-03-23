@@ -48,5 +48,32 @@ PROMPTS = [
             "Guide Spot to the target area on the far side of the wall. "
             "It must go around the obstacle rather than through it, and it should finish in the goal area beyond the wall."
         ),
-    }
+    },
+    {
+        "id": "p8",
+        "text": (
+            "Spot starts at position (0.0, 0.0) facing 0 degrees. "
+            "The wall occupies x from 4.5 to 5.5 and y from -2.0 to 2.0. "
+            "The goal region occupies x from 6.0 to 10.0 and y from -2.0 to 2.0. "
+            "Generate a collision-free path that goes around the wall and finishes in the goal region."
+        ),
+    },
+    {
+        "id": "p9",
+        "text": (
+            "Spot starts at position (0.0, 0.0) facing 0 degrees. "
+            "A wall blocks the region x from 4.5 to 5.5 and y from -2.0 to 2.0. "
+            "The goal region is x from 6.0 to 10.0 and y from -2.0 to 2.0. "
+            "Produce a valid path that reaches the goal region without passing through the wall."
+        ),
+    },
+    {
+        "id": "p10",
+        "text": (
+            "Spot starts at position (0.0, 0.0) facing 0 degrees. "
+            "The obstacle occupies x from 4.5 to 5.5 and y from -2.0 to 2.0. "
+            "The target region occupies x from 6.0 to 10.0 and y from -2.0 to 2.0. "
+            "Plan a complete path for Spot to reach the target region by going around the obstacle, not through it."
+        ),
+    },
 ]

@@ -23,7 +23,7 @@ _MODEL_CACHE: dict[str, tuple[AutoModelForImageTextToText, AutoProcessor]] = {}
 
 
 # ----- Model Setup -----
-def init_model(model_id: str):
+def init_model(model_id: str, token: str):
     if model_id in _MODEL_CACHE:
         return _MODEL_CACHE[model_id]
 
@@ -35,8 +35,9 @@ def init_model(model_id: str):
 
     model = AutoModelForImageTextToText.from_pretrained(
         model_id, 
+        token=token,
         cache_dir=str(HF_CACHE_DIR),
-        torch_dtype=torch.bfloat16 if use_cuda else torch.float32,
+        dtype=torch.bfloat16 if use_cuda else torch.float32,
         device_map="auto" if use_cuda else "cpu",
     )
 
