@@ -20,7 +20,7 @@ PROMPTS = [
         "text": (
             "Spot starts at position (0.0, 0.0) facing 0 degrees. "
             "The wall occupies x from 4.5 to 5.5 and y from -2.0 to 2.0. "
-            "The goal region occupies x from 6.0 to 10.0 and y from -3.0 to 3.0. "
+            "The goal region occupies x from 6.0 to 10.0 and y from -2.0 to 2.0. "
             "Generate a path that reaches the goal region without crossing the wall."
         ),
     },
@@ -29,7 +29,7 @@ PROMPTS = [
         "text": (
             "Plan from this exact state: Spot is at (0.0, 0.0) with heading 0 degrees. "
             "The obstacle is the rectangle x in [4.5, 5.5], y in [-2.0, 2.0]. "
-            "The target is the rectangle x in [6.0, 10.0], y in [-3.0, 3.0]. "
+            "The target is the rectangle x in [6.0, 10.0], y in [-2.0, 2.0]. "
             "Each move follows Spot's current heading. "
             "Produce a collision-free sequence that ends inside the target."
         ),
@@ -39,8 +39,7 @@ PROMPTS = [
         "text": (
             "Spot starts at (0.0, 0.0) facing 0 degrees. "
             "A wall blocks the middle region: x from 4.5 to 5.5 and y from -2.0 to 2.0. "
-            "The target region is beyond the wall at x from 6.0 to 10.0 and y from -3.0 to 3.0. "
-            "The path must go around the wall by passing either above it or below it, then end in the target region."
+            "The target region is beyond the wall at x from 6.0 to 10.0 and y from -2.0 to 2.0. "
         ),
     },
     {
