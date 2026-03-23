@@ -1,5 +1,6 @@
 import torch
 from PIL import Image
+from pathlib import Path
 from transformers import AutoProcessor, AutoModelForImageTextToText
 
 from .tools import get_tools_prompt, get_tool_declarations
@@ -16,18 +17,30 @@ SYSTEM_PROMPT = """
     - Do not stop after one action unless the task is already complete.
 """
 
+HF_CACHE_DIR = Path(__file__).resolve().parent.parent / ".hf_cache"
+HF_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+_MODEL_CACHE: dict[str, tuple[AutoModelForImageTextToText, AutoProcessor]] = {}
+
 
 # ----- Model Setup -----
 def init_model(model_id: str):
-    processor = AutoProcessor.from_pretrained(model_id)
+    if model_id in _MODEL_CACHE:
+        return _MODEL_CACHE[model_id]
+
+    processor = AutoProcessor.from_pretrained(
+        model_id,
+        cache_dir=str(HF_CACHE_DIR),
+    )
     use_cuda = torch.cuda.is_available()
 
     model = AutoModelForImageTextToText.from_pretrained(
         model_id, 
+        cache_dir=str(HF_CACHE_DIR),
         torch_dtype=torch.bfloat16 if use_cuda else torch.float32,
         device_map="auto" if use_cuda else "cpu",
     )
 
+    _MODEL_CACHE[model_id] = (model, processor)
     return model, processor
 
 
