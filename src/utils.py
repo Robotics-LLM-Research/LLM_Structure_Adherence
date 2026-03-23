@@ -2,8 +2,10 @@ import json
 from typing import Any
 from pathlib import Path
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 ROOT_DIR = Path(__file__).parent.parent
+NEW_YORK_TZ = ZoneInfo("America/New_York")
 
 RESULTS_DIR = ROOT_DIR / "results"
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -84,7 +86,12 @@ def clean_llm_raw_output(raw: str) -> str:
 
 def format_run_timestamp(when: datetime | None = None) -> str:
     """ Run folder name: YYYY-MM-DD_HH-MM-SS """
-    dt = when or datetime.now()
+    if when is None:
+        dt = datetime.now(tz=NEW_YORK_TZ)
+    elif when.tzinfo is None:
+        dt = when.replace(tzinfo=NEW_YORK_TZ)
+    else:
+        dt = when.astimezone(NEW_YORK_TZ)
     return dt.strftime("%Y-%m-%d_%H-%M-%S")
 
 def save_results(

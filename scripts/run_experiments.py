@@ -1,25 +1,29 @@
+import os
 import sys
 import json
 from typing import Any
+from dotenv import load_dotenv
 
 from src.prompts import PROMPTS
 from src.schemas import SCHEMAS
 from src.simulator import simulate_plan
 from src.parser import parse_path_output
 from src.model import init_model, get_message, ask_model
-from src.utils import clean_llm_raw_output, save_run_config, save_results
+from src.utils import (
+    clean_llm_raw_output,
+    format_run_timestamp,
+    save_run_config,
+    save_results,
+)
 
 RUNS_IN_EXP = 10
 IMAGE_PATH = "assets/wall_crossing_env.png"
-
-# Which prompts from src.prompts.PROMPTS to run
-DEFAULT_PROMPT_IDS: list[str] | None = ["p4", "p8", "p9", "p10"]
 
 
 
 # ----- Helper Functions -----
 def _resolve_prompts(exp_config: dict[str, Any]) -> list[dict[str, Any]]:
-    ids = exp_config.get("prompt_ids", DEFAULT_PROMPT_IDS)
+    ids = exp_config.get("prompt_ids")
     if ids is None:
         return list(PROMPTS)
     if not ids:
@@ -301,3 +305,54 @@ def experiment(exp_config: dict[str, Any]):
 
         save_results(exp_config=base_config, results=experiment_results)
         
+
+
+EXPERIMENTS: list[dict[str, Any]] = [
+    {
+        "model_id": "Qwen/Qwen2.5-VL-32B-Instruct",
+        "uses_tools": False,
+        "uses_image": "both",
+        "prompt_ids": ["p4", "p8", "p9", "p10"],
+    },
+    {
+        "model_id": "Qwen/Qwen3-VL-8B-Instruct",
+        "uses_tools": False,
+        "uses_image": "both",
+        "prompt_ids": ["p4", "p8", "p9", "p10"],
+    },
+    {
+        "model_id": "Qwen/Qwen2.5-VL-7B-Instruct",
+        "uses_tools": False,
+        "uses_image": False,
+        "prompt_ids": ["p4", "p8", "p9", "p10"],
+    },
+    {
+        "model_id": "mistralai/Mistral-Small-3.1-24B-Instruct-2503",
+        "uses_tools": False,
+        "uses_image": False,
+        "prompt_ids": ["p4", "p8", "p9", "p10"],
+    },
+    {
+        "model_id": "Qwen/Qwen2.5-VL-72B-Instruct",
+        "uses_tools": False,
+        "uses_image": False,
+        "prompt_ids": ["p4", "p8", "p9", "p10"],
+    },
+]
+
+def main() -> None:
+    load_dotenv()
+    TOKEN = os.getenv("HF_TOKEN")
+    run_id = format_run_timestamp()
+
+    for base_config in EXPERIMENTS:
+        exp_config = {
+            **base_config,
+            "run_id": run_id,
+            "token": TOKEN,
+        }
+        experiment(exp_config)
+
+
+if __name__ == "__main__":
+    main()
