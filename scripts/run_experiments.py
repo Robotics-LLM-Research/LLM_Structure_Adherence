@@ -225,13 +225,12 @@ def experiment(exp_config: dict[str, Any]):
     # Unpack config
     model_id = exp_config["model_id"]
     uses_tools = exp_config["uses_tools"]
-    run_id = exp_config["run_id"]
     uses_image_modes = _resolve_uses_image_modes(exp_config.get("uses_image", "both"))
 
     print("Initializing model...", flush=True)
     model, processor = init_model(
         model_id=model_id, 
-        token=exp_config["token"]
+        token=exp_config.get("token")
     )
 
     prompts_to_run = _resolve_prompts(exp_config)

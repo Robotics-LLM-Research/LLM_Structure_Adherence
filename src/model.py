@@ -23,8 +23,9 @@ _MODEL_CACHE: dict[str, tuple[AutoModelForImageTextToText, AutoProcessor]] = {}
 
 
 # ----- Model Setup -----
-def init_model(model_id: str, token: str):
+def init_model(model_id: str, token: str | None = None):
     if model_id in _MODEL_CACHE:
+        print("Loaded model from cache...", flush=True)
         return _MODEL_CACHE[model_id]
 
     processor = AutoProcessor.from_pretrained(
@@ -33,12 +34,17 @@ def init_model(model_id: str, token: str):
     )
     use_cuda = torch.cuda.is_available()
 
+    model_load_kwargs = {
+        "cache_dir": str(HF_CACHE_DIR),
+        "dtype": torch.bfloat16 if use_cuda else torch.float32,
+        "device_map": "auto" if use_cuda else "cpu",
+    }
+    if token:
+        model_load_kwargs["token"] = token
+
     model = AutoModelForImageTextToText.from_pretrained(
-        model_id, 
-        token=token,
-        cache_dir=str(HF_CACHE_DIR),
-        dtype=torch.bfloat16 if use_cuda else torch.float32,
-        device_map="auto" if use_cuda else "cpu",
+        model_id,
+        **model_load_kwargs,
     )
 
     _MODEL_CACHE[model_id] = (model, processor)
