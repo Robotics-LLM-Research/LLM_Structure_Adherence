@@ -4,85 +4,60 @@ from pathlib import Path
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from .prompts import FULL_PATH_PROMPTS, STEP_SEQUENCE_PROMPTS
+
 ROOT_DIR = Path(__file__).parent.parent
 NEW_YORK_TZ = ZoneInfo("America/New_York")
 
 RESULTS_DIR = ROOT_DIR / "results"
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+ASSETS_DIR = ROOT_DIR / "assets"
+DEFAULT_ENV_IMAGE_PATH = ASSETS_DIR / "wall_crossing_env.png"
 
 
-def clean_llm_raw_output(raw: str) -> str:
-    """
-    Make raw LLM output easier to read in saved logs.
 
-    Behavior:
-    1) Strip surrounding whitespace and markdown code fences.
-    2) If the model returned JSON directly, compact it to one line.
-    3) If the model returned a JSON-encoded string containing JSON, unwrap it.
-    4) If parsing still fails, do a best-effort cleanup of escaped characters
-       like \\n and \\" without pretending broken JSON is valid.
-    """
-    if raw is None:
-        return ""
+# ----- Script Resolves -----
+def resolve_prompts(
+    mode: str,
+    exp_config: dict[str, Any]
+) -> list[dict[str, Any]]:
+    if mode == "Path":
+        PROMPTS = FULL_PATH_PROMPTS
+    else:
+        PROMPTS = STEP_SEQUENCE_PROMPTS
 
-    text = str(raw).strip()
-    if not text:
-        return ""
+    ids = exp_config.get("prompt_ids")
+    if ids is None:
+        return list(PROMPTS)
+    if not ids:
+        raise ValueError(
+            "prompt_ids must be a non-empty list of prompt ids, or omit it to run all prompts."
+        )
+    if len(ids) != len(set(ids)):
+        raise ValueError("prompt_ids must not contain duplicate ids.")
+    by_id = {p["id"]: p for p in PROMPTS}
+    resolved: list[dict[str, Any]] = []
+    for pid in ids:
+        if pid not in by_id:
+            known = ", ".join(sorted(by_id))
+            raise ValueError(f"Unknown prompt id {pid!r}. Known ids: {known}")
+        resolved.append(by_id[pid])
+    return resolved
 
-    if text.startswith("```"):
-        lines = text.splitlines()
+def resolve_uses_image_modes(uses_image_config: Any) -> list[bool]:
+    if uses_image_config in (True, False):
+        return [uses_image_config]
+    if uses_image_config == "both":
+        return [False, True]
+    raise ValueError("exp_config['uses_image'] must be True, False, or 'both'.")
 
-        if lines and lines[0].lstrip().startswith("```"):
-            lines = lines[1:]
 
-        if lines and lines[-1].strip().startswith("```"):
-            lines = lines[:-1]
-
-        text = "\n".join(lines).strip()
-
-    def _try_parse(candidate: str):
-        try:
-            return json.loads(candidate)
-        except json.JSONDecodeError:
-            return None
-
-    def _compact_json(value: Any) -> str:
-        return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
-
-    for _ in range(3):
-        parsed = _try_parse(text)
-
-        if parsed is None:
-            break
-
-        if isinstance(parsed, str):
-            text = parsed.strip()
-            continue
-
-        return _compact_json(parsed)
-
-    for open_char, close_char in (("{", "}"), ("[", "]")):
-        start = text.find(open_char)
-        end = text.rfind(close_char)
-
-        if start != -1 and end != -1 and end > start:
-            candidate = text[start:end + 1]
-            parsed = _try_parse(candidate)
-
-            if parsed is not None:
-                return _compact_json(parsed)
-
-    text = (
-        text
-        .replace("\\r\\n", " ")
-        .replace("\\n", " ")
-        .replace("\\r", " ")
-        .replace("\\t", " ")
-        .replace('\\"', '"')
-        .replace("\\/", "/")
-    )
-
-    return " ".join(text.split()).strip()
+# ----- Formatting ------
+def expand_llm_output(raw_output: str) -> Any:
+    try:
+        return json.loads(raw_output)
+    except Exception:
+        return raw_output
 
 def format_run_timestamp(when: datetime | None = None) -> str:
     """ Run folder name: YYYY-MM-DD_HH-MM-SS """
@@ -94,12 +69,17 @@ def format_run_timestamp(when: datetime | None = None) -> str:
         dt = when.astimezone(NEW_YORK_TZ)
     return dt.strftime("%Y-%m-%d_%H-%M-%S")
 
+
+# ------ Saving Results ------
 def save_results(
     exp_config: dict[str, Any], 
     results: dict[str, Any], 
 ) -> Path:
+    prefix = exp_config["prefix"]
     run_id = exp_config["run_id"]
-    RUN_DIR = RESULTS_DIR / run_id
+    run_path = f"{prefix}_{run_id}"
+
+    RUN_DIR = RESULTS_DIR / run_path
     RUN_DIR.mkdir(parents=True, exist_ok=True)
 
     MODEL_DIR = RUN_DIR / exp_config["model_id"]
@@ -118,6 +98,7 @@ def save_run_config(
     prompt_id: str,
     schema_id: str,
     runs: list[dict[str, Any]],
+    prefix: str | None = None,
 ) -> Path:
     root = RESULTS_DIR / run_id
     root.mkdir(parents=True, exist_ok=True)

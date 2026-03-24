@@ -28,6 +28,7 @@ TARGET_BOUNDS = {
 _COLLISION_SAMPLE_STEP_M = 0.05
 
 
+
 # --- Helpers ---
 def _point_in_bounds(x: float, y: float, bounds: dict[str, float]) -> bool:
     return (
@@ -35,10 +36,7 @@ def _point_in_bounds(x: float, y: float, bounds: dict[str, float]) -> bool:
         and bounds["y1"] <= y <= bounds["y2"]
     )
 
-def _check_collision(spot: dict[str, float]) -> bool:
-    return _point_in_bounds(spot["x"], spot["y"], WALL_BOUNDS)
-
-def _check_collision_segment(
+def _check_collision(
     prev_spot: dict[str, float],
     next_spot: dict[str, float],
 ) -> bool:
@@ -84,27 +82,48 @@ def _apply_rotate(spot: dict[str, float], action: RotateSpotAction) -> dict[str,
     }
 
 
-# --- Simulation ---
+# ----- Simulation -----
+def _handle_action(
+    spot: dict[str, float] | None, 
+    action: MoveSpotAction | RotateSpotAction
+) -> tuple[dict[str, float], bool]:
+    collided = False
+    if isinstance(action, RotateSpotAction):
+        spot = _apply_rotate(spot, action)
+    elif isinstance(action, MoveSpotAction):
+        prev_spot = spot
+        spot = _apply_move(spot, action)
+
+        if _check_collision(prev_spot, spot):
+            collided = True
+
+    return spot, collided
+
+def simulate_step(
+    spot: dict[str, float] | None, 
+    action: MoveSpotAction | RotateSpotAction
+) -> dict:
+    if spot is None:
+        spot = INITIAL_SPOT_STATE.copy()
+
+    spot, collided = _handle_action(spot, action)
+    success = (not collided) and _check_success(spot)
+
+    return {
+        "success": success,
+        "collided": collided,
+        "state": spot,
+    }
+    
 def simulate_plan(plan: ActionPlan) -> dict:
     spot = INITIAL_SPOT_STATE.copy()
     collided = False
 
     for action in plan.actions:
-        if isinstance(action, RotateSpotAction):
-            spot = _apply_rotate(spot, action)
-        elif isinstance(action, MoveSpotAction):
-            prev_spot = spot
-            spot = _apply_move(spot, action)
+        spot, collided = _handle_action(spot, action) 
 
-            if _check_collision_segment(prev_spot, spot):
-                collided = True
-                break
-        else:
-            return {
-                "success": False,
-                "collided": False,
-                "final_spot": spot,
-            }
+        if collided:
+            break
 
     success = (not collided) and _check_success(spot)
     spot = {k: round(v, 1) for k, v in spot.items()}

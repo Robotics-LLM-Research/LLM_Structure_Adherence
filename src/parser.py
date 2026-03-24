@@ -2,12 +2,87 @@ import json
 
 from pydantic import ValidationError
 
-from .schemas import SCHEMA_BY_ID, ActionPlan
-from .schemas import MoveSpotAction, RotateSpotAction
-from .schemas import Schema1, Schema2, Schema3, Schema4, Schema5
+from .schemas import (
+    ActionPlan,
+    MoveSpotAction, 
+    RotateSpotAction, 
+    FinishTaskAction,
+) 
+from .path_schemas import (
+    PATH_SCHEMA_BY_ID,
+    PathSchema0,
+    PathSchema1,
+    PathSchema2,
+    PathSchema3,
+    PathSchema4,
+)
+from .step_schemas import STEP_SCHEMA_BY_ID
 
 
+# ---------- Step ----------
+def parse_action_output(
+    raw_output: str,
+    schema_id: str,
+) -> tuple[MoveSpotAction | RotateSpotAction | FinishTaskAction | None, str | None]:
+    try:
+        data = json.loads(raw_output)
+    except json.JSONDecodeError as error:
+        return None, f"Invalid JSON: {error}"
+    
+    schema_model = STEP_SCHEMA_BY_ID[schema_id]["schema"]
 
+    try:
+        validated = schema_model.model_validate(data)
+    except ValidationError as error:
+        return None, f"Schema validation failed: {error}"
+    
+    try:
+        action = _normalize_to_action(validated, schema_id)
+    except ValueError as error:
+        return None, str(error)
+    
+    return action, None
+
+
+# --- Normalization ---
+def _normalize_to_action(
+    validated,
+    schema_id: str,
+) -> MoveSpotAction | RotateSpotAction | FinishTaskAction:
+    if schema_id == "st0":
+        return validated
+
+    if schema_id == "st1":
+        return validated.action
+
+    if schema_id == "st2":
+        if validated.call.name == "move_spot":
+            return MoveSpotAction(
+                tool_name=validated.call.name,
+                arguments=validated.call.args,
+            )
+
+        if validated.call.name == "rotate_spot":
+            return RotateSpotAction(
+                tool_name=validated.call.name,
+                arguments=validated.call.args,
+            )
+        
+        if validated.call.name == "finish_task":
+            return FinishTaskAction(
+                tool_name=validated.call.name,
+                arguments=validated.call.args,
+            )
+
+        raise ValueError(f"Unsupported action name: {validated.call.name}")
+    
+    if schema_id == "st3":
+        return validated.next_action
+
+    raise ValueError(f"Unsupported step schema_id: {schema_id}")
+
+
+# ---------- Path ----------
 def parse_path_output(
     raw_output: str,
     schema_id: str,
@@ -17,7 +92,7 @@ def parse_path_output(
     except json.JSONDecodeError as error:
         return None, f"Invalid JSON: {error}"
     
-    schema_model = SCHEMA_BY_ID[schema_id]["schema"]
+    schema_model = PATH_SCHEMA_BY_ID[schema_id]["schema"]
 
     try:
         validated = schema_model.model_validate(data)
@@ -25,11 +100,10 @@ def parse_path_output(
         return None, f"Schema validation failed: {error}"
     
     plan = _normalize_to_action_plan(validated, schema_id)
-    
     return plan, None
 
 
-# ---------- Normalization ----------
+# --- Normalization ---
 def _normalize_to_action_plan(validated, schema_id: str) -> ActionPlan:
     if schema_id == "s0":
         return _normalize_schema_1(validated)
@@ -48,13 +122,13 @@ def _normalize_to_action_plan(validated, schema_id: str) -> ActionPlan:
 
     raise ValueError(f"Unsupported schema_id: {schema_id}")
 
-def _normalize_schema_1(validated: Schema1) -> ActionPlan:
+def _normalize_schema_1(validated: PathSchema0) -> ActionPlan:
     return ActionPlan(actions=validated.actions)
 
-def _normalize_schema_2(validated: Schema2) -> ActionPlan:
+def _normalize_schema_2(validated: PathSchema1) -> ActionPlan:
     return ActionPlan(actions=validated.root)
 
-def _normalize_schema_3(validated: Schema3) -> ActionPlan:
+def _normalize_schema_3(validated: PathSchema2) -> ActionPlan:
     normalized_actions = []
 
     for step in validated.actions:
@@ -77,7 +151,7 @@ def _normalize_schema_3(validated: Schema3) -> ActionPlan:
 
     return ActionPlan(actions=normalized_actions)
 
-def _normalize_schema_4(validated: Schema4) -> ActionPlan:
+def _normalize_schema_4(validated: PathSchema3) -> ActionPlan:
     normalized_actions = []
 
     for step in validated.plan:
@@ -100,7 +174,6 @@ def _normalize_schema_4(validated: Schema4) -> ActionPlan:
 
     return ActionPlan(actions=normalized_actions)
 
-def _normalize_schema_5(validated: Schema5) -> ActionPlan:
+def _normalize_schema_5(validated: PathSchema4) -> ActionPlan:
     normalized_actions = [step.call for step in validated.steps]
-
     return ActionPlan(actions=normalized_actions)

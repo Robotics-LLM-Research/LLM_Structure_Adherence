@@ -4,22 +4,12 @@ from pathlib import Path
 from transformers import AutoProcessor, AutoModelForImageTextToText
 
 from .tools import get_tools_prompt, get_tool_declarations
-
-SYSTEM_PROMPT = """
-    You control a simulated robot: Spot.
-    Your job is to ouput a COMPLETE path, not just the next action.
-
-    RULES:
-    - Output only JSON.
-    - Do not include markdown fences.
-    - Output the FULL sequence of actions needed to complete the task.
-    - Most tasks will require multiple actions.
-    - Do not stop after one action unless the task is already complete.
-"""
+from .prompts import FULL_PATH_SYSTEM_PROMPT, STEP_SEQUENCE_SYSTEM_PROMPT
 
 HF_CACHE_DIR = Path(__file__).resolve().parent.parent / ".hf_cache"
 HF_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 _MODEL_CACHE: dict[str, tuple[AutoModelForImageTextToText, AutoProcessor]] = {}
+
 
 
 # ----- Model Setup -----
@@ -28,9 +18,15 @@ def init_model(model_id: str, token: str | None = None):
         print("Loaded model from cache...", flush=True)
         return _MODEL_CACHE[model_id]
 
+    processor_load_kwargs = {
+        "cache_dir": str(HF_CACHE_DIR),
+    }
+    if token:
+        processor_load_kwargs["token"] = token
+
     processor = AutoProcessor.from_pretrained(
         model_id,
-        cache_dir=str(HF_CACHE_DIR),
+        **processor_load_kwargs,
     )
     use_cuda = torch.cuda.is_available()
 
@@ -53,17 +49,21 @@ def init_model(model_id: str, token: str | None = None):
 
 # ----- Prompt -----
 def _build_system_prompt(
+        mode: str,
         schema_config: dict,
         use_native_tools: bool,
         uses_image: bool,
 ) -> str:
     schema_sample = schema_config["sample"]
 
-    prompt = SYSTEM_PROMPT
+    if mode == "Path":
+        prompt = FULL_PATH_SYSTEM_PROMPT
+    else:
+        prompt = STEP_SEQUENCE_SYSTEM_PROMPT
 
     if uses_image:
         prompt += (
-            "\n    - Use the provided image to determine the environment/scene context relevant to the plan."
+            "\n    - Use the provided image to determine the environment/scene context relevant to the task."
         )
 
     prompt += (
@@ -72,7 +72,6 @@ def _build_system_prompt(
         f"{schema_sample}"
     )
         
-
     if not use_native_tools:
         tools_json = get_tools_prompt()
         prompt += f"\n\nAVAILABLE TOOLS:\n{tools_json}"
@@ -80,12 +79,14 @@ def _build_system_prompt(
     return prompt
 
 def get_message(
+    mode: str,
     uses_tools: bool, 
-    img_path: str | None, 
+    img_path: str | Path | None, 
     prompt_config: dict,
     schema_config: dict,
 ) -> list[dict]:
     system_prompt = _build_system_prompt(
+        mode=mode,
         schema_config=schema_config, 
         use_native_tools=uses_tools,
         uses_image=img_path is not None,
@@ -120,6 +121,42 @@ def get_message(
         })
 
     return messages
+
+def append_message(
+    messages: list[dict],
+    raw_output: str,
+    error: str | None = None,
+    action_result: dict | None = None,
+    current_state: dict | None = None,
+) -> list[dict]:
+    messages.append({
+        "role": "assistant",
+        "content": [
+            {"type": "text", "text": raw_output}
+        ]
+    })
+
+    if error is not None:
+        feedback = (
+            f"Your previous response could not be parsed: {error}\n"
+            f"Current state is unchanged: {current_state}\n"
+        )
+    else:
+        feedback = (
+            f"Action executed.\n"
+            f"collided={action_result['collided']}, "
+            f"state={action_result['state']}\n"
+        )
+        
+    messages.append({
+        "role": "user",
+        "content": [
+            {"type": "text", "text": feedback}
+        ]
+    })
+
+    return messages
+
 
 # ----- Inference -----
 def ask_model(

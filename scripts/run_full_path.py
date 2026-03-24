@@ -4,14 +4,12 @@ import json
 from typing import Any
 from dotenv import load_dotenv
 
-from src.prompts import PROMPTS
-from src.schemas import SCHEMAS
+from src.path_schemas import PATH_SCHEMAS
 from src.simulator import simulate_plan
 from src.parser import parse_path_output
 from src.model import init_model, get_message, ask_model
+import src.utils as utils
 from src.utils import (
-    clean_llm_raw_output,
-    format_run_timestamp,
     save_run_config,
     save_results,
 )
@@ -21,42 +19,91 @@ IMAGE_PATH = "assets/wall_crossing_env.png"
 
 
 
-# ----- Helper Functions -----
-def _resolve_prompts(exp_config: dict[str, Any]) -> list[dict[str, Any]]:
-    ids = exp_config.get("prompt_ids")
-    if ids is None:
-        return list(PROMPTS)
-    if not ids:
-        raise ValueError(
-            "prompt_ids must be a non-empty list of prompt ids, or omit it to run all prompts."
-        )
-    if len(ids) != len(set(ids)):
-        raise ValueError("prompt_ids must not contain duplicate ids.")
-    by_id = {p["id"]: p for p in PROMPTS}
-    resolved: list[dict[str, Any]] = []
-    for pid in ids:
-        if pid not in by_id:
-            known = ", ".join(sorted(by_id))
-            raise ValueError(f"Unknown prompt id {pid!r}. Known ids: {known}")
-        resolved.append(by_id[pid])
-    return resolved
-
+# ----- Helpers -----
 def _expand_llm_output(raw_output: str) -> Any:
     try:
         return json.loads(raw_output)
     except Exception:
         return raw_output
 
-def _resolve_uses_image_modes(uses_image_config: Any) -> list[bool]:
-    if uses_image_config in (True, False):
-        return [uses_image_config]
-    if uses_image_config == "both":
-        return [False, True]
-    raise ValueError("exp_config['uses_image'] must be True, False, or 'both'.")
+
+def _clean_llm_raw_output(raw: str) -> str:
+    """
+    Make raw LLM output easier to read in saved logs.
+
+    Behavior:
+    1) Strip surrounding whitespace and markdown code fences.
+    2) If the model returned JSON directly, compact it to one line.
+    3) If the model returned a JSON-encoded string containing JSON, unwrap it.
+    4) If parsing still fails, do a best-effort cleanup of escaped characters
+       like \\n and \\" without pretending broken JSON is valid.
+    """
+    if raw is None:
+        return ""
+
+    text = str(raw).strip()
+    if not text:
+        return ""
+
+    if text.startswith("```"):
+        lines = text.splitlines()
+
+        if lines and lines[0].lstrip().startswith("```"):
+            lines = lines[1:]
+
+        if lines and lines[-1].strip().startswith("```"):
+            lines = lines[:-1]
+
+        text = "\n".join(lines).strip()
+
+    def _try_parse(candidate: str):
+        try:
+            return json.loads(candidate)
+        except json.JSONDecodeError:
+            return None
+
+    def _compact_json(value: Any) -> str:
+        return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+
+    for _ in range(3):
+        parsed = _try_parse(text)
+
+        if parsed is None:
+            break
+
+        if isinstance(parsed, str):
+            text = parsed.strip()
+            continue
+
+        return _compact_json(parsed)
+
+    for open_char, close_char in (("{", "}"), ("[", "]")):
+        start = text.find(open_char)
+        end = text.rfind(close_char)
+
+        if start != -1 and end != -1 and end > start:
+            candidate = text[start:end + 1]
+            parsed = _try_parse(candidate)
+
+            if parsed is not None:
+                return _compact_json(parsed)
+
+    text = (
+        text
+        .replace("\\r\\n", " ")
+        .replace("\\n", " ")
+        .replace("\\r", " ")
+        .replace("\\t", " ")
+        .replace('\\"', '"')
+        .replace("\\/", "/")
+    )
+
+    return " ".join(text.split()).strip()
 
 
 # ----- Experiment Loops -----
 def run(
+    mode,
     model,
     processor,
     uses_tools: bool,
@@ -69,6 +116,7 @@ def run(
 
     # Get prompt and schema messages
     messages = get_message(
+        mode=mode,
         uses_tools=uses_tools,
         img_path=img_path,
         prompt_config=prompt_config,
@@ -93,7 +141,7 @@ def run(
         return {
             "structure": structure,
             "completion": completion,
-            "llm_output_raw": clean_llm_raw_output(raw_output),
+            "llm_output_raw": _clean_llm_raw_output(raw_output),
             "llm_output_expanded": _expand_llm_output(raw_output),
             "run_summary": {
                 "error_msg": error_msg,
@@ -113,7 +161,7 @@ def run(
     return {
         "structure": structure,
         "completion": completion,
-        "llm_output_raw": clean_llm_raw_output(raw_output),
+        "llm_output_raw": _clean_llm_raw_output(raw_output),
         "llm_output_expanded": _expand_llm_output(raw_output),
         "run_summary": {
             "error_msg": None,
@@ -131,6 +179,7 @@ def run_config(
     total_exp_configs: int,
 ) -> dict[str, Any]:
     # Unpack config
+    mode = exp_config["prefix"]
     model_id = exp_config["model_id"]
     uses_tools = exp_config["uses_tools"]
     uses_image = exp_config["uses_image"]
@@ -172,6 +221,7 @@ def run_config(
             print(status, end=("\r" if use_inline_updates else "\n"), flush=True)
 
         run_result = run(
+            mode=mode,
             model=model,
             processor=processor,
             uses_tools=uses_tools,
@@ -227,9 +277,10 @@ def run_config(
 
 def experiment(exp_config: dict[str, Any]):
     # Unpack config
+    mode = exp_config["prefix"]
     model_id = exp_config["model_id"]
     uses_tools = exp_config["uses_tools"]
-    uses_image_modes = _resolve_uses_image_modes(exp_config.get("uses_image", "both"))
+    uses_image_modes = utils.resolve_uses_image_modes(exp_config.get("uses_image", "both"))
 
     print("Initializing model...", flush=True)
     model, processor = init_model(
@@ -237,8 +288,8 @@ def experiment(exp_config: dict[str, Any]):
         token=exp_config.get("token")
     )
 
-    prompts_to_run = _resolve_prompts(exp_config)
-    total_exp_configs = len(prompts_to_run) * len(SCHEMAS)
+    prompts_to_run = utils.resolve_prompts(mode=mode, exp_config=exp_config)
+    total_exp_configs = len(prompts_to_run) * len(PATH_SCHEMAS)
 
     print("Begin Experiments....", flush=True)
     for uses_image in uses_image_modes:
@@ -256,7 +307,7 @@ def experiment(exp_config: dict[str, Any]):
         # Run loop
         all_run_results: list[dict[str, Any]] = []
         for prompt_config in prompts_to_run:
-            for schema_config in SCHEMAS:
+            for schema_config in PATH_SCHEMAS:
                 config_idx += 1
 
                 # Build config for this run
@@ -278,7 +329,7 @@ def experiment(exp_config: dict[str, Any]):
 
         # Calculate summary metrics
         num_prompts = len(prompts_to_run)
-        num_schemas = len(SCHEMAS)
+        num_schemas = len(PATH_SCHEMAS)
         total_runs = num_prompts * num_schemas * RUNS_IN_EXP
         structure_count_total = sum(r.get("structure_count", 0) for r in all_run_results)
         completion_count_total = sum(r.get("completion_count", 0) for r in all_run_results)
@@ -343,11 +394,12 @@ EXPERIMENTS: list[dict[str, Any]] = [
 def main() -> None:
     load_dotenv()
     TOKEN = os.getenv("HF_TOKEN")
-    run_id = format_run_timestamp()
+    run_id = utils.format_run_timestamp()
 
     for base_config in EXPERIMENTS:
         exp_config = {
             **base_config,
+            "prefix": "Path",
             "run_id": run_id,
             "token": TOKEN,
         }
