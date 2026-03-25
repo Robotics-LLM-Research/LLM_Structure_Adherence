@@ -1,15 +1,25 @@
 #!/bin/bash
-#SBATCH --job-name=llm-adh
-#SBATCH --partition=normal
-#SBATCH --gres=gpu:1
+#SBATCH --job-name=steps_h100
+#SBATCH --account=abedi
+#SBATCH --qos=abedi
+#SBATCH --partition=highgpu
+#SBATCH --gres=gpu:nvidia_h100_80gb_hbm3:1
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=32G
-#SBATCH --time=08:00:00
+#SBATCH --mem=64G
+#SBATCH --time=24:00:00
 #SBATCH --output=logs/%x-%j.out
 #SBATCH --error=logs/%x-%j.err
 
-module load anaconda/anaconda-2024.10
-conda activate robotics
+set -euo pipefail
 
 cd ~/Research/LLM_Structure_Adherence
-python run_experiments.py
+mkdir -p logs
+
+module purge
+module load anaconda/anaconda-2024.10
+source "$(conda info --base)/etc/profile.d/conda.sh"
+conda activate llm_struct
+
+export PYTHONPATH=$PWD
+
+python -u scripts/run_step_sequence.py
