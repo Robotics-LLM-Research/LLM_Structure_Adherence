@@ -1,3 +1,4 @@
+import gc
 import torch
 from PIL import Image
 from pathlib import Path
@@ -8,16 +9,11 @@ from .prompts import FULL_PATH_SYSTEM_PROMPT, STEP_SEQUENCE_SYSTEM_PROMPT
 
 HF_CACHE_DIR = Path(__file__).resolve().parent.parent / ".hf_cache"
 HF_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-_MODEL_CACHE: dict[str, tuple[AutoModelForImageTextToText, AutoProcessor]] = {}
 
 
 
 # ----- Model Setup -----
 def init_model(model_id: str, token: str | None = None):
-    if model_id in _MODEL_CACHE:
-        print("Loaded model from cache...", flush=True)
-        return _MODEL_CACHE[model_id]
-
     processor_load_kwargs = {
         "cache_dir": str(HF_CACHE_DIR),
     }
@@ -43,8 +39,19 @@ def init_model(model_id: str, token: str | None = None):
         **model_load_kwargs,
     )
 
-    _MODEL_CACHE[model_id] = (model, processor)
     return model, processor
+
+def cleanup_model(model=None, processor=None) -> None:
+    del model
+    del processor
+    gc.collect()
+
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        try:
+            torch.cuda.ipc_collect()
+        except RuntimeError:
+            pass
 
 
 # ----- Prompt -----

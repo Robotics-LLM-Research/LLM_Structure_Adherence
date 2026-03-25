@@ -59,7 +59,7 @@ def expand_llm_output(raw_output: str) -> Any:
     except Exception:
         return raw_output
 
-def format_run_timestamp(when: datetime | None = None) -> str:
+def format_run_timestamp(prefix: str | None = None, when: datetime | None = None) -> str:
     """ Run folder name: YYYY-MM-DD_HH-MM-SS """
     if when is None:
         dt = datetime.now(tz=NEW_YORK_TZ)
@@ -67,7 +67,8 @@ def format_run_timestamp(when: datetime | None = None) -> str:
         dt = when.replace(tzinfo=NEW_YORK_TZ)
     else:
         dt = when.astimezone(NEW_YORK_TZ)
-    return dt.strftime("%Y-%m-%d_%H-%M-%S")
+    timestamp = dt.strftime("%Y-%m-%d_%H-%M-%S")
+    return f"{prefix}_{timestamp}" if prefix else timestamp
 
 
 # ------ Saving Results ------
@@ -75,11 +76,8 @@ def save_results(
     exp_config: dict[str, Any], 
     results: dict[str, Any], 
 ) -> Path:
-    prefix = exp_config["prefix"]
     run_id = exp_config["run_id"]
-    run_path = f"{prefix}_{run_id}"
-
-    RUN_DIR = RESULTS_DIR / run_path
+    RUN_DIR = RESULTS_DIR / run_id
     RUN_DIR.mkdir(parents=True, exist_ok=True)
 
     MODEL_DIR = RUN_DIR / exp_config["model_id"]
@@ -90,6 +88,7 @@ def save_results(
 
     out_path = MODEL_DIR / f"{filename}.json"
     out_path.write_text(json.dumps(results, indent=2))
+    return out_path
 
 def save_run_config(
     run_id: str,
@@ -98,7 +97,6 @@ def save_run_config(
     prompt_id: str,
     schema_id: str,
     runs: list[dict[str, Any]],
-    prefix: str | None = None,
 ) -> Path:
     root = RESULTS_DIR / run_id
     root.mkdir(parents=True, exist_ok=True)

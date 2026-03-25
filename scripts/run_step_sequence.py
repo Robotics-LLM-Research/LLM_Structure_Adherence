@@ -7,7 +7,13 @@ from src.step_schemas import STEP_SCHEMAS
 from src.simulator import simulate_step
 from src.schemas import FinishTaskAction
 from src.parser import parse_action_output
-from src.model import init_model, get_message, append_message, ask_model
+from src.model import (
+    init_model,
+    cleanup_model, 
+    get_message, 
+    append_message, 
+    ask_model, 
+)
 import src.utils as utils
 from src.utils import (
     save_run_config,
@@ -226,7 +232,6 @@ def run_config(
         prompt_id=prompt_id,
         schema_id=schema_id,
         runs=all_run_details,
-        prefix=mode,
     )
 
     # Mean over episodes of (valid_structure_count / step_count) for this config
@@ -270,82 +275,85 @@ def experiment(exp_config: dict[str, Any]):
         token=exp_config.get("token")
     )
 
-    # Prepare prompts
-    prompts_to_run = utils.resolve_prompts(mode=mode, exp_config=exp_config)
-    total_exp_configs = len(prompts_to_run) * len(STEP_SCHEMAS)
+    try:
+        # Prepare prompts
+        prompts_to_run = utils.resolve_prompts(mode=mode, exp_config=exp_config)
+        total_exp_configs = len(prompts_to_run) * len(STEP_SCHEMAS)
 
-    # Experiment Loop
-    for uses_image in uses_image_modes:
-        print(
-            f"Mode: model_id={model_id} | uses_tools={uses_tools} | uses_image={uses_image}",
-            flush=True,
-        )
+        # Experiment Loop
+        for uses_image in uses_image_modes:
+            print(
+                f"Mode: model_id={model_id} | uses_tools={uses_tools} | uses_image={uses_image}",
+                flush=True,
+            )
 
-        # Set up config tracking
-        config_idx = 0
-        base_config = dict(exp_config)
-        base_config["uses_image"] = uses_image
+            # Set up config tracking
+            config_idx = 0
+            base_config = dict(exp_config)
+            base_config["uses_image"] = uses_image
 
-        # Run loop
-        all_run_results: list[dict[str, Any]] = []
-        for prompt_config in prompts_to_run:
-            for schema_config in STEP_SCHEMAS:
-                config_idx += 1
+            # Run loop
+            all_run_results: list[dict[str, Any]] = []
+            for prompt_config in prompts_to_run:
+                for schema_config in STEP_SCHEMAS:
+                    config_idx += 1
 
-                # Build config for this run
-                config_for_run = {
-                    **base_config,
-                    "prompt_config": prompt_config,
-                    "schema_config": schema_config,
-                }
+                    # Build config for this run
+                    config_for_run = {
+                        **base_config,
+                        "prompt_config": prompt_config,
+                        "schema_config": schema_config,
+                    }
 
-                # Run experiment
-                result = run_config(
-                    model=model, 
-                    processor=processor, 
-                    exp_config=config_for_run,
-                    config_idx=config_idx,
-                    total_exp_configs=total_exp_configs,
-                )
-                all_run_results.append(result)
+                    # Run experiment
+                    result = run_config(
+                        model=model, 
+                        processor=processor, 
+                        exp_config=config_for_run,
+                        config_idx=config_idx,
+                        total_exp_configs=total_exp_configs,
+                    )
+                    all_run_results.append(result)
 
-        # Calculate summary metrics
-        num_prompts = len(prompts_to_run)
-        num_schemas = len(STEP_SCHEMAS)
-        total_runs = num_prompts * num_schemas * RUNS_IN_EXP
-        structure_count_total = sum(r.get("perfect_structure_count", 0) for r in all_run_results)
-        completion_count_total = sum(r.get("completion_count", 0) for r in all_run_results)
-        num_configs = len(all_run_results)
-        overall_structure_total_pct = (
-            sum(r.get("overall_structure_adherence_pct", 0.0) for r in all_run_results)
-            / num_configs
-            if num_configs
-            else 0.0
-        )
+            # Calculate summary metrics
+            num_prompts = len(prompts_to_run)
+            num_schemas = len(STEP_SCHEMAS)
+            total_runs = num_prompts * num_schemas * RUNS_IN_EXP
+            structure_count_total = sum(r.get("perfect_structure_count", 0) for r in all_run_results)
+            completion_count_total = sum(r.get("completion_count", 0) for r in all_run_results)
+            num_configs = len(all_run_results)
+            overall_structure_total_pct = (
+                sum(r.get("overall_structure_adherence_pct", 0.0) for r in all_run_results)
+                / num_configs
+                if num_configs
+                else 0.0
+            )
 
-        summary = {
-            "structure_count": structure_count_total,
-            "completion_count": completion_count_total,
-            "perfect_structure_adherence_pct": (structure_count_total / total_runs) * 100,
-            "overall_structure_adherence_pct": overall_structure_total_pct,
-            "structure_adherence_pct": (structure_count_total / total_runs) * 100,
-            "task_accuracy_pct": (completion_count_total / total_runs) * 100,
-        }
+            summary = {
+                "structure_count": structure_count_total,
+                "completion_count": completion_count_total,
+                "perfect_structure_adherence_pct": (structure_count_total / total_runs) * 100,
+                "overall_structure_adherence_pct": overall_structure_total_pct,
+                "structure_adherence_pct": (structure_count_total / total_runs) * 100,
+                "task_accuracy_pct": (completion_count_total / total_runs) * 100,
+            }
 
-        experiment_results = {
-            "model_id": model_id,
-            "uses_tools": uses_tools,
-            "uses_image": uses_image,
-            "runs_per_config": RUNS_IN_EXP,
-            "prompt_ids": [p["id"] for p in prompts_to_run],
-            "num_prompts": num_prompts,
-            "num_schemas": num_schemas,
-            "total_runs": total_runs,
-            "overall_summary": summary,
-            "config_summaries": all_run_results,
-        }
+            experiment_results = {
+                "model_id": model_id,
+                "uses_tools": uses_tools,
+                "uses_image": uses_image,
+                "runs_per_config": RUNS_IN_EXP,
+                "prompt_ids": [p["id"] for p in prompts_to_run],
+                "num_prompts": num_prompts,
+                "num_schemas": num_schemas,
+                "total_runs": total_runs,
+                "overall_summary": summary,
+                "config_summaries": all_run_results,
+            }
 
-        save_results(exp_config=base_config, results=experiment_results)
+            save_results(exp_config=base_config, results=experiment_results)
+    finally:
+        cleanup_model(model, processor)
         
 
 
@@ -379,7 +387,7 @@ EXPERIMENTS: list[dict[str, Any]] = [
 def main() -> None:
     load_dotenv()
     TOKEN = os.getenv("HF_TOKEN")
-    run_id = utils.format_run_timestamp()
+    run_id = utils.format_run_timestamp("Steps")
 
     for base_config in EXPERIMENTS:
         exp_config = {
