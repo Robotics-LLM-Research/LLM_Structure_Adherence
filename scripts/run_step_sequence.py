@@ -1,7 +1,6 @@
-import os
+
 import sys
 from typing import Any
-from dotenv import load_dotenv
 
 import src.utils as utils
 from src.simulator import simulate_step
@@ -45,6 +44,7 @@ def run(
     img_path: str | None,
     prompt_config: dict[str, Any],
     schema_config: dict[str, Any],
+    backend: str,
 ) -> dict[str, Any]:
     """ Run one step-by-step episode """
     # Initialize episode state
@@ -64,6 +64,7 @@ def run(
         img_path=img_path,
         prompt_config=prompt_config,
         schema_config=schema_config,
+        backend=backend,
     )
     all_outputs: list[str] = []
 
@@ -77,6 +78,8 @@ def run(
             model=model,
             processor=processor,
             messages=messages,
+            schema_config=schema_config,
+            backend=backend,
         )
         all_outputs.append(raw_output)
 
@@ -94,6 +97,7 @@ def run(
                 error=error_msg,
                 action_result=None,
                 current_state=spot,
+                backend=backend,
             )
             continue
 
@@ -126,6 +130,7 @@ def run(
             raw_output=raw_output,
             error=None,
             action_result=action_result,
+            backend=backend,
         )
 
     # Fill missing stop reason
@@ -160,6 +165,7 @@ def run_config(
     prompt_config = exp_config["prompt_config"]
     schema_config = exp_config["schema_config"]
     run_id = exp_config["run_id"]
+    backend=exp_config["backend"]
 
     # Resolve runtime inputs
     img_path = str(IMAGE_PATH) if uses_image else None
@@ -205,6 +211,7 @@ def run_config(
             img_path=img_path,
             prompt_config=prompt_config,
             schema_config=schema_config,
+            backend=backend,
         )
         all_run_details.append(run_result)
 
@@ -275,6 +282,7 @@ def experiment(exp_config: dict[str, Any]) -> None:
     model, processor = init_model(
         model_id=model_id,
         token=exp_config.get("token"),
+        backend=exp_config["backend"],
     )
 
     try:
@@ -361,56 +369,3 @@ def experiment(exp_config: dict[str, Any]) -> None:
             save_results(exp_config=base_config, results=experiment_results)
     finally:
         cleanup_model(model, processor)
-
-
-
-# ----- Experiment Grid -----
-EXPERIMENTS: list[dict[str, Any]] = [
-    {
-        "model_id": "Qwen/Qwen2.5-VL-32B-Instruct",
-        "uses_tools": False,
-        "uses_image": "both",
-        "prompt_ids": ["p0", "p1", "p2", "p3", "p4"],
-    },
-    {
-        "model_id": "Qwen/Qwen3-VL-8B-Instruct",
-        "uses_tools": False,
-        "uses_image": "both",
-        "prompt_ids": ["p0", "p1", "p2", "p3", "p4"],
-    },
-    {
-        "model_id": "Qwen/Qwen2.5-VL-7B-Instruct",
-        "uses_tools": False,
-        "uses_image": False,
-        "prompt_ids": ["p0", "p1", "p2", "p3", "p4"],
-    },
-    {
-        "model_id": "mistralai/Mistral-Small-3.1-24B-Instruct-2503",
-        "uses_tools": False,
-        "uses_image": False,
-        "prompt_ids": ["p0", "p1", "p2", "p3", "p4"],
-    },
-]
-
-
-
-# ----- Entry Point -----
-def main() -> None:
-    # Load runtime settings
-    load_dotenv()
-    token = os.getenv("HF_TOKEN")
-    run_id = utils.format_run_timestamp("Steps")
-
-    # Execute experiment grid
-    for base_config in EXPERIMENTS:
-        exp_config = {
-            **base_config,
-            "prefix": "Steps",
-            "run_id": run_id,
-            "token": token,
-        }
-        experiment(exp_config)
-
-
-if __name__ == "__main__":
-    main()

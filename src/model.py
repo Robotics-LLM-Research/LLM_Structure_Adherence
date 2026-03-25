@@ -4,20 +4,49 @@ from pathlib import Path
 
 import torch
 from PIL import Image
+from pydantic import TypeAdapter
+from vllm import LLM, SamplingParams
+from vllm.sampling_params import StructuredOutputsParams
 from transformers import AutoProcessor, AutoModelForImageTextToText
 
 from .tools import get_tools_prompt, get_tool_declarations
 from .prompts import FULL_PATH_SYSTEM_PROMPT, STEP_SEQUENCE_SYSTEM_PROMPT
+
 HF_CACHE_DIR = Path(__file__).resolve().parent.parent / ".hf_cache"
 HF_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 
 
+# ----------  Helpers ----------
+def get_schema_json(schema_type: Any) -> dict[str, Any]:
+    if hasattr(schema_type, "model_json_schema"):
+        return schema_type.model_json_schema()
+
+    return TypeAdapter(schema_type).json_schema()
+
 # ----- Model Setup -----
-def init_model(model_id: str, token: str | None = None) -> tuple[Any, Any]:
+def init_model(
+        model_id: str, 
+        token: str | None = None, 
+        backend: str = "transformers"
+) -> tuple[Any, Any]:
     """ Load the multimodal model stack """
+    # Use vllm
+    if backend == "vllm":
+        llm_kwargs = {
+            "model": model_id,
+            "trust_remote_code": True,
+            "model_impl": "transformers",
+            "limit_mm_per_prompt": {"image": 1},
+        }
+        if token:
+            llm_kwargs["hf_token"] = token
+
+        llm = LLM(**llm_kwargs)
+        return llm, None
+    
     # Configure processor loading
-    processor_load_kwargs: dict[str, Any] = {
+    processor_load_kwargs = {
         "cache_dir": str(HF_CACHE_DIR),
     }
 
@@ -32,7 +61,7 @@ def init_model(model_id: str, token: str | None = None) -> tuple[Any, Any]:
 
     # Configure model loading
     use_cuda = torch.cuda.is_available()
-    model_load_kwargs: dict[str, Any] = {
+    model_load_kwargs = {
         "cache_dir": str(HF_CACHE_DIR),
         "dtype": torch.bfloat16 if use_cuda else torch.float32,
         "device_map": "auto" if use_cuda else "cpu",
@@ -48,7 +77,6 @@ def init_model(model_id: str, token: str | None = None) -> tuple[Any, Any]:
     )
 
     return model, processor
-
 
 def cleanup_model(model: Any | None = None, processor: Any | None = None) -> None:
     # Release Python references
@@ -111,6 +139,7 @@ def get_message(
     img_path: str | Path | None,
     prompt_config: dict[str, Any],
     schema_config: dict[str, Any],
+    backend: str = "transformers",
 ) -> list[dict[str, Any]]:
     """ Build chat messages for inference """
     # Build prompt text
@@ -121,6 +150,43 @@ def get_message(
         uses_image=img_path is not None,
     )
     user_prompt = prompt_config["text"]
+
+    # Handle vllm backend
+    if backend == "vllm":
+        messages = [
+            {
+                "role": "system",
+                "content": system_prompt,
+            }
+        ]
+
+        if img_path is None:
+            messages.append(
+                {
+                    "role": "user",
+                    "content": user_prompt,
+                }
+            )
+        else:
+            image = Image.open(img_path).convert("RGB")
+
+            messages.append(
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image_pil",
+                            "image_pil": image,
+                        },
+                        {
+                            "type": "text",
+                            "text": user_prompt,
+                        },
+                    ],
+                }
+            )
+
+        return messages
 
     # Seed system message
     messages: list[dict[str, Any]] = [
@@ -167,17 +233,8 @@ def append_message(
     error: str | None = None,
     action_result: dict[str, Any] | None = None,
     current_state: dict[str, Any] | None = None,
+    backend: str = "transformers",
 ) -> list[dict[str, Any]]:
-    # Record assistant output
-    messages.append(
-        {
-            "role": "assistant",
-            "content": [
-                {"type": "text", "text": raw_output},
-            ],
-        }
-    )
-
     # Build simulator feedback
     if error is not None:
         feedback = (
@@ -190,6 +247,32 @@ def append_message(
             f"collided={action_result['collided']}, "
             f"state={action_result['state']}\n"
         )
+
+    # Handle vllm
+    if backend == "vllm":
+        messages.append(
+            {
+                "role": "assistant",
+                "content": raw_output,
+            }
+        )
+        messages.append(
+            {
+                "role": "user",
+                "content": feedback,
+            }
+        )
+        return messages
+    
+    # Record assistant output
+    messages.append(
+        {
+            "role": "assistant",
+            "content": [
+                {"type": "text", "text": raw_output},
+            ],
+        }
+    )
 
     # Add user feedback turn
     messages.append(
@@ -211,8 +294,35 @@ def ask_model(
     model: Any,
     processor: Any,
     messages: list[dict[str, Any]],
+    schema_config: dict,
+    backend: str = "transformers",
 ) -> str:
     """ Generate one model response """
+    # Handle vllm
+    if backend == "vllm":
+        if uses_tools:
+            raise ValueError(
+                "For the vLLM structured-output baseline, keep uses_tools=False. "
+                "Use a separate branch if you want to test vLLM tool calling."
+            )
+
+        schema_json = get_schema_json(schema_config["schema"])
+
+        sampling_params = SamplingParams(
+            temperature=0.0,
+            max_tokens=256,
+            structured_outputs=StructuredOutputsParams(
+                json=schema_json,
+            ),
+        )
+
+        outputs = model.chat(
+            messages,
+            sampling_params=sampling_params,
+        )
+
+        return outputs[0].outputs[0].text.strip()
+    
     # Build model inputs
     if uses_tools:
         inputs = processor.apply_chat_template(
