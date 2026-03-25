@@ -1,6 +1,6 @@
 import json
 
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 
 from .schemas import (
     ActionPlan,
@@ -19,6 +19,10 @@ from .path_schemas import (
 from .step_schemas import STEP_SCHEMA_BY_ID
 
 
+def _validate_schema(schema, data):
+    return TypeAdapter(schema).validate_python(data)
+
+
 # ---------- Step ----------
 def parse_action_output(
     raw_output: str,
@@ -32,7 +36,7 @@ def parse_action_output(
     schema_model = STEP_SCHEMA_BY_ID[schema_id]["schema"]
 
     try:
-        validated = schema_model.model_validate(data)
+        validated = _validate_schema(schema_model, data)
     except ValidationError as error:
         return None, f"Schema validation failed: {error}"
     
@@ -95,7 +99,7 @@ def parse_path_output(
     schema_model = PATH_SCHEMA_BY_ID[schema_id]["schema"]
 
     try:
-        validated = schema_model.model_validate(data)
+        validated = _validate_schema(schema_model, data)
     except ValidationError as error:
         return None, f"Schema validation failed: {error}"
     
