@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH --job-name=steps_h100
+#SBATCH --job-name=3-25_steps_0
 #SBATCH --account=abedi
 #SBATCH --qos=abedi
 #SBATCH --partition=highgpu
 #SBATCH --gres=gpu:nvidia_h100_80gb_hbm3:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
-#SBATCH --time=24:00:00
+#SBATCH --time=4:00:00
 #SBATCH --output=logs/%x-%j.out
 #SBATCH --error=logs/%x-%j.err
 
