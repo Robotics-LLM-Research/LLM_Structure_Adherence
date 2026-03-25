@@ -7,10 +7,11 @@ TOOLS_PATH = Path(__file__).with_name("tools.json")
 
 
 def get_tool_declarations() -> list[dict[str, Any]]:
+    # Load raw tool declarations
     with TOOLS_PATH.open("r", encoding="utf-8") as file:
         return json.load(file)
 
 def get_tools_prompt() -> str:
+    # Format tools for prompts
     tools = get_tool_declarations()
-
     return json.dumps(tools, indent=2)

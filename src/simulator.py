@@ -1,8 +1,5 @@
 import math
-
 from .schemas import ActionPlan, MoveSpotAction, RotateSpotAction
-
-
 
 INITIAL_SPOT_STATE = {
     "x": 0.0,
@@ -24,45 +21,49 @@ TARGET_BOUNDS = {
     "y2": 3.0,
 }
 
-# How fine to sample along a move segment for collision detection
 _COLLISION_SAMPLE_STEP_M = 0.05
 
 
 
-# --- Helpers ---
+# ----- Geometry Helpers -----
 def _point_in_bounds(x: float, y: float, bounds: dict[str, float]) -> bool:
+    # Check axis-aligned bounds
     return (
         bounds["x1"] <= x <= bounds["x2"]
         and bounds["y1"] <= y <= bounds["y2"]
     )
 
-def _check_collision(
-    prev_spot: dict[str, float],
-    next_spot: dict[str, float],
-) -> bool:
+def _check_collision(prev_spot: dict[str, float], next_spot: dict[str, float]) -> bool:
+    """ Detect wall collisions along a move """
+    # Measure movement delta
     dx = next_spot["x"] - prev_spot["x"]
     dy = next_spot["y"] - prev_spot["y"]
     dist = math.hypot(dx, dy)
     steps = max(1, int(math.ceil(dist / _COLLISION_SAMPLE_STEP_M)))
 
-    # Sample intermediate positions to avoid "tunneling" through the wall
+    # Sample the full segment
     for i in range(steps + 1):
         t = i / steps
         x = prev_spot["x"] + t * dx
         y = prev_spot["y"] + t * dy
+
         if _point_in_bounds(x, y, WALL_BOUNDS):
             return True
+
     return False
 
 def _check_success(spot: dict[str, float]) -> bool:
+    # Check target region
     return _point_in_bounds(spot["x"], spot["y"], TARGET_BOUNDS)
 
 
-# --- Action Application ---
+# ----- Action Application -----
 def _apply_move(spot: dict[str, float], action: MoveSpotAction) -> dict[str, float]:
+    # Read movement inputs
     meters = action.arguments.meters
     heading_rad = math.radians(-spot["heading"])
 
+    # Project next position
     new_x = spot["x"] + meters * math.cos(heading_rad)
     new_y = spot["y"] + meters * math.sin(heading_rad)
 
@@ -73,6 +74,7 @@ def _apply_move(spot: dict[str, float], action: MoveSpotAction) -> dict[str, flo
     }
 
 def _apply_rotate(spot: dict[str, float], action: RotateSpotAction) -> dict[str, float]:
+    # Update heading only
     new_heading = (spot["heading"] + action.arguments.degrees) % 360
 
     return {
@@ -84,10 +86,17 @@ def _apply_rotate(spot: dict[str, float], action: RotateSpotAction) -> dict[str,
 
 # ----- Simulation -----
 def _handle_action(
-    spot: dict[str, float] | None, 
-    action: MoveSpotAction | RotateSpotAction
+    spot: dict[str, float] | None,
+    action: MoveSpotAction | RotateSpotAction,
 ) -> tuple[dict[str, float], bool]:
+    """ Handle one action """
+    # Seed missing state
+    if spot is None:
+        spot = INITIAL_SPOT_STATE.copy()
+
     collided = False
+
+    # Apply the requested action
     if isinstance(action, RotateSpotAction):
         spot = _apply_rotate(spot, action)
     elif isinstance(action, MoveSpotAction):
@@ -100,36 +109,40 @@ def _handle_action(
     return spot, collided
 
 def simulate_step(
-    spot: dict[str, float] | None, 
-    action: MoveSpotAction | RotateSpotAction
-) -> dict:
-    if spot is None:
-        spot = INITIAL_SPOT_STATE.copy()
+    spot: dict[str, float] | None,
+    action: MoveSpotAction | RotateSpotAction,
+) -> dict[str, bool | dict[str, float]]:
+    # Apply one simulator action
+    next_spot, collided = _handle_action(spot, action)
 
-    spot, collided = _handle_action(spot, action)
-    success = (not collided) and _check_success(spot)
+    # Evaluate resulting state
+    success = (not collided) and _check_success(next_spot)
 
     return {
         "success": success,
         "collided": collided,
-        "state": spot,
+        "state": next_spot,
     }
-    
-def simulate_plan(plan: ActionPlan) -> dict:
+
+def simulate_plan(plan: ActionPlan) -> dict[str, bool | dict[str, float]]:
+    """ Run a full action plan """
+    # Initialize plan state
     spot = INITIAL_SPOT_STATE.copy()
     collided = False
 
+    # Execute each action
     for action in plan.actions:
-        spot, collided = _handle_action(spot, action) 
+        spot, collided = _handle_action(spot, action)
 
         if collided:
             break
 
+    # Package final outcome
     success = (not collided) and _check_success(spot)
-    spot = {k: round(v, 1) for k, v in spot.items()}
+    final_spot = {key: round(value, 1) for key, value in spot.items()}
 
     return {
         "success": success,
         "collided": collided,
-        "final_spot": spot,
+        "final_spot": final_spot,
     }

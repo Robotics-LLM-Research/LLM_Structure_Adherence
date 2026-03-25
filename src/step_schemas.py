@@ -1,16 +1,13 @@
-from typing import Literal, Annotated, Union
-from pydantic import BaseModel, Field
-
+from typing import Union, Literal, Annotated
+from pydantic import Field, BaseModel
 from .schemas import (
-    StepAction, 
-    MoveSpotArg, 
+    StepAction,
+    MoveSpotArg,
     RotateSpotArg,
     FinishTaskArg,
 )
 
-
-
-# ---------- SCHEMA 0 ----------
+# ----- Schema 0 -----
 # Baseline: {"tool_name": "...", "arguments": {...}]}
 
 SCHEMA_0_SAMPLE = """    
@@ -25,7 +22,7 @@ SCHEMA_0_SAMPLE = """
 Schema0 = StepAction
 
 
-# ---------- SCHEMA 1 ----------
+# ----- Schema 1 -----
 # Adds wrapper object: {"action": {...}}
 
 SCHEMA_1_SAMPLE = """    
@@ -43,7 +40,7 @@ class StepSchema1(BaseModel):
     action: StepAction
 
 
-# ---------- SCHEMA 2 ----------
+# ----- Schema 2 -----
 # Different field names: {"call": {"name": "...", "args": {...}}}
 
 SCHEMA_2_SAMPLE = """    
@@ -71,9 +68,9 @@ class StepSchema2FinishCall(BaseModel):
 
 StepSchema2Call = Annotated[
     Union[
-        StepSchema2MoveCall, 
+        StepSchema2MoveCall,
         StepSchema2RotateCall,
-        StepSchema2FinishCall
+        StepSchema2FinishCall,
     ],
     Field(discriminator="name"),
 ]
@@ -82,7 +79,7 @@ class StepSchema2(BaseModel):
     call: StepSchema2Call
 
 
-# ---------- SCHEMA 3 ----------
+# ----- Schema 3 -----
 # Adds wrapper object: {"next_action": {...}}
 
 SCHEMA_3_SAMPLE = """    
@@ -100,7 +97,7 @@ class StepSchema3(BaseModel):
     next_action: StepAction
 
 
-#---------- Registry ----------
+# ---------- Registry ----------
 STEP_SCHEMAS = [
     {
         "id": "st0",
@@ -121,7 +118,7 @@ STEP_SCHEMAS = [
         "id": "st3",
         "schema": StepSchema3,
         "sample": SCHEMA_3_SAMPLE,
-    }
+    },
 ]
 
 STEP_SCHEMA_BY_ID = {

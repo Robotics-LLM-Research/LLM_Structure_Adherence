@@ -1,9 +1,9 @@
-from typing import Literal, Annotated, Union
-from pydantic import BaseModel, Field
+from typing import Union, Literal, Annotated
+from pydantic import Field, BaseModel
 
 
 
-# ---------- Base Tools ----------
+# ----- Argument Schemas -----
 class MoveSpotArg(BaseModel):
     meters: float
 
@@ -13,6 +13,8 @@ class RotateSpotArg(BaseModel):
 class FinishTaskArg(BaseModel):
     pass
 
+
+# ----- Action Schemas -----
 class MoveSpotAction(BaseModel):
     tool_name: Literal["move_spot"]
     arguments: MoveSpotArg
@@ -25,6 +27,8 @@ class FinishTaskAction(BaseModel):
     tool_name: Literal["finish_task"]
     arguments: FinishTaskArg
 
+
+# ----- Union Schemas -----
 PathAction = Annotated[
     Union[MoveSpotAction, RotateSpotAction],
     Field(discriminator="tool_name"),
@@ -35,5 +39,7 @@ StepAction = Annotated[
     Field(discriminator="tool_name"),
 ]
 
+
+# ----- Plan Schema -----
 class ActionPlan(BaseModel):
     actions: list[PathAction]

@@ -1,6 +1,5 @@
-from typing import Literal, Annotated, Union
-from pydantic import BaseModel, Field, RootModel
-
+from typing import Union, Literal, Annotated
+from pydantic import Field, BaseModel, RootModel
 from .schemas import PathAction, MoveSpotArg, RotateSpotArg
 
 
@@ -126,7 +125,7 @@ class PathSchema3MoveStep(BaseModel):
 
 class PathSchema3RotateStep(BaseModel):
     action: Literal["rotate_spot"]
-    params: RotateSpotArg 
+    params: RotateSpotArg
 
 PathSchema3Action = Annotated[
     Union[PathSchema3MoveStep, PathSchema3RotateStep],
@@ -167,6 +166,7 @@ SCHEMA_4_SAMPLE = """
 class PathSchema4Step(BaseModel):
     call: PathAction
 
+
 class PathSchema4(BaseModel):
     steps: list[PathSchema4Step]
 
@@ -203,6 +203,6 @@ PATH_SCHEMAS = [
 
 
 PATH_SCHEMA_BY_ID = {
-    schema_config["id"]: schema_config 
+    schema_config["id"]: schema_config
     for schema_config in PATH_SCHEMAS
 }

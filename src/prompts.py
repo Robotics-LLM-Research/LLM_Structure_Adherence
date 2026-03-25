@@ -1,3 +1,4 @@
+# ----- Full path prompts -----
 FULL_PATH_SYSTEM_PROMPT = """
     You control a simulated robot: Spot.
     Your job is to ouput a COMPLETE path, not just the next action.
@@ -9,7 +10,6 @@ FULL_PATH_SYSTEM_PROMPT = """
     - Most tasks will require multiple actions.
     - Do not stop after one action unless the task is already complete.
 """
-
 FULL_PATH_PROMPTS = [
     {
         "id": "p0", 
@@ -91,7 +91,7 @@ FULL_PATH_PROMPTS = [
 ]
 
 
-
+# ----- Step sequence prompts -----
 STEP_SEQUENCE_SYSTEM_PROMPT = """
     You control a simulated robot: Spot.
     Your job is to output EXACTLY ONE next action at each turn.
@@ -107,7 +107,6 @@ STEP_SEQUENCE_SYSTEM_PROMPT = """
     - Do not output free text such as TASK COMPLETE.
     - Prefer safe actions that avoid collisions and make progress toward the objective.
 """
-
 STEP_SEQUENCE_PROMPTS = [
     {
         "id": "p0",
