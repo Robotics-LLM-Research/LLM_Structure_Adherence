@@ -22,9 +22,7 @@ This repository evaluates how well vision-language and instruction-tuned models 
 
 ## Core Modules
 
-- `src/schemas.py`: canonical action and argument models.
-- `src/step_schemas.py`: schema variants for single-step outputs.
-- `src/path_schemas.py`: schema variants for full-path outputs.
+- `src/schemas/`: schema package split by concern (`base`, `step`, `path`, `multi_dog`).
 - `src/prompts/`: prompt package split by scenario (`single_path`, `single_step`, `multi_dog_step`) with centralized mode maps.
 - `src/model.py`: Hugging Face model loading, message construction, and generation.
 - `src/parser.py`: validation and normalization into shared action models.

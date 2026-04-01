@@ -1,5 +1,5 @@
 import math
-from .schemas import ActionPlan, MoveSpotAction, RotateSpotAction
+from .schemas.base import ActionPlan, MoveSpotAction, RotateSpotAction
 
 INITIAL_SPOT_STATE = {
     "x": 0.0,

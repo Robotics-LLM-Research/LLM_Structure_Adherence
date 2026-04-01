@@ -3,8 +3,8 @@ from typing import Any
 
 from pydantic import TypeAdapter, ValidationError
 
-from .step_schemas import STEP_SCHEMA_BY_ID
-from .path_schemas import (
+from .schemas.step import STEP_SCHEMA_BY_ID
+from .schemas.path import (
     PATH_SCHEMA_BY_ID,
     PathSchema0,
     PathSchema1,
@@ -12,7 +12,7 @@ from .path_schemas import (
     PathSchema3,
     PathSchema4,
 )
-from .schemas import (
+from .schemas.base import (
     ActionPlan,
     MoveSpotAction,
     RotateSpotAction,

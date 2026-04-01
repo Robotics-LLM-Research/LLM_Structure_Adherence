@@ -4,9 +4,9 @@ from typing import Any
 
 import src.utils as utils
 from src.simulator import simulate_step
-from src.schemas import FinishTaskAction
+from src.schemas.base import FinishTaskAction
 from src.parser import parse_action_output
-from src.step_schemas import STEP_SCHEMAS
+from src.schemas.step import STEP_SCHEMAS
 from src.model import (
     ask_model,
     get_message,
