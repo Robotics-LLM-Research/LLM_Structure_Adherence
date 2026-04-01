@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 import src.utils as utils
 from src.simulator import simulate_plan
 from src.schemas.path import PATH_SCHEMAS
-from src.parser import parse_path_output
+from src.parsers.path import parse_path_output
 from src.model import ask_model, get_message, init_model, cleanup_model
 from src.utils import save_results, save_run_config
 

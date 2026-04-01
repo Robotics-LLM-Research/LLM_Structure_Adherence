@@ -16,7 +16,7 @@ This repository evaluates how well vision-language and instruction-tuned models 
 
 1. A runner script selects prompts, schema variants, and model settings.
 2. `src/model.py` builds the prompt messages and queries the model.
-3. `src/parser.py` validates the raw JSON against the requested schema.
+3. `src/parsers/` validates the raw JSON against the requested schema.
 4. `src/simulator.py` applies actions in the wall-crossing environment.
 5. `src/utils.py` writes raw run details and aggregate summaries.
 
@@ -25,7 +25,7 @@ This repository evaluates how well vision-language and instruction-tuned models 
 - `src/schemas/`: schema package split by concern (`base`, `step`, `path`, `multi_dog`).
 - `src/prompts/`: prompt package split by scenario (`single_path`, `single_step`, `multi_dog_step`) with centralized mode maps.
 - `src/model.py`: Hugging Face model loading, message construction, and generation.
-- `src/parser.py`: validation and normalization into shared action models.
+- `src/parsers/`: validation and normalization into shared action models (split into `step`, `path`, and `multi_dog`).
 - `src/simulator.py`: collision checks, movement updates, and success detection.
 - `src/utils.py`: prompt selection, timestamp formatting, and result persistence.
 - `src/tools.py`: serialized tool declarations for prompt injection.
