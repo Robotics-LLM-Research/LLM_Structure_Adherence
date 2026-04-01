@@ -10,7 +10,7 @@ from vllm.sampling_params import StructuredOutputsParams
 from transformers import AutoProcessor, AutoModelForImageTextToText
 
 from .tools import get_tools_prompt, get_tool_declarations
-from .prompts import FULL_PATH_SYSTEM_PROMPT, STEP_SEQUENCE_SYSTEM_PROMPT
+from .prompts import SYSTEM_PROMPTS_BY_MODE, STEP_SEQUENCE_SYSTEM_PROMPT
 
 HF_CACHE_DIR = Path(__file__).resolve().parent.parent / ".hf_cache"
 HF_CACHE_DIR.mkdir(parents=True, exist_ok=True)
@@ -107,10 +107,7 @@ def _build_system_prompt(
     schema_sample = schema_config["sample"]
 
     # Select base prompt
-    if mode == "Path":
-        prompt = FULL_PATH_SYSTEM_PROMPT
-    else:
-        prompt = STEP_SEQUENCE_SYSTEM_PROMPT
+    prompt = SYSTEM_PROMPTS_BY_MODE.get(mode, STEP_SEQUENCE_SYSTEM_PROMPT)
 
     # Add image guidance
     if uses_image:
