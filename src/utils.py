@@ -4,7 +4,7 @@ from pathlib import Path
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from .prompts import FULL_PATH_PROMPTS, STEP_SEQUENCE_PROMPTS
+from .prompts import PROMPT_POOLS_BY_MODE, STEP_SEQUENCE_PROMPTS
 ROOT_DIR = Path(__file__).parent.parent
 NEW_YORK_TZ = ZoneInfo("America/New_York")
 RESULTS_DIR = ROOT_DIR / "results"
@@ -18,10 +18,7 @@ DEFAULT_ENV_IMAGE_PATH = ASSETS_DIR / "wall_crossing_env.png"
 def resolve_prompts(mode: str, exp_config: dict[str, Any]) -> list[dict[str, Any]]:
     """ Resolve prompts for one experiment """
     # Select prompt collection
-    if mode == "Path":
-        prompt_pool = FULL_PATH_PROMPTS
-    else:
-        prompt_pool = STEP_SEQUENCE_PROMPTS
+    prompt_pool = PROMPT_POOLS_BY_MODE.get(mode, STEP_SEQUENCE_PROMPTS)
 
     # Read prompt selection
     ids = exp_config.get("prompt_ids")

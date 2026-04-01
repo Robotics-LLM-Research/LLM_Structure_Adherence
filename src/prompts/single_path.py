@@ -1,4 +1,3 @@
-# ----- Full path prompts -----
 FULL_PATH_SYSTEM_PROMPT = """
     You control a simulated robot: Spot.
     Your job is to ouput a COMPLETE path, not just the next action.
@@ -10,22 +9,23 @@ FULL_PATH_SYSTEM_PROMPT = """
     - Most tasks will require multiple actions.
     - Do not stop after one action unless the task is already complete.
 """
+
 FULL_PATH_PROMPTS = [
     {
-        "id": "p0", 
-        "text":"Using the available robot actions, generate a complete action sequence for Spot to get to the other side of the wall. Return only output that matches the required schema."
+        "id": "p0",
+        "text": "Using the available robot actions, generate a complete action sequence for Spot to get to the other side of the wall. Return only output that matches the required schema.",
     },
     {
-        "id": "p1", 
-        "text":"Plan a full path for Spot to go around the wall and finish behind it. Use only the allowed actions and return only the required structured output."
+        "id": "p1",
+        "text": "Plan a full path for Spot to go around the wall and finish behind it. Use only the allowed actions and return only the required structured output.",
     },
     {
-        "id": "p2", 
-        "text":"Spot starts in front of a wall and must end on the far side without crossing through the obstacle. Produce the entire sequence of robot actions in the exact output format requested."
+        "id": "p2",
+        "text": "Spot starts in front of a wall and must end on the far side without crossing through the obstacle. Produce the entire sequence of robot actions in the exact output format requested.",
     },
     {
-        "id": "p3", 
-        "text":"Find a valid movement plan that takes Spot from its starting position to the target region behind the wall. Output only the final structured action plan and nothing else."
+        "id": "p3",
+        "text": "Find a valid movement plan that takes Spot from its starting position to the target region behind the wall. Output only the final structured action plan and nothing else.",
     },
     {
         "id": "p4",
@@ -87,45 +87,5 @@ FULL_PATH_PROMPTS = [
             "The target region occupies x from 6.0 to 10.0 and y from -2.0 to 2.0. "
             "Plan a complete path for Spot to reach the target region by going around the obstacle, not through it."
         ),
-    },
-]
-
-
-# ----- Step sequence prompts -----
-STEP_SEQUENCE_SYSTEM_PROMPT = """
-    You control a simulated robot: Spot.
-    Your job is to output EXACTLY ONE next action at each turn.
-
-    Rules:
-    - Output only valid JSON matching the required schema.
-    - Do not include markdown fences.
-    - Do not explain your reasoning.
-    - Do not output more than one action.
-    - Use only the allowed actions.
-    - If the task is not yet complete, return the single best next action.
-    - Return finish_task only when the current state and the task description indicate that the objective has already been achieved.
-    - Do not output free text such as TASK COMPLETE.
-    - Prefer safe actions that avoid collisions and make progress toward the objective.
-"""
-STEP_SEQUENCE_PROMPTS = [
-    {
-        "id": "p0",
-        "text":"Spot must cross to the other side of a wall and complete the task safely. Return exactly one next action in the required schema.",
-    },
-    {
-        "id": "p1",
-        "text":"A wall occupies x from 4.5 to 5.5 and y from -2.0 to 2.0. Spot must get to the other side of the wall safely. Return exactly one next action in the required schema.",
-    },
-    {
-        "id": "p2",
-        "text":"A wall occupies x from 4.5 to 5.5 and y from -2.0 to 2.0. The goal region occupies x from 6.0 to 10.0 and y from -3.0 to 3.0. Spot must reach the goal safely. Return exactly one next action in the required schema.",
-    },
-    {
-        "id": "p3",
-        "text":"Spot is currently at position (0.0, 0.0) facing 0 degrees. A wall occupies x from 4.5 to 5.5 and y from -2.0 to 2.0. The goal region occupies x from 6.0 to 10.0 and y from -3.0 to 3.0. Return exactly one next action in the required schema.",
-    },
-    {
-        "id": "p4",
-        "text":"Spot is currently at position (0.0, 0.0) facing 0 degrees. A wall occupies x from 4.5 to 5.5 and y from -2.0 to 2.0. Spot must get to the far side of the wall safely. Return exactly one next action in the required schema.",
     },
 ]
