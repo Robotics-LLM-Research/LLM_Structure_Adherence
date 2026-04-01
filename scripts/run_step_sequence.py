@@ -5,7 +5,7 @@ from typing import Any
 import src.utils as utils
 from src.simulator import simulate_step
 from src.schemas.base import FinishTaskAction
-from src.parser import parse_action_output
+from src.parsers.step import parse_action_output
 from src.schemas.step import STEP_SCHEMAS
 from src.model import (
     ask_model,

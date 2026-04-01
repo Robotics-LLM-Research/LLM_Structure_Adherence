@@ -1,10 +1,10 @@
 import json
 from typing import Any
 
-from pydantic import TypeAdapter, ValidationError
+from pydantic import ValidationError
 
-from .schemas.step import STEP_SCHEMA_BY_ID
-from .schemas.path import (
+from .common import validate_schema
+from ..schemas.path import (
     PATH_SCHEMA_BY_ID,
     PathSchema0,
     PathSchema1,
@@ -12,98 +12,11 @@ from .schemas.path import (
     PathSchema3,
     PathSchema4,
 )
-from .schemas.base import (
-    ActionPlan,
-    MoveSpotAction,
-    RotateSpotAction,
-    FinishTaskAction,
-)
+from ..schemas.base import ActionPlan, MoveSpotAction, RotateSpotAction
 
 
-
-# ----- Validation -----
-def _validate_schema(schema: Any, data: Any) -> Any:
-    # Validate parsed JSON payload
-    return TypeAdapter(schema).validate_python(data)
-
-
-# ---------- Step Parsing ----------
-def parse_action_output(
-    raw_output: str,
-    schema_id: str,
-) -> tuple[MoveSpotAction | RotateSpotAction | FinishTaskAction | None, str | None]:
-    """ Parse a single-step model output """
-    # Parse model JSON
-    try:
-        data = json.loads(raw_output)
-    except json.JSONDecodeError as error:
-        return None, f"Invalid JSON: {error}"
-
-    # Select target schema
-    schema_model = STEP_SCHEMA_BY_ID[schema_id]["schema"]
-
-    # Validate parsed payload
-    try:
-        validated = _validate_schema(schema_model, data)
-    except ValidationError as error:
-        return None, f"Schema validation failed: {error}"
-
-    # Normalize to shared action
-    try:
-        action = _normalize_to_action(validated, schema_id)
-    except ValueError as error:
-        return None, str(error)
-
-    return action, None
-
-
-
-# --- Step Normalization ---
-def _normalize_to_action(
-    validated: Any,
-    schema_id: str,
-) -> MoveSpotAction | RotateSpotAction | FinishTaskAction:
-    """ Normalize a validated step payload """
-    # Handle direct schemas
-    if schema_id == "st0":
-        return validated
-
-    if schema_id == "st1":
-        return validated.action
-
-    # Convert call-based schema
-    if schema_id == "st2":
-        if validated.call.name == "move_spot":
-            return MoveSpotAction(
-                tool_name=validated.call.name,
-                arguments=validated.call.args,
-            )
-
-        if validated.call.name == "rotate_spot":
-            return RotateSpotAction(
-                tool_name=validated.call.name,
-                arguments=validated.call.args,
-            )
-
-        if validated.call.name == "finish_task":
-            return FinishTaskAction(
-                tool_name=validated.call.name,
-                arguments=validated.call.args,
-            )
-
-        raise ValueError(f"Unsupported action name: {validated.call.name}")
-
-    # Handle wrapped action schema
-    if schema_id == "st3":
-        return validated.next_action
-
-    raise ValueError(f"Unsupported step schema_id: {schema_id}")
-
-
-
-# ---------- Path Parsing ----------
 def parse_path_output(raw_output: str, schema_id: str) -> tuple[ActionPlan | None, str | None]:
-    """ Parse a full-path model output """
+    """Parse a full-path model output."""
     # Parse model JSON
     try:
         data = json.loads(raw_output)
@@ -115,7 +28,7 @@ def parse_path_output(raw_output: str, schema_id: str) -> tuple[ActionPlan | Non
 
     # Validate parsed payload
     try:
-        validated = _validate_schema(schema_model, data)
+        validated = validate_schema(schema_model, data)
     except ValidationError as error:
         return None, f"Schema validation failed: {error}"
 
@@ -128,8 +41,6 @@ def parse_path_output(raw_output: str, schema_id: str) -> tuple[ActionPlan | Non
     return plan, None
 
 
-
-# --- Path Normalization ---
 def _normalize_to_action_plan(validated: Any, schema_id: str) -> ActionPlan:
     # Dispatch schema-specific normalization
     if schema_id == "s0":
