@@ -1,6 +1,6 @@
 from typing import Union, Literal, Annotated
 from pydantic import Field, BaseModel
-from .schemas import (
+from .base import (
     StepAction,
     MoveSpotArg,
     RotateSpotArg,
@@ -10,7 +10,7 @@ from .schemas import (
 # ----- Schema 0 -----
 # Baseline: {"tool_name": "...", "arguments": {...}]}
 
-SCHEMA_0_SAMPLE = """    
+SCHEMA_0_SAMPLE = """
 {
     "tool_name": "move_spot",
     "arguments": {
@@ -25,7 +25,7 @@ Schema0 = StepAction
 # ----- Schema 1 -----
 # Adds wrapper object: {"action": {...}}
 
-SCHEMA_1_SAMPLE = """    
+SCHEMA_1_SAMPLE = """
 {
     "action": {
         "tool_name": "rotate_spot",
@@ -36,6 +36,7 @@ SCHEMA_1_SAMPLE = """
 }
 """
 
+
 class StepSchema1(BaseModel):
     action: StepAction
 
@@ -43,7 +44,7 @@ class StepSchema1(BaseModel):
 # ----- Schema 2 -----
 # Different field names: {"call": {"name": "...", "args": {...}}}
 
-SCHEMA_2_SAMPLE = """    
+SCHEMA_2_SAMPLE = """
 {
     "call": {
         "name": "move_spot",
@@ -54,17 +55,21 @@ SCHEMA_2_SAMPLE = """
 }
 """
 
+
 class StepSchema2MoveCall(BaseModel):
     name: Literal["move_spot"]
     args: MoveSpotArg
+
 
 class StepSchema2RotateCall(BaseModel):
     name: Literal["rotate_spot"]
     args: RotateSpotArg
 
+
 class StepSchema2FinishCall(BaseModel):
     name: Literal["finish_task"]
     args: FinishTaskArg
+
 
 StepSchema2Call = Annotated[
     Union[
@@ -75,6 +80,7 @@ StepSchema2Call = Annotated[
     Field(discriminator="name"),
 ]
 
+
 class StepSchema2(BaseModel):
     call: StepSchema2Call
 
@@ -82,7 +88,7 @@ class StepSchema2(BaseModel):
 # ----- Schema 3 -----
 # Adds wrapper object: {"next_action": {...}}
 
-SCHEMA_3_SAMPLE = """    
+SCHEMA_3_SAMPLE = """
 {
     "next_action": {
         "tool_name": "move_spot",
@@ -92,6 +98,7 @@ SCHEMA_3_SAMPLE = """
     }
 }
 """
+
 
 class StepSchema3(BaseModel):
     next_action: StepAction

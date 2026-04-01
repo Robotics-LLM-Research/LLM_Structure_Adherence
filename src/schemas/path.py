@@ -1,13 +1,12 @@
 from typing import Union, Literal, Annotated
 from pydantic import Field, BaseModel, RootModel
-from .schemas import PathAction, MoveSpotArg, RotateSpotArg
-
+from .base import PathAction, MoveSpotArg, RotateSpotArg
 
 
 # ---------- SCHEMA 0 ----------
 # Baseline: {"actions": [...]}
 
-SCHEMA_0_SAMPLE = """    
+SCHEMA_0_SAMPLE = """
     {
         "actions": [
             {
@@ -26,6 +25,7 @@ SCHEMA_0_SAMPLE = """
     }
 """
 
+
 class PathSchema0(BaseModel):
     actions: list[PathAction]
 
@@ -33,7 +33,7 @@ class PathSchema0(BaseModel):
 # ---------- SCHEMA 1 ----------
 # Removes wrapper object: [...]
 
-SCHEMA_1_SAMPLE = """    
+SCHEMA_1_SAMPLE = """
     [
         {
             "tool_name": "rotate_spot",
@@ -50,6 +50,7 @@ SCHEMA_1_SAMPLE = """
     ]
 """
 
+
 class PathSchema1(RootModel[list[PathAction]]):
     pass
 
@@ -57,7 +58,7 @@ class PathSchema1(RootModel[list[PathAction]]):
 # ---------- SCHEMA 2 ----------
 # Adds required "step" field
 
-SCHEMA_2_SAMPLE = """    
+SCHEMA_2_SAMPLE = """
     {
         "actions": [
             {
@@ -78,20 +79,24 @@ SCHEMA_2_SAMPLE = """
     }
 """
 
+
 class PathSchema2MoveStep(BaseModel):
     step: int
     tool_name: Literal["move_spot"]
     arguments: MoveSpotArg
+
 
 class PathSchema2RotateStep(BaseModel):
     step: int
     tool_name: Literal["rotate_spot"]
     arguments: RotateSpotArg
 
+
 PathSchema2Action = Annotated[
     Union[PathSchema2MoveStep, PathSchema2RotateStep],
     Field(discriminator="tool_name"),
 ]
+
 
 class PathSchema2(BaseModel):
     actions: list[PathSchema2Action]
@@ -100,7 +105,7 @@ class PathSchema2(BaseModel):
 # ---------- SCHEMA 3 ----------
 # Different field names: {"plan": [{"action": ..., "params": ...}]}
 
-SCHEMA_3_SAMPLE = """    
+SCHEMA_3_SAMPLE = """
     {
         "plan": [
             {
@@ -119,18 +124,22 @@ SCHEMA_3_SAMPLE = """
     }
 """
 
+
 class PathSchema3MoveStep(BaseModel):
     action: Literal["move_spot"]
     params: MoveSpotArg
+
 
 class PathSchema3RotateStep(BaseModel):
     action: Literal["rotate_spot"]
     params: RotateSpotArg
 
+
 PathSchema3Action = Annotated[
     Union[PathSchema3MoveStep, PathSchema3RotateStep],
     Field(discriminator="action"),
 ]
+
 
 class PathSchema3(BaseModel):
     plan: list[PathSchema3Action]
@@ -139,7 +148,7 @@ class PathSchema3(BaseModel):
 # ---------- SCHEMA 4 ----------
 # Extra nesting: {"steps": [{"call": {...}}]}
 
-SCHEMA_4_SAMPLE = """    
+SCHEMA_4_SAMPLE = """
     {
         "steps": [
             {
@@ -162,6 +171,7 @@ SCHEMA_4_SAMPLE = """
         ]
     }
 """
+
 
 class PathSchema4Step(BaseModel):
     call: PathAction
