@@ -20,15 +20,16 @@ MULTI_DOG_STEP_PROMPTS = [
     {
         "id": "md_p0",
         "text": (
-            "All dogs have a target block directly in front of them 10 meters away."
-            "Coordinate all five dogs to reach the target blocks. "
-            "The space is open (no designated crossing zone). "
-            "Use the provided current state (pose + vision distances for each dog) "
-            "and the provided target coordinates. "
+            "There are 5 target blocks in the environment. "
+            "All dogs must eventually reach different target blocks. "
+            "A dog's final target block cannot be in the same aisle where that dog started. "
+            "The space is open with no designated crossing zone. "
+            "Use the provided current state and the provided target coordinates. "
             "Return exactly one command for each dog in the required schema."
         ),
     },
 ]
+
 
 
 # ----- Prompt Building -----
@@ -49,7 +50,7 @@ def _build_user_prompt(
     dog_states: dict[str, object],
     target_blocks: dict[str, object],
 ) -> str:
-    base_prompt = MULTI_DOG_STEP_PROMPTS[0]
+    base_prompt = MULTI_DOG_STEP_PROMPTS[0]["text"]
     state_json = json.dumps(dog_states, indent=2)
     targets_json = json.dumps(target_blocks, indent=2)
 
@@ -94,5 +95,25 @@ def get_init_message(
 
     return messages
 
-def append_message():
-    pass
+def append_message(
+    messages: list[dict[str, object]],
+    dog_states: dict[str, object],
+) -> list[dict[str, object]]:
+    state_json = json.dumps(dog_states, indent=2)
+
+    messages.append(
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": (
+                        "UPDATED DOG STATE INPUT (NEXT TURN):\n"
+                        f"{state_json}\n\n"
+                    ),
+                }
+            ],
+        }
+    )
+
+    return messages

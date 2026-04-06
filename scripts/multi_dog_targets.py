@@ -10,8 +10,8 @@ if str(ROOT_DIR) not in sys.path:
 
 import src.utils as utils
 from src.model import init_model, ask_model
-from src.executor import execute_multi_dog_commands
-from src.prompts.multi_dog_step import get_init_message
+from src.executor import execute_multi_dog_commands, wait_for_all_robots, get_multi_dog_poses
+from src.prompts.multi_dog_step import get_init_message, append_message
 from src.parsers.multi_dog import parse_multi_dog_step_output
 from src.schemas.multi_dog import MULTI_DOG_STEP_SCHEMA_CONFIG
 
@@ -42,6 +42,27 @@ TARGET_BLOCKS = {
 }
 
 
+
+# ----- Utils -----
+def refresh_dog_runtime(
+    dog_runtime: dict[str, dict[str, object]],
+) -> dict[str, dict[str, object]]:
+    pose_payloads = get_multi_dog_poses(DOG_PORTS)
+
+    for dog_id, payload in pose_payloads.items():
+        if not payload["ok"]:
+            raise RuntimeError(f"Failed to fetch pose for {dog_id}: {payload}")
+
+        pose = payload["pose"]
+        dog_runtime[dog_id]["pose"] = {
+            "x": float(pose["x"]),
+            "y": float(pose["y"]),
+            "heading_deg": float(pose["yaw_rad"]) * 180.0 / 3.141592653589793,
+        }
+
+    return dog_runtime
+
+
 # ----- Experiment Loops -----
 def run(
     model: Any,
@@ -50,6 +71,15 @@ def run(
 ):
     # Initialize episode state
     steps = 0
+    dog_runtime = {
+        dog_id: {
+            "mission_done": False,
+            "last_command": None,
+            "last_result": None,
+            "pose": dog_state.get("pose"),
+        }
+        for dog_id, dog_state in INITIAL_DOG_STATES.items()
+    }
 
     # Build initial messages
     messages = get_init_message(
@@ -57,51 +87,92 @@ def run(
         target_blocks=TARGET_BLOCKS,
     )
     print("Initial messages:")
-    print(messages)
-    
-    all_outputs: list[str] = []
 
-    # while steps < MAX_STEPS:
-    steps += 1
+    while steps < MAX_STEPS:
+        steps += 1
+        print(f"\n===== STEP {steps} =====")
 
-    # Query the model
-    raw_output = ask_model(
-        model=model,
-        processor=processor,
-        messages=messages,
-        schema_config=MULTI_DOG_STEP_SCHEMA_CONFIG,
-        backend=exp_config.get("backend", "transformers"),
-    )
-    all_outputs.append(raw_output)
-    
-    # Parse structured output
-    parsed_by_dog = parse_multi_dog_step_output(raw_output)
-    errors_by_dog = [item for item in parsed_by_dog if item["error"] is not None]
-    if errors_by_dog:
-        print("\nParse failed:")
-        for error_item in errors_by_dog:
-            dog_id = error_item["dog_id"]
-            error_msg = error_item["error"]
-            print(f"- {dog_id}: {error_msg}")
-        return
-    
-    # TODO: Check finish action
+        # Query the model
+        raw_output = ask_model(
+            uses_tools=False,
+            model=model,
+            processor=processor,
+            messages=messages,
+            schema_config=MULTI_DOG_STEP_SCHEMA_CONFIG,
+            backend=exp_config.get("backend", "transformers"),
+        )
 
-    # Execute action
-    commands_by_dog = {
-        str(item["dog_id"]): {
-            "tool_name": item["action"]["tool_name"],
-            "args": item["action"]["args"],
+        print("Raw model output:")
+        print(raw_output)
+        
+        # Parse structured output
+        parsed_by_dog = parse_multi_dog_step_output(raw_output)
+        errors_by_dog = [item for item in parsed_by_dog if item["error"] is not None]
+        if errors_by_dog:
+            print("\nParse failed:")
+            for error_item in errors_by_dog:
+                print(f"- {error_item['dog_id']}: {error_item['error']}")
+            return
+        
+        # TODO: Check finish action
+
+        # Execute action
+        commands_by_dog = {
+            str(item["dog_id"]): {
+                "tool_name": item["action"]["tool_name"],
+                "args": item["action"]["args"],
+            }
+            for item in parsed_by_dog
         }
-        for item in parsed_by_dog
-    }
-    actions_results = execute_multi_dog_commands(
-        commands_by_dog=commands_by_dog,
-        dog_ports=DOG_PORTS,
-    )
 
-    print("Actions results:")
-    print(actions_results)
+        print("Commands by dog:")
+        print(commands_by_dog)
+
+        try:
+            actions_results = execute_multi_dog_commands(
+                commands_by_dog=commands_by_dog,
+                dog_ports=DOG_PORTS,
+            )
+        except Exception as error:
+            print(f"[ERROR][step={steps}][phase=execute] {error}")
+            return
+
+        print("Actions results:")
+        print(actions_results)
+
+        failed = [dog_id for dog_id, result in actions_results.items() if not result["ok"]]
+        if failed:
+            print(f"[ERROR][step={steps}][phase=execute] Execution failed for: {failed}")
+            for dog_id in failed:
+                print(f"- {dog_id}: {actions_results[dog_id].get('error')}")
+            return
+
+        # Wait for all actions to complete
+        try:
+            wait_for_all_robots(DOG_PORTS)
+        except Exception as error:
+            print(f"[ERROR][step={steps}][phase=wait_for_all_robots] {error}")
+            return
+
+        # Refresh runtime state
+        dog_runtime = refresh_dog_runtime(dog_runtime)
+
+        for item in parsed_by_dog:
+            dog_id = str(item["dog_id"])
+            dog_runtime[dog_id]["last_command"] = {
+                "tool_name": item["action"]["tool_name"],
+                "args": item["action"]["args"],
+            }
+
+        for dog_id, result in actions_results.items():
+            dog_runtime[dog_id]["last_result"] = result
+
+        messages = append_message(
+            messages=messages,
+            dog_states=dog_runtime,
+        )
+
+    print(f"Stopped after max steps ({MAX_STEPS})")
 
 
 def experiment(exp_config: dict[str, Any]) -> None:
