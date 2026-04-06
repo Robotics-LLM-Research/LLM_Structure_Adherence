@@ -1,12 +1,21 @@
 import os
-import json
+import sys
+from typing import Any
+from pathlib import Path
 from dotenv import load_dotenv
 
-from src.model import init_model, cleanup_model, ask_model, get_message
+ROOT_DIR = Path(__file__).resolve().parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
+import src.utils as utils
+from src.model import init_model, ask_model
 from src.executor import execute_multi_dog_commands
+from src.prompts.multi_dog_step import get_init_message
 from src.parsers.multi_dog import parse_multi_dog_step_output
-from src.prompts.multi_dog_step import MULTI_DOG_STEP_PROMPTS
 from src.schemas.multi_dog import MULTI_DOG_STEP_SCHEMA_CONFIG
+
+MAX_STEPS = 10
 
 DOG_PORTS = {
     "dog1": 8001,
@@ -33,101 +42,112 @@ TARGET_BLOCKS = {
 }
 
 
-# ----- Utils -----
-def _build_multi_dog_prompt_text() -> str:
-    base_prompt = MULTI_DOG_STEP_PROMPTS[0]["text"]
-    state_json = json.dumps(INITIAL_DOG_STATES, indent=2)
-    targets_json = json.dumps(TARGET_BLOCKS, indent=2)
-    ports_json = json.dumps(DOG_PORTS, indent=2)
+# ----- Experiment Loops -----
+def run(
+    model: Any,
+    processor: Any,
+    exp_config: dict[str, Any],
+):
+    # Initialize episode state
+    steps = 0
 
-    return (
-        f"{base_prompt}\n\n"
-        "DOG STATE INPUT (CURRENT TURN):\n"
-        f"{state_json}\n\n"
-        "TARGET BLOCKS (GLOBAL TASK INPUT):\n"
-        f"{targets_json}\n\n"
-        "DOG IDS:\n"
-        f"{ports_json}\n"
+    # Build initial messages
+    messages = get_init_message(
+        dog_states=INITIAL_DOG_STATES,
+        target_blocks=TARGET_BLOCKS,
+    )
+    print("Initial messages:")
+    print(messages)
+    
+    all_outputs: list[str] = []
+
+    # while steps < MAX_STEPS:
+    steps += 1
+
+    # Query the model
+    raw_output = ask_model(
+        model=model,
+        processor=processor,
+        messages=messages,
+        schema_config=MULTI_DOG_STEP_SCHEMA_CONFIG,
+        backend=exp_config.get("backend", "transformers"),
+    )
+    all_outputs.append(raw_output)
+    
+    # Parse structured output
+    parsed_by_dog = parse_multi_dog_step_output(raw_output)
+    errors_by_dog = [item for item in parsed_by_dog if item["error"] is not None]
+    if errors_by_dog:
+        print("\nParse failed:")
+        for error_item in errors_by_dog:
+            dog_id = error_item["dog_id"]
+            error_msg = error_item["error"]
+            print(f"- {dog_id}: {error_msg}")
+        return
+    
+    # TODO: Check finish action
+
+    # Execute action
+    commands_by_dog = {
+        str(item["dog_id"]): {
+            "tool_name": item["action"]["tool_name"],
+            "args": item["action"]["args"],
+        }
+        for item in parsed_by_dog
+    }
+    actions_results = execute_multi_dog_commands(
+        commands_by_dog=commands_by_dog,
+        dog_ports=DOG_PORTS,
     )
 
-
-def _normalized_commands_for_execution(
-    parsed_actions,
-) -> dict[str, dict[str, object]]:
-    commands: dict[str, dict[str, object]] = {}
-
-    for dog_id, action in parsed_actions.items():
-        commands[dog_id] = {
-            "tool_name": action.tool_name,
-            "args": action.arguments.model_dump(),
-        }
-
-    return commands
+    print("Actions results:")
+    print(actions_results)
 
 
-def main():
-    # Load runtime settings
-    load_dotenv()
-    token = os.getenv("HF_TOKEN")
-
-    model_id = "Qwen/Qwen3-VL-2B-Instruct"
-    backend = "transformers"
+def experiment(exp_config: dict[str, Any]) -> None:
+    # Unpack base config
+    model_id = exp_config["model_id"]
+    backend = exp_config["backend"]
 
     # Initialize model
     model, processor = init_model(
         model_id=model_id,
-        token=token,
+        token=exp_config.get("token"),
         backend=backend,
     )
 
-    try:
-        prompt_config = {
-            "id": "md_p0_runtime",
-            "text": _build_multi_dog_prompt_text(),
+    result = run(
+        model=model,
+        processor=processor,
+        exp_config=exp_config,
+    )
+
+
+# ----- Experiment Grid -----
+EXPERIMENTS = [
+    {
+        "model_id": "Qwen/Qwen3-VL-2B-Instruct",
+        "backend": "transformers",
+    },
+]
+
+
+# ----- Entry Point -----
+def main():
+    # Load runtime settings
+    load_dotenv()
+    token = os.getenv("HF_TOKEN")
+    run_id = utils.format_run_timestamp("MultiDog")
+
+    # Execute experiment grid
+    for base_config in EXPERIMENTS:
+        exp_config = {
+            **base_config,
+            "prefix": "MultiDog",
+            "run_id": run_id,
+            "token": token,
         }
-        schema_config = MULTI_DOG_STEP_SCHEMA_CONFIG
-
-        # One-shot LLM call (no loop)
-        messages = get_message(
-            mode="MultiDogSteps",
-            uses_tools=False,
-            img_path=None,
-            prompt_config=prompt_config,
-            schema_config=schema_config,
-            backend=backend,
-        )
-        raw_output = ask_model(
-            uses_tools=False,
-            model=model,
-            processor=processor,
-            messages=messages,
-            schema_config=schema_config,
-            backend=backend,
-        )
-        print("\nRaw LLM Output:\n")
-        print(raw_output)
-
-        # Parse output into per-dog actions
-        parsed_actions, error_msg = parse_multi_dog_step_output(raw_output)
-        if error_msg is not None:
-            print("\nParse failed:")
-            print(error_msg)
-            return
-
-        commands_by_dog = _normalized_commands_for_execution(parsed_actions)
-
-        print("\nParsed commands to execute:")
-        print(json.dumps(commands_by_dog, indent=2))
-
-        # Execute all dog commands concurrently
-        execution_results = execute_multi_dog_commands(
-            commands_by_dog=commands_by_dog,
-            dog_ports=DOG_PORTS,
-        )
-        print("\nExecution results:")
-        print(json.dumps(execution_results, indent=2))
-    finally:
-        cleanup_model(model, processor)
+        experiment(exp_config)
 
 if __name__ == "__main__":
     main()
