@@ -6,8 +6,6 @@ from dotenv import load_dotenv
 
 import torch
 from pydantic import TypeAdapter
-from vllm import LLM, SamplingParams
-from vllm.sampling_params import StructuredOutputsParams
 from transformers import AutoProcessor, AutoModelForImageTextToText
 
 from .tools import get_tool_declarations
@@ -24,6 +22,19 @@ def get_schema_json(schema_type: Any) -> dict[str, Any]:
 
     return TypeAdapter(schema_type).json_schema()
 
+def _import_vllm() -> tuple[Any, Any, Any]:
+    """Import vLLM symbols lazily so transformers-only runs still work."""
+    try:
+        from vllm import LLM, SamplingParams
+        from vllm.sampling_params import StructuredOutputsParams
+    except ImportError as error:
+        raise ImportError(
+            "backend='vllm' requires the 'vllm' package. "
+            "Install it or switch backend to 'transformers'."
+        ) from error
+
+    return LLM, SamplingParams, StructuredOutputsParams
+
 # ----- Model Setup -----
 def init_model(
         model_id: str, 
@@ -35,6 +46,8 @@ def init_model(
 
     # --- VLLM ---
     if backend == "vllm":
+        LLM, _, _ = _import_vllm()
+
         llm_kwargs = {
             "model": model_id,
             "trust_remote_code": True,
@@ -84,24 +97,28 @@ def cleanup_model(model: Any | None = None, processor: Any | None = None) -> Non
 
 # ----- Inference -----
 def ask_model(
-    uses_tools: bool,
     model: Any,
     processor: Any,
+    uses_tools: bool,
     messages: list[dict[str, Any]],
-    schema_config: dict,
+    schema: Any | None = None,
     backend: str = "transformers",
 ) -> str:
     """ Generate one model response """
-    # Handle vllm
+    # --- VLLM ---
     if backend == "vllm":
+        _, SamplingParams, StructuredOutputsParams = _import_vllm()
+
         if uses_tools:
             raise ValueError(
                 "For the vLLM structured-output baseline, keep uses_tools=False. "
                 "Use a separate branch if you want to test vLLM tool calling."
             )
 
-        schema_json = get_schema_json(schema_config["schema"])
+        if schema is None:
+            raise ValueError("schema is required when backend='vllm'.")
 
+        schema_json = get_schema_json(schema)
         sampling_params = SamplingParams(
             temperature=0.0,
             max_tokens=256,
@@ -117,32 +134,35 @@ def ask_model(
 
         return outputs[0].outputs[0].text.strip()
     
-    # Build model inputs
-    if uses_tools:
-        inputs = processor.apply_chat_template(
-            messages,
-            tools=get_tool_declarations(),
-            tokenize=True,
-            add_generation_prompt=True,
-            return_dict=True,
-            return_tensors="pt",
-        ).to(model.device)
-    else:
-        inputs = processor.apply_chat_template(
-            messages,
-            tokenize=True,
-            add_generation_prompt=True,
-            return_dict=True,
-            return_tensors="pt",
-        ).to(model.device)
+    # --- Transformers ---
+    if backend == "transformers":
+        if uses_tools:
+            inputs = processor.apply_chat_template(
+                messages,
+                tools=get_tool_declarations(),
+                tokenize=True,
+                add_generation_prompt=True,
+                return_dict=True,
+                return_tensors="pt",
+            ).to(model.device)
+        else:
+            inputs = processor.apply_chat_template(
+                messages,
+                tokenize=True,
+                add_generation_prompt=True,
+                return_dict=True,
+                return_tensors="pt",
+            ).to(model.device)
 
-    # Run text generation
-    outputs = model.generate(
-        **inputs,
-        max_new_tokens=256,
-    )
+        # Run text generation
+        outputs = model.generate(
+            **inputs,
+            max_new_tokens=256,
+        )
 
-    # Decode new tokens only
-    prompt_token_count = inputs["input_ids"].shape[1]
-    generated_tokens = outputs[0][prompt_token_count:]
-    return processor.decode(generated_tokens, skip_special_tokens=True)
+        # Decode new tokens only
+        prompt_token_count = inputs["input_ids"].shape[1]
+        generated_tokens = outputs[0][prompt_token_count:]
+        return processor.decode(generated_tokens, skip_special_tokens=True)
+
+    raise ValueError(f"Unknown backend: {backend!r}")
