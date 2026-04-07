@@ -26,3 +26,7 @@ MULTI_DOG_STEP_PROMPTS = [
         ),
     },
 ]
+
+
+def get_feedback(*args, **kwargs) -> str:
+    return "Feedback placeholder for MultiDogSteps."

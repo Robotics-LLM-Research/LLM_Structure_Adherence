@@ -1,15 +1,14 @@
-import os
 import sys
 import json
 from typing import Any
-from dotenv import load_dotenv
 
 import src.utils as utils
 from src.simulator import simulate_plan
 from src.schemas.path import PATH_SCHEMAS
 from src.parsers.path import parse_path_output
-from src.model import ask_model, get_message, init_model, cleanup_model
+from src.prompts.factory import get_initial_message
 from src.utils import save_results, save_run_config
+from src.model import ask_model, init_model, cleanup_model
 
 RUNS_IN_EXP = 10
 IMAGE_PATH = "assets/wall_crossing_env.png"
@@ -115,12 +114,12 @@ def run(
     completion = False
 
     # Build inference messages
-    messages = get_message(
-        mode=mode,
+    messages = get_initial_message(
+        task_name=mode,
+        user_prompt=prompt_config["text"],
+        schema_sample=schema_config["sample"],
+        image_path=img_path,
         uses_tools=uses_tools,
-        img_path=img_path,
-        prompt_config=prompt_config,
-        schema_config=schema_config,
     )
 
     # Query the model
@@ -286,7 +285,6 @@ def experiment(exp_config: dict[str, Any]) -> None:
     print("Initializing model...", flush=True)
     model, processor = init_model(
         model_id=model_id,
-        token=exp_config.get("token"),
     )
 
     try:
@@ -404,9 +402,6 @@ EXPERIMENTS: list[dict[str, Any]] = [
 
 # ----- Entry Point -----
 def main() -> None:
-    # Load runtime settings
-    load_dotenv()
-    token = os.getenv("HF_TOKEN")
     run_id = utils.format_run_timestamp("Path")
 
     # Execute experiment grid
@@ -415,7 +410,6 @@ def main() -> None:
             **base_config,
             "prefix": "Path",
             "run_id": run_id,
-            "token": token,
         }
         experiment(exp_config)
 

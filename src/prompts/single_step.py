@@ -36,3 +36,24 @@ STEP_SEQUENCE_PROMPTS = [
         "text": "Spot is currently at position (0.0, 0.0) facing 0 degrees. A wall occupies x from 4.5 to 5.5 and y from -2.0 to 2.0. Spot must get to the far side of the wall safely. Return exactly one next action in the required schema.",
     },
 ]
+
+# ----- Feedback -----
+def get_feedback(
+    error: str | None = None,
+    action_result: dict | None = None,
+    current_state: dict | None = None,
+) -> str:
+    if error is not None:
+        return (
+            f"Your previous response could not be parsed: {error}\n"
+            f"Current state is unchanged: {current_state}\n"
+        )
+
+    if action_result is None:
+        raise ValueError("action_result is required when error is None.")
+
+    return (
+        "Action executed.\n"
+        f"collided={action_result['collided']}, "
+        f"state={action_result['state']}\n"
+    )

@@ -1,20 +1,19 @@
-
 import sys
 from typing import Any
 
 import src.utils as utils
+from src.utils import save_results, save_run_config
 from src.simulator import simulate_step
+from src.model import ask_model, init_model, cleanup_model
+from src.prompts.factory import (
+    get_initial_message,
+    append_message,
+)
+
+from src.schemas.step import STEP_SCHEMAS
 from src.schemas.base import FinishTaskAction
 from src.parsers.step import parse_action_output
-from src.schemas.step import STEP_SCHEMAS
-from src.model import (
-    ask_model,
-    get_message,
-    init_model,
-    append_message,
-    cleanup_model,
-)
-from src.utils import save_results, save_run_config
+from src.prompts.single_step import get_feedback
 
 MAX_STEPS = 10
 RUNS_IN_EXP = 10
@@ -58,12 +57,12 @@ def run(
     spot: dict[str, Any] | None = None
 
     # Build initial messages
-    messages = get_message(
-        mode=mode,
+    messages = get_initial_message(
+        task_name=mode,
+        user_prompt=prompt_config["text"],
+        schema_sample=schema_config["sample"],
+        image_path=img_path,
         uses_tools=uses_tools,
-        img_path=img_path,
-        prompt_config=prompt_config,
-        schema_config=schema_config,
         backend=backend,
     )
     all_outputs: list[str] = []
@@ -91,12 +90,14 @@ def run(
 
         if error_msg is not None:
             perfect_structure = False
+            feedback = get_feedback(
+                error=error_msg,
+                current_state=spot,
+            )
             messages = append_message(
                 messages=messages,
                 raw_output=raw_output,
-                error=error_msg,
-                action_result=None,
-                current_state=spot,
+                user_feedback=feedback,
                 backend=backend,
             )
             continue
@@ -125,11 +126,14 @@ def run(
             break
 
         # Append execution feedback
+        feedback = get_feedback(
+            error=None,
+            action_result=action_result,
+        )
         messages = append_message(
             messages=messages,
             raw_output=raw_output,
-            error=None,
-            action_result=action_result,
+            user_feedback=feedback,
             backend=backend,
         )
 
@@ -281,7 +285,6 @@ def experiment(exp_config: dict[str, Any]) -> None:
     print("Initializing model...", flush=True)
     model, processor = init_model(
         model_id=model_id,
-        token=exp_config.get("token"),
         backend=exp_config["backend"],
     )
 
