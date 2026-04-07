@@ -4,7 +4,7 @@ from typing import Any
 from pydantic import ValidationError
 
 from .common import validate_schema
-from ..schemas.step import STEP_SCHEMA_BY_ID
+from ..schemas.steps import STEP_SCHEMA_BY_ID
 from ..schemas.base import MoveSpotAction, RotateSpotAction, FinishTaskAction
 
 

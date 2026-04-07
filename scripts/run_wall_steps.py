@@ -10,10 +10,10 @@ from src.prompts.factory import (
     append_message,
 )
 
-from src.schemas.step import STEP_SCHEMAS
+from src.schemas.steps import STEP_SCHEMAS
 from src.schemas.base import FinishTaskAction
-from src.parsers.step import parse_action_output
-from src.prompts.single_step import get_feedback
+from src.parsers.steps import parse_action_output
+from src.prompts.wall_steps import get_feedback
 
 MAX_STEPS = 10
 RUNS_IN_EXP = 10
@@ -271,7 +271,7 @@ def run_config(
 def experiment(exp_config: dict[str, Any]) -> None:
     """ Run all configs for one model setup """
     # Unpack base config
-    mode = exp_config.get("prefix", "Steps")
+    mode = exp_config.get("prefix", "wall_steps")
     model_id = exp_config["model_id"]
     uses_tools = exp_config["uses_tools"]
     uses_image_modes = utils.resolve_uses_image_modes(exp_config.get("uses_image", "both"))

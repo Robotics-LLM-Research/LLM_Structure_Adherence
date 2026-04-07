@@ -43,13 +43,13 @@ def main() -> None:
     # Load runtime settings
     load_dotenv()
     token = os.getenv("HF_TOKEN")
-    run_id = format_run_timestamp("Steps")
+    run_id = format_run_timestamp("wall_steps")
 
     # Execute experiment grid
     for base_config in EXPERIMENTS:
         exp_config = {
             **base_config,
-            "prefix": "Steps",
+            "prefix": "wall_steps",
             "run_id": run_id,
             "token": token,
         }

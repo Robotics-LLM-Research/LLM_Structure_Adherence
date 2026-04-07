@@ -1,4 +1,4 @@
-STEP_SEQUENCE_SYSTEM_PROMPT = """
+WALL_STEPS_SYSTEM_PROMPT = """
     You control a simulated robot: Spot.
     Your job is to output EXACTLY ONE next action at each turn.
 
@@ -14,7 +14,7 @@ STEP_SEQUENCE_SYSTEM_PROMPT = """
     - Prefer safe actions that avoid collisions and make progress toward the objective.
 """
 
-STEP_SEQUENCE_PROMPTS = [
+WALL_STEPS_PROMPTS = [
     {
         "id": "p0",
         "text": "Spot must cross to the other side of a wall and complete the task safely. Return exactly one next action in the required schema.",
@@ -37,7 +37,7 @@ STEP_SEQUENCE_PROMPTS = [
     },
 ]
 
-# ----- Feedback -----
+
 def get_feedback(
     error: str | None = None,
     action_result: dict | None = None,

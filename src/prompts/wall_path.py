@@ -1,4 +1,4 @@
-FULL_PATH_SYSTEM_PROMPT = """
+WALL_PATH_SYSTEM_PROMPT = """
     You control a simulated robot: Spot.
     Your job is to ouput a COMPLETE path, not just the next action.
 
@@ -10,7 +10,7 @@ FULL_PATH_SYSTEM_PROMPT = """
     - Do not stop after one action unless the task is already complete.
 """
 
-FULL_PATH_PROMPTS = [
+WALL_PATH_PROMPTS = [
     {
         "id": "p0",
         "text": "Using the available robot actions, generate a complete action sequence for Spot to get to the other side of the wall. Return only output that matches the required schema.",

@@ -402,13 +402,13 @@ EXPERIMENTS: list[dict[str, Any]] = [
 
 # ----- Entry Point -----
 def main() -> None:
-    run_id = utils.format_run_timestamp("Path")
+    run_id = utils.format_run_timestamp("wall_path")
 
     # Execute experiment grid
     for base_config in EXPERIMENTS:
         exp_config = {
             **base_config,
-            "prefix": "Path",
+            "prefix": "wall_path",
             "run_id": run_id,
         }
         experiment(exp_config)

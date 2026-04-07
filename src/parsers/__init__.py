@@ -1,1 +1,1 @@
-"""Parser package."""
+""" Parser package """

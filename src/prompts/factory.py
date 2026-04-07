@@ -5,17 +5,25 @@ from PIL import Image
 
 from src.tools import get_tools_prompt
 
-from .single_path import FULL_PATH_SYSTEM_PROMPT
-from .single_step import STEP_SEQUENCE_SYSTEM_PROMPT
-from .multi_dog_step import MULTI_DOG_STEP_SYSTEM_PROMPT
+from .wall_path import WALL_PATH_SYSTEM_PROMPT, WALL_PATH_PROMPTS
+from .wall_steps import WALL_STEPS_SYSTEM_PROMPT, WALL_STEPS_PROMPTS
+from .multi_dog_step import MULTI_DOG_STEP_SYSTEM_PROMPT, MULTI_DOG_STEP_PROMPTS
 from .wall_bt import WALL_BT_SYSTEM_PROMPT
 
 SYSTEM_PROMPTS = {
-    "Path": FULL_PATH_SYSTEM_PROMPT,
-    "Steps": STEP_SEQUENCE_SYSTEM_PROMPT,
-    "MultiDogSteps": MULTI_DOG_STEP_SYSTEM_PROMPT,
+    "wall_path": WALL_PATH_SYSTEM_PROMPT,
+    "wall_steps": WALL_STEPS_SYSTEM_PROMPT,
+    "multi_dog_steps": MULTI_DOG_STEP_SYSTEM_PROMPT,
     "wall_bt": WALL_BT_SYSTEM_PROMPT,
 }
+
+PROMPT_POOLS_BY_MODE = {
+    "wall_path": WALL_PATH_PROMPTS,
+    "wall_steps": WALL_STEPS_PROMPTS,
+    "multi_dog_steps": MULTI_DOG_STEP_PROMPTS,
+}
+
+
 
 def _build_system_prompt(
     task_name: str,

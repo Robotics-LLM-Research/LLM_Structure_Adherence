@@ -23,7 +23,7 @@ This repository evaluates how well vision-language and instruction-tuned models 
 ## Core Modules
 
 - `src/schemas/`: schema package split by concern (`base`, `step`, `path`, `multi_dog`).
-- `src/prompts/`: prompt package split by scenario (`single_path`, `single_step`, `multi_dog_step`) with centralized mode maps.
+- `src/prompts/`: prompt package split by scenario (`wall_path`, `wall_steps`, `multi_dog_step`) with centralized mode maps.
 - `src/model.py`: Hugging Face model loading, message construction, and generation.
 - `src/parsers/`: validation and normalization into shared action models (split into `step`, `path`, and `multi_dog`).
 - `src/simulator.py`: collision checks, movement updates, and success detection.
