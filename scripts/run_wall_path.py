@@ -3,7 +3,7 @@ import json
 from typing import Any
 
 import src.utils as utils
-from src.simulator import simulate_plan
+from src.simulator import simulate_action_plan
 from src.schemas.path import PATH_SCHEMAS
 from src.parsers.path import parse_path_output
 from src.prompts.factory import get_initial_message
@@ -128,6 +128,7 @@ def run(
         model=model,
         processor=processor,
         messages=messages,
+        schema=schema_config["schema"],
     )
 
     # Parse structured output
@@ -152,7 +153,7 @@ def run(
 
     # Simulate valid plan
     structure = True
-    plan_results = simulate_plan(plan)
+    plan_results = simulate_action_plan(plan)
     completion = bool(plan_results.get("success", False))
 
     return {

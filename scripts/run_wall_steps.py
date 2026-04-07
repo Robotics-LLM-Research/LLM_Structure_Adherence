@@ -3,7 +3,7 @@ from typing import Any
 
 import src.utils as utils
 from src.utils import save_results, save_run_config
-from src.simulator import simulate_step
+from src.simulator import simulate_action_step
 from src.model import ask_model, init_model, cleanup_model
 from src.prompts.factory import (
     get_initial_message,
@@ -77,7 +77,7 @@ def run(
             model=model,
             processor=processor,
             messages=messages,
-            schema_config=schema_config,
+            schema=schema_config["schema"],
             backend=backend,
         )
         all_outputs.append(raw_output)
@@ -114,7 +114,7 @@ def run(
             break
 
         # Simulate next state
-        action_result = simulate_step(spot, action)
+        action_result = simulate_action_step(spot, action)
         spot = action_result["state"]
         collided = bool(action_result["collided"])
         goal_reached = bool(action_result["success"])

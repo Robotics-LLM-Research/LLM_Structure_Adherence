@@ -1,5 +1,13 @@
 import math
 from .schemas.base import ActionPlan, MoveSpotAction, RotateSpotAction
+from .schemas.bt import (
+    WallBTSchema,
+    BTNode,
+    BTConditionNode,
+    BTActionNode,
+    BTSequenceNode,
+    BTFallbackNode,
+)
 
 INITIAL_SPOT_STATE = {
     "x": 0.0,
@@ -22,6 +30,9 @@ TARGET_BOUNDS = {
 }
 
 _COLLISION_SAMPLE_STEP_M = 0.05
+_WALL_AHEAD_DIST_M = 10.0
+_LEFT_CLEAR_ANGLE_DEG = 45.0
+_RIGHT_CLEAR_ANGLE_DEG = 45.0
 
 
 
@@ -84,6 +95,48 @@ def _apply_rotate(spot: dict[str, float], action: RotateSpotAction) -> dict[str,
     }
 
 
+# ----- Observation Simulation -----
+def _ray_hits_wall(
+    spot: dict[str, float],
+    rel_angle_deg: float,
+    distance_m: float,
+) -> bool:
+    # Cast a short segment from the current pose and test wall intersection.
+    heading_rad = math.radians(-(spot["heading"] + rel_angle_deg))
+    probe = {
+        "x": spot["x"] + distance_m * math.cos(heading_rad),
+        "y": spot["y"] + distance_m * math.sin(heading_rad),
+        "heading": spot["heading"],
+    }
+    return _check_collision(spot, probe)
+
+def _check_wall_ahead(spot: dict[str, float]) -> bool:
+    return _ray_hits_wall(spot, rel_angle_deg=0.0, distance_m=_WALL_AHEAD_DIST_M)
+
+def _check_left_clear(spot: dict[str, float]) -> bool:
+    return not _ray_hits_wall(
+        spot,
+        rel_angle_deg=-_LEFT_CLEAR_ANGLE_DEG,
+        distance_m=_WALL_AHEAD_DIST_M,
+    )
+
+def _check_right_clear(spot: dict[str, float]) -> bool:
+    return not _ray_hits_wall(
+        spot,
+        rel_angle_deg=_RIGHT_CLEAR_ANGLE_DEG,
+        distance_m=_WALL_AHEAD_DIST_M,
+    )
+
+def get_observations(spot: dict[str, float]) -> dict[str, bool]:
+    """ Get all observations for a given spot state """
+    return {
+        "wall_ahead": _check_wall_ahead(spot),
+        "left_clear": _check_left_clear(spot),
+        "right_clear": _check_right_clear(spot),
+        "at_goal": _check_success(spot),
+    }
+
+
 # ----- Simulation -----
 def _handle_action(
     spot: dict[str, float] | None,
@@ -108,7 +161,7 @@ def _handle_action(
 
     return spot, collided
 
-def simulate_step(
+def simulate_action_step(
     spot: dict[str, float] | None,
     action: MoveSpotAction | RotateSpotAction,
 ) -> dict[str, bool | dict[str, float]]:
@@ -124,7 +177,7 @@ def simulate_step(
         "state": next_spot,
     }
 
-def simulate_plan(plan: ActionPlan) -> dict[str, bool | dict[str, float]]:
+def simulate_action_plan(plan: ActionPlan) -> dict[str, bool | dict[str, float]]:
     """ Run a full action plan """
     # Initialize plan state
     spot = INITIAL_SPOT_STATE.copy()
@@ -145,4 +198,67 @@ def simulate_plan(plan: ActionPlan) -> dict[str, bool | dict[str, float]]:
         "success": success,
         "collided": collided,
         "final_spot": final_spot,
+    }
+
+def simulate_bt_plan(plan: WallBTSchema) -> dict[str, bool | dict[str, float]]:
+    """ Run a behavior-tree plan against the wall-crossing simulator """
+    spot = INITIAL_SPOT_STATE.copy()
+    collided = False
+    success = False
+    observations = get_observations(spot)
+    max_ticks = 64
+
+    def _eval_node(node: BTNode) -> bool:
+        nonlocal spot, collided, success, observations
+
+        if isinstance(node, BTConditionNode):
+            observations = get_observations(spot)
+            observed = observations.get(node.observation, False)
+            return observed == node.expected
+
+        if isinstance(node, BTActionNode):
+            action = node.call
+            if action.tool_name == "finish_task":
+                observations = get_observations(spot)
+                success = observations["at_goal"]
+                return success
+
+            step_result = simulate_action_step(spot, action)
+            spot = step_result["state"]  # pyright: ignore[reportAssignmentType]
+            collided = bool(step_result["collided"])
+            observations = get_observations(spot)
+            return not collided
+
+        if isinstance(node, BTSequenceNode):
+            for child in node.children:
+                if not _eval_node(child):
+                    return False
+                if collided:
+                    return False
+            return True
+
+        if isinstance(node, BTFallbackNode):
+            for child in node.children:
+                if _eval_node(child):
+                    return True
+                if collided:
+                    return False
+            return False
+
+        return False
+
+    for _ in range(max_ticks):
+        if collided or success:
+            break
+
+        tick_ok = _eval_node(plan.root)
+        observations = get_observations(spot)
+        success = success or observations["at_goal"] or tick_ok and observations["at_goal"]
+
+    final_spot = {key: round(value, 1) for key, value in spot.items()}
+    return {
+        "observations": observations,
+        "final_spot": final_spot,
+        "collided": collided,
+        "success": success and not collided,
     }
