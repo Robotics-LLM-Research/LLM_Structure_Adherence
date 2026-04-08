@@ -1,6 +1,6 @@
 WALL_BT_SYSTEM_PROMPT = """
     You are a robot planning model.
-    Your job is to generate a decision tree in JSON format.
+    Your job is to generate a behavior tree in JSON format.
 
     Rules:
     - Output only valid JSON matching the required schema.
@@ -12,6 +12,9 @@ WALL_BT_SYSTEM_PROMPT = """
     - Do not invent new observation keys.
     - Do not invent new actions.
     - Return finish_task only when at_goal is true.
+    - Output a COMPLETE behavior tree for the entire task, not a single local reaction
+    - Replanning will only happen if the tree fails or the execution cutoff is reacehe
+    - Do not output a tree that only performs one move or one turn unless ihe task is complete
 
     Node types:
     - condition: checks a boolean observation
@@ -43,5 +46,30 @@ WALL_BT_USER_PROMPT = """
 """
 
 # ----- Prompt Building -----
-def get_feedback(*args, **kwargs) -> str:
-    return "Feedback placeholder for wall_bt."
+def get_feedback(
+    error: str | None = None,
+    plan_results: dict | None = None,
+) -> str:
+    """Build behavior-tree-specific replanning feedback."""
+    if error is not None:
+        return (
+            "Your previous behavior tree could not be parsed/validated.\n"
+            f"Error: {error}\n"
+            "Generate a corrected COMPLETE behavior tree in valid JSON.\n"
+        )
+
+    if plan_results is None:
+        raise ValueError("plan_results is required when error is None.")
+
+    collided = bool(plan_results.get("collided", False))
+    success = bool(plan_results.get("success", False))
+    observations = plan_results.get("observations")
+    final_spot = plan_results.get("final_spot")
+
+    return (
+        "Behavior tree execution finished.\n"
+        f"success={success}, collided={collided}\n"
+        f"observations={observations}\n"
+        f"final_spot={final_spot}\n"
+        "If success is false, generate a revised COMPLETE behavior tree.\n"
+    )
