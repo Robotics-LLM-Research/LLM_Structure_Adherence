@@ -16,7 +16,6 @@ def wait_for_all_robots(
     """ Block until every robot status is no longer 'idle' """
     deadline = time.time() + timeout_s
     observed_busy = False
-
     while True:
         all_idle = True
 
@@ -39,7 +38,20 @@ def wait_for_all_robots(
             return
 
         if time.time() >= deadline:
-            raise TimeoutError("Timed out waiting for all robots to finish")
+            stop_commands = {
+                dog_id: {
+                    "tool_name": "stop_spot",
+                    "args": {},
+                }
+                for dog_id in dog_ports
+            }
+            stop_results = execute_multi_dog_commands(stop_commands, dog_ports)
+            failed = [dog_id for dog_id, result in stop_results.items() if not result["ok"]]
+            if failed:
+                raise TimeoutError(
+                    f"Timed out waiting for all robots; stop failed for: {failed}"
+                )
+            return
 
         time.sleep(poll_interval_s)
 
@@ -75,6 +87,9 @@ def execute_fc(port, tool, args):
     
     elif tool == "rotate_spot":
         response = requests.post(f"{HOST}:{port}/rotate", params={"deg": float(args["degrees"])}, timeout=5)
+
+    elif tool == "stop_spot":
+        response = requests.post(f"{HOST}:{port}/stop", timeout=5)
 
     else:
         raise ValueError("Unknown function: ", tool) 
