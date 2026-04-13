@@ -200,16 +200,20 @@ def simulate_action_plan(plan: ActionPlan) -> dict[str, bool | dict[str, float]]
         "final_spot": final_spot,
     }
 
-def simulate_bt_plan(plan: WallBTSchema) -> dict[str, bool | dict[str, float]]:
+def simulate_bt_plan(
+    plan: WallBTSchema, 
+    spot_state: dict[str, float] | None = None
+) -> dict[str, bool | dict[str, float]]:
     """ Run a behavior-tree plan against the wall-crossing simulator """
-    spot = INITIAL_SPOT_STATE.copy()
+    spot = spot_state.copy() if spot_state is not None else INITIAL_SPOT_STATE.copy()
     collided = False
     success = False
+    replan_requested = False
     observations = get_observations(spot)
     max_ticks = 64
 
     def _eval_node(node: BTNode) -> bool:
-        nonlocal spot, collided, success, observations
+        nonlocal spot, collided, success, observations, replan_requested
 
         if isinstance(node, BTConditionNode):
             observations = get_observations(spot)
@@ -218,6 +222,10 @@ def simulate_bt_plan(plan: WallBTSchema) -> dict[str, bool | dict[str, float]]:
 
         if isinstance(node, BTActionNode):
             action = node.call
+            if action.tool_name == "call_llm":
+                replan_requested = True
+                return False
+
             if action.tool_name == "finish_task":
                 observations = get_observations(spot)
                 success = observations["at_goal"]
@@ -235,10 +243,14 @@ def simulate_bt_plan(plan: WallBTSchema) -> dict[str, bool | dict[str, float]]:
                     return False
                 if collided:
                     return False
+                if replan_requested:
+                    return False
             return True
 
         if isinstance(node, BTFallbackNode):
             for child in node.children:
+                if replan_requested:
+                    return False
                 if _eval_node(child):
                     return True
                 if collided:
@@ -248,7 +260,7 @@ def simulate_bt_plan(plan: WallBTSchema) -> dict[str, bool | dict[str, float]]:
         return False
 
     for _ in range(max_ticks):
-        if collided or success:
+        if collided or success or replan_requested:
             break
 
         tick_ok = _eval_node(plan.root)
@@ -261,4 +273,5 @@ def simulate_bt_plan(plan: WallBTSchema) -> dict[str, bool | dict[str, float]]:
         "final_spot": final_spot,
         "collided": collided,
         "success": success and not collided,
+        "replan_requested": replan_requested,
     }

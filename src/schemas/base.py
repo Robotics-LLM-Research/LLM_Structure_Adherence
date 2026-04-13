@@ -15,6 +15,10 @@ class FinishTaskArg(BaseModel):
     pass
 
 
+class CallLLMArg(BaseModel):
+    pass
+
+
 # ----- Action Schemas -----
 class MoveSpotAction(BaseModel):
     tool_name: Literal["move_spot"]
@@ -31,6 +35,11 @@ class FinishTaskAction(BaseModel):
     arguments: FinishTaskArg
 
 
+class CallLLMAction(BaseModel):
+    tool_name: Literal["call_llm"]
+    arguments: CallLLMArg
+
+
 # ----- Union Schemas -----
 PathAction = Annotated[
     Union[MoveSpotAction, RotateSpotAction],
@@ -38,7 +47,7 @@ PathAction = Annotated[
 ]
 
 StepAction = Annotated[
-    Union[MoveSpotAction, RotateSpotAction, FinishTaskAction],
+    Union[MoveSpotAction, RotateSpotAction, FinishTaskAction, CallLLMAction],
     Field(discriminator="tool_name"),
 ]
 

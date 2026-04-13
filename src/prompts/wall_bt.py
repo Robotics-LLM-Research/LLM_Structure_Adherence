@@ -12,9 +12,10 @@ WALL_BT_SYSTEM_PROMPT = """
     - Do not invent new observation keys.
     - Do not invent new actions.
     - Return finish_task only when at_goal is true.
+    - call_llm is allowed only when the current tree should stop and request replanning.
     - Output a COMPLETE behavior tree for the entire task, not a single local reaction
-    - Replanning will only happen if the tree fails or the execution cutoff is reacehe
-    - Do not output a tree that only performs one move or one turn unless ihe task is complete
+    - Replanning will only happen if the tree fails or the execution cutoff is reached
+    - Do not output a tree that only performs one move or one turn unless the task is complete
 
     Node types:
     - condition: checks a boolean observation
@@ -42,7 +43,8 @@ WALL_BT_USER_PROMPT = """
     Allowed actions:
     - move_spot(meters)
     - rotate_spot(degrees)
-    - finish_task() 
+    - finish_task()
+    - call_llm()
 """
 
 # ----- Prompt Building -----
@@ -63,12 +65,13 @@ def get_feedback(
 
     collided = bool(plan_results.get("collided", False))
     success = bool(plan_results.get("success", False))
+    replan_requested = bool(plan_results.get("replan_requested", False))
     observations = plan_results.get("observations")
     final_spot = plan_results.get("final_spot")
 
     return (
         "Behavior tree execution finished.\n"
-        f"success={success}, collided={collided}\n"
+        f"success={success}, collided={collided}, replan_requested={replan_requested}\n"
         f"observations={observations}\n"
         f"final_spot={final_spot}\n"
         "If success is false, generate a revised COMPLETE behavior tree.\n"

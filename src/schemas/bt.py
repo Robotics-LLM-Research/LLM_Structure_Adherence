@@ -81,10 +81,8 @@ WALL_BT_SCHEMA_SAMPLE = """
             {
                 "type": "action",
                 "call": {
-                    "tool_name": "move_spot",
-                    "arguments": {
-                        "meters": 1.0
-                    }
+                    "tool_name": "call_llm",
+                    "arguments": {}
                 }
             }
         ]
