@@ -158,7 +158,9 @@ def append_message(
             {
                 "role": "assistant",
                 "content": raw_output,
-            },
+            }
+        )
+        messages.append(
             {
                 "role": "user",
                 "content": user_feedback,
@@ -174,7 +176,9 @@ def append_message(
                 "content": [
                     {"type": "text", "text": raw_output},
                 ],
-            },
+            }
+        )
+        messages.append(
             {
                 "role": "user",
                 "content": [
