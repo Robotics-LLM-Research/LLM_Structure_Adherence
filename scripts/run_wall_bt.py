@@ -18,13 +18,13 @@ from src.schemas.bt import WALL_BT_SCHEMA_CONFIG
 from src.parsers.bt import parse_bt_output
 
 EPS_IN_EXP = 1
-MAX_BT_COUNT = 5
-
+MAX_BT_COUNT = 1
 
 
 def episode(
     model: Any,
     processor: Any,
+    backend: str,
     episode_idx: int,
     total_episodes: int,
 ):
@@ -43,6 +43,7 @@ def episode(
         "wall_bt",
         user_prompt=WALL_BT_USER_PROMPT,
         schema_sample=WALL_BT_SCHEMA_CONFIG["sample"],
+        backend=backend,
     )
 
     while bt_count < MAX_BT_COUNT:
@@ -57,7 +58,7 @@ def episode(
             uses_tools=False,
             messages=prompt,
             schema=WALL_BT_SCHEMA_CONFIG["schema"],
-            backend="transformers",
+            backend=backend,
         )
         inference_times_s.append(time.perf_counter() - inference_start)
 
@@ -78,7 +79,7 @@ def episode(
                 messages=prompt,
                 raw_output=raw_output,
                 user_feedback=feedback,
-                backend="transformers",
+                backend=backend,
             )
             continue
 
@@ -106,7 +107,7 @@ def episode(
                 messages=prompt,
                 raw_output=raw_output,
                 user_feedback=feedback,
-                backend="transformers",
+                backend=backend,
             )
 
     return {
@@ -127,6 +128,7 @@ def experiment(
     ep_out_dir: Path,
     model: Any,
     processor: Any,
+    backend: str,
 ):
     perfect_structure_count = 0
     valid_structure_count_total = 0
@@ -141,6 +143,7 @@ def experiment(
             processor=processor,
             episode_idx=i + 1,
             total_episodes=EPS_IN_EXP,
+            backend=backend,
         )
         all_episode_results.append(episode_result)
 
@@ -150,6 +153,7 @@ def experiment(
         completion_count += 1 if episode_result["task_completion"] else 0
         avg_inference_time_total += float(episode_result["avg_inference_time_s"])
 
+        ep_out_dir.mkdir(parents=True, exist_ok=True)
         out_path = ep_out_dir / f"episode_{i}.json"
         out_path.write_text(json.dumps(episode_result, indent=2))
 
@@ -168,21 +172,26 @@ def experiment(
 
     
 def main():
-    model_id = "Qwen/Qwen3-VL-2B-Instruct"
-    model, processor = init_model(model_id)
-    run_id = utils.format_run_timestamp("wall_bt")
+    # model_id = "Qwen/Qwen3-VL-2B-Instruct"
+    model_id = "Qwen/Qwen2.5-3B-Instruct"
+    backend = "vllm"
+    model, processor = init_model(model_id, backend=backend)
 
+    run_id = utils.format_run_timestamp("wall_bt")
     ep_out_dir = utils.RESULTS_DIR / run_id / model_id
-    ep_out_dir.mkdir(parents=True, exist_ok=True)
 
     try:
-        experiment_result = experiment(ep_out_dir, model, processor)
+        experiment_result = experiment(
+            ep_out_dir=ep_out_dir, 
+            model=model, 
+            processor=processor, 
+            backend=backend
+        )
     finally:
         cleanup_model(model, processor)
 
     experiment_out_path = ep_out_dir / "experiment.json"
     experiment_out_path.write_text(json.dumps(experiment_result, indent=2))
-    print(f"Saved experiment result to: {experiment_out_path}")
     
 
 if __name__ == "__main__":

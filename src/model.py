@@ -37,8 +37,9 @@ def _import_vllm() -> tuple[Any, Any, Any]:
 
 # ----- Model Setup -----
 def init_model(
-        model_id: str, 
-        backend: str = "transformers"
+    model_id: str, 
+    backend: str = "transformers",
+    uses_image: bool = False,
 ) -> tuple[Any, Any]:
     """ Load model and return {model, processor} """
     load_dotenv()
@@ -52,7 +53,11 @@ def init_model(
             "model": model_id,
             "trust_remote_code": True,
             "model_impl": "transformers",
-            "limit_mm_per_prompt": {"image": 1},
+            "limit_mm_per_prompt": {"image": 1 if uses_image else 0},
+            "skip_mm_profiling": True,
+            "gpu_memory_utilization": 0.50,
+            "max_model_len": 1536,
+            "enforce_eager": True,
         }
         if token:
             llm_kwargs["hf_token"] = token
@@ -157,7 +162,12 @@ def ask_model(
         # Run text generation
         outputs = model.generate(
             **inputs,
-            max_new_tokens=256,
+            max_new_tokens=128,
+            do_sample=False,
+            num_beams=1,
+            use_cache=True,
+            eos_token_id=processor.tokenizer.eos_token_id,
+            pad_token_id=processor.tokenizer.eos_token_id,
         )
 
         # Decode new tokens only
