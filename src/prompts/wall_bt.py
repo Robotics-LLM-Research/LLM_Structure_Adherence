@@ -35,9 +35,9 @@ WALL_BT_USER_PROMPT = """
     Navigate Spot around the wall and reach the target.
 
     Runtime observations:
-    - wall_ahead: true if there is a wall within 10 meters directly ahead of Spot
-    - left_clear: true if the path at 45 degrees to the left is clear
-    - right_clear: true if the path at 45 degrees to the right is clear
+    - obstacle_ahead: true if there is an obstacle within 10 meters directly ahead of Spot
+    - obstacle_left: true if there is an obstacle at 45 degrees to the left within 10 meters
+    - obstacle_right: true if there is an obstacle at 45 degrees to the right within 10 meters
     - at_goal: true if Spot is inside the goal bounds
 
     Allowed actions:

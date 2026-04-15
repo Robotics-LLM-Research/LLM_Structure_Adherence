@@ -12,6 +12,10 @@ from src.model import ask_model, init_model, cleanup_model
 
 RUNS_IN_EXP = 10
 IMAGE_PATH = "assets/wall_crossing_env.png"
+WALL_TASK_ENV = {
+    "obstacles": [{"x1": 4.5, "y1": -2.0, "x2": 5.5, "y2": 2.0}],
+    "targets": [{"x1": 6.0, "y1": -3.0, "x2": 10.0, "y2": 3.0}],
+}
 
 
 
@@ -153,7 +157,7 @@ def run(
 
     # Simulate valid plan
     structure = True
-    plan_results = simulate_action_plan(plan)
+    plan_results = simulate_action_plan(plan, task_env=WALL_TASK_ENV)
     completion = bool(plan_results.get("success", False))
 
     return {

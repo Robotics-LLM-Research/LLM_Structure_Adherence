@@ -15,7 +15,7 @@ RESPONSES_PATH = PROJECT_ROOT / "src" / "tasks" / "responses.json"
 
 
 
-def episode(output_tree: str):
+def episode(output_tree: str, task_env: dict):
     """ Run one task episode for the specified model's behavior tree """
     # Parse tree
     plan, error_msg = parse_bt_output(output_tree)
@@ -28,7 +28,7 @@ def episode(output_tree: str):
         }
 
     # Simulate plan
-    plan_results = simulate_bt_plan(plan)
+    plan_results = simulate_bt_plan(plan, task_env=task_env)
 
     return {
         "structure_adherence": True,
@@ -63,7 +63,7 @@ def experiment():
                 )
                 continue
 
-            episode_result = episode(entry["llm_output"])
+            episode_result = episode(entry["llm_output"], task_env=task["world"])
             model_results.append(
                 {
                     "task_id": task_id,

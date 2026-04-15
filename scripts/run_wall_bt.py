@@ -19,6 +19,10 @@ from src.parsers.bt import parse_bt_output
 
 EPS_IN_EXP = 1
 MAX_BT_COUNT = 1
+WALL_TASK_ENV = {
+    "obstacles": [{"x1": 4.5, "y1": -2.0, "x2": 5.5, "y2": 2.0}],
+    "targets": [{"x1": 6.0, "y1": -3.0, "x2": 10.0, "y2": 3.0}],
+}
 
 
 def episode(
@@ -85,7 +89,7 @@ def episode(
 
         # Simulate valid plan
         structure_count += 1
-        plan_results = simulate_bt_plan(plan, spot_state)
+        plan_results = simulate_bt_plan(plan, spot_state=spot_state, task_env=WALL_TASK_ENV)
         completion = bool(plan_results.get("success", False))
         spot_state = plan_results.get("final_spot")
         behavior_trees.append(

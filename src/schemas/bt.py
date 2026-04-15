@@ -6,9 +6,9 @@ from .base import StepAction
 
 # ---------- Observation Keys ----------
 ObservationKey = Literal[
-    "wall_ahead",
-    "left_clear",
-    "right_clear",
+    "obstacle_ahead",
+    "obstacle_left",
+    "obstacle_right",
     "at_goal",
 ]
 
