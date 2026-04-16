@@ -63,7 +63,11 @@ def experiment():
                 )
                 continue
 
-            episode_result = episode(entry["llm_output"], task_env=task["world"])
+            task_env = {
+                **task["world"],
+                "task_type": task.get("task_type", "go_to_target"),
+            }
+            episode_result = episode(entry["llm_output"], task_env=task_env)
             model_results.append(
                 {
                     "task_id": task_id,

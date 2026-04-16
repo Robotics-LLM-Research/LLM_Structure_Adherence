@@ -19,6 +19,12 @@ MAX_STEPS = 10
 RUNS_IN_EXP = 10
 IMAGE_PATH = utils.DEFAULT_ENV_IMAGE_PATH
 
+WALL_TASK_ENV = {
+    "task_type": "go_around_obstacle",
+    "obstacles": [{"x1": 4.5, "y1": -2.0, "x2": 5.5, "y2": 2.0}],
+    "targets": [{"x1": 6.0, "y1": -3.0, "x2": 10.0, "y2": 3.0}],
+}
+
 
 
 # ----- Helpers -----
@@ -114,7 +120,13 @@ def run(
             break
 
         # Simulate next state
-        action_result = simulate_action_step(spot, action)
+        action_result = simulate_action_step(
+            spot,
+            action,
+            obstacles=WALL_TASK_ENV["obstacles"],
+            targets=WALL_TASK_ENV["targets"],
+            task_type=WALL_TASK_ENV["task_type"],
+        )
         spot = action_result["state"]
         collided = bool(action_result["collided"])
         goal_reached = bool(action_result["success"])
