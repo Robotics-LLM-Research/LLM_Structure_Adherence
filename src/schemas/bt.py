@@ -9,6 +9,7 @@ ObservationKey = Literal[
     "obstacle_ahead",
     "obstacle_left",
     "obstacle_right",
+    "target_ahead",
     "at_goal",
 ]
 
