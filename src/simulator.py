@@ -64,10 +64,13 @@ def _point_in_bounds(x: float, y: float, bounds: dict[str, float]) -> bool:
 def _check_collision(
     prev_spot: dict[str, float],
     next_spot: dict[str, float],
-    obstacles: list[dict[str, float]],
+    rects: list[dict[str, float]],
 ) -> bool:
-    """ Detect wall collisions along a move """
-    if not obstacles:
+    """True if the segment prev_spot→next_spot (xy only) samples any point inside any axis-aligned rectangle.
+
+    Used for obstacle collisions along moves and for forward-ray hits against obstacles or targets.
+    """
+    if not rects:
         return False
 
     # Measure movement delta
@@ -82,8 +85,8 @@ def _check_collision(
         x = prev_spot["x"] + t * dx
         y = prev_spot["y"] + t * dy
 
-        for obstacle in obstacles:
-            if _point_in_bounds(x, y, obstacle):
+        for rect in rects:
+            if _point_in_bounds(x, y, rect):
                 return True
 
     return False
@@ -241,7 +244,21 @@ def _ray_hits_wall(
         "y": spot["y"] + distance_m * math.sin(heading_rad),
         "heading": spot["heading"],
     }
-    return _check_collision(spot, probe, obstacles=obstacles)
+    return _check_collision(spot, probe, obstacles)
+
+def _ray_hits_target(
+    spot: dict[str, float],
+    rel_angle_deg: float,
+    distance_m: float,
+    targets: list[dict[str, float]],
+) -> bool:
+    heading_rad = math.radians(-(spot["heading"] + rel_angle_deg))
+    probe = {
+        "x": spot["x"] + distance_m * math.cos(heading_rad),
+        "y": spot["y"] + distance_m * math.sin(heading_rad),
+        "heading": spot["heading"],
+    }
+    return _check_collision(spot, probe, targets)
 
 def _check_obstacle_ahead(
     spot: dict[str, float],
@@ -276,6 +293,17 @@ def _check_obstacle_right(
         obstacles=obstacles,
     )
 
+def _check_target_ahead(
+    spot: dict[str, float],
+    targets: list[dict[str, float]],
+) -> bool:
+    return _ray_hits_target(
+        spot,
+        rel_angle_deg=0.0,
+        distance_m=_WALL_AHEAD_DIST_M,
+        targets=targets,
+    )
+
 def get_observations(
     spot: dict[str, float],
     obstacles: list[dict[str, float]],
@@ -288,6 +316,7 @@ def get_observations(
         "obstacle_ahead": _check_obstacle_ahead(spot, obstacles=obstacles),
         "obstacle_left": _check_obstacle_left(spot, obstacles=obstacles),
         "obstacle_right": _check_obstacle_right(spot, obstacles=obstacles),
+        "target_ahead": _check_target_ahead(spot, targets=targets),
         "at_goal": _check_task_success(spot, targets, task_type, visited),
     }
 
@@ -312,7 +341,7 @@ def _handle_action(
         prev_spot = spot
         spot = _apply_move(spot, action)
 
-        if _check_collision(prev_spot, spot, obstacles=obstacles):
+        if _check_collision(prev_spot, spot, obstacles):
             collided = True
 
     return spot, collided
@@ -379,6 +408,7 @@ def simulate_bt_plan(
     spot_state: dict[str, float] | None = None,
     task_env: dict | None = None,
     max_ticks: int = 64,
+    record_path: bool = False,
 ) -> dict[str, bool | dict[str, float]]:
     """ Run a behavior-tree plan against the wall-crossing simulator """
     obstacles, targets = _resolve_task_bounds(task_env)
@@ -386,6 +416,10 @@ def simulate_bt_plan(
     spot = spot_state.copy() if spot_state is not None else INITIAL_SPOT_STATE.copy()
 
     visited = get_visited(task_type, spot, targets)
+
+    path = []
+    if record_path:
+        path.append({"x": spot["x"], "y": spot["y"], "heading": spot["heading"]})
 
     # Result flags
     collided = False
@@ -430,6 +464,8 @@ def simulate_bt_plan(
 
             spot = step_result["state"]
             collided = bool(step_result["collided"])
+            if record_path:
+                path.append({"x": spot["x"], "y": spot["y"], "heading": spot["heading"]})
             observations = get_observations(
                 spot, obstacles=obstacles, targets=targets, task_type=task_type, visited=visited
             )
@@ -466,10 +502,13 @@ def simulate_bt_plan(
         success = success or observations["at_goal"]
 
     final_spot = {key: round(value, 1) for key, value in spot.items()}
-    return {
+    out = {
         "observations": observations,
         "final_spot": final_spot,
         "collided": collided,
         "success": success and not collided,
         "replan_requested": replan_requested,
     }
+    if record_path:
+        out["path"] = path
+    return out

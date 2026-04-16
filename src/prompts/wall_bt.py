@@ -38,6 +38,7 @@ WALL_BT_USER_PROMPT = """
     - obstacle_ahead: true if there is an obstacle within 10 meters directly ahead of Spot
     - obstacle_left: true if there is an obstacle at 45 degrees to the left within 10 meters
     - obstacle_right: true if there is an obstacle at 45 degrees to the right within 10 meters
+    - target_ahead: true if a forward ray up to 10 meters intersects any target region
     - at_goal: true if Spot is inside the goal bounds
 
     Allowed actions:
