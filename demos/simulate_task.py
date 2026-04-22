@@ -59,7 +59,7 @@ def go_to_target():
 
 def face_target():
     actions = [
-        {"tool_name": "rotate_spot", "args": {"degrees": -6.52}},
+        {"tool_name": "rotate_spot", "args": {"degrees": -91}},
     ]
     return _simulate_task("face_target_v16", actions)
 
@@ -88,13 +88,13 @@ def go_to_multiple_targets():
 
 def go_around_obstacle():
     actions = [
-        {"tool_name": "move_spot", "args": {"meters": 3.5}},
+        {"tool_name": "move_spot", "args": {"meters": 3.0}},
         {"tool_name": "rotate_spot", "args": {"degrees": -90.0}},
-        {"tool_name": "move_spot", "args": {"meters": 2.0}},
+        {"tool_name": "move_spot", "args": {"meters": 3}},
         {"tool_name": "rotate_spot", "args": {"degrees": 90.0}},
-        {"tool_name": "move_spot", "args": {"meters": 2.0}},
+        {"tool_name": "move_spot", "args": {"meters": 2.2}},
         {"tool_name": "rotate_spot", "args": {"degrees": 90.0}},
-        {"tool_name": "move_spot", "args": {"meters": 2.0}},
+        {"tool_name": "move_spot", "args": {"meters": 2.5}},
         {"tool_name": "rotate_spot", "args": {"degrees": -90.0}},
         {"tool_name": "move_spot", "args": {"meters": 2.5}},
     ]
@@ -103,7 +103,7 @@ def go_around_obstacle():
 
 if __name__ == "__main__":
     # go_to_target()
-    # face_target()
+    face_target()
     # move_to_closest_target()
     # go_to_multiple_targets()
     # go_around_obstacle()
