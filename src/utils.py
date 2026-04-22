@@ -5,7 +5,6 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from .prompts.factory import PROMPT_POOLS_BY_MODE
-
 ROOT_DIR = Path(__file__).parent.parent
 NEW_YORK_TZ = ZoneInfo("America/New_York")
 RESULTS_DIR = ROOT_DIR / "results"

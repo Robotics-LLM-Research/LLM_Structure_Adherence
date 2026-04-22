@@ -1,49 +1,70 @@
 import json
 
+from pydantic import TypeAdapter
 from pydantic import ValidationError
 
-from .common import validate_schema
-from ..schemas.multi_dog import MULTI_DOG_STEP_SCHEMA_CONFIG
-from ..schemas.base import MoveSpotAction, RotateSpotAction
+from ..schemas.multi_dog import MultiDogDogAction
+
+DOG_IDS = ("dog1", "dog2", "dog3", "dog4", "dog5")
+_DOG_ACTION_ADAPTER = TypeAdapter(MultiDogDogAction)
+
+MultiDogActionResult = dict[str, object | None]
+MultiDogParseResults = list[MultiDogActionResult]
 
 
-MultiDogParsedActions = dict[str, MoveSpotAction | RotateSpotAction]
 
+def _all_dog_errors(message: str) -> MultiDogParseResults:
+    return [{"dog_id": dog_id, "action": None, "error": message} for dog_id in DOG_IDS]
 
-def parse_multi_dog_step_output(raw_output: str) -> tuple[MultiDogParsedActions | None, str | None]:
-    """Parse one multi-dog step output using the canonical schema."""
+def parse_multi_dog_step_output(
+    raw_output: str,
+) -> MultiDogParseResults:
+    """Parse one multi-dog step output into per-dog action/error records."""
     # Parse model JSON
     try:
         data = json.loads(raw_output)
     except json.JSONDecodeError as error:
-        return None, f"Invalid JSON: {error}"
+        return _all_dog_errors(f"Invalid JSON: {error}")
 
-    # Validate parsed payload
-    schema_model = MULTI_DOG_STEP_SCHEMA_CONFIG["schema"]
-    try:
-        validated = validate_schema(schema_model, data)
-    except ValidationError as error:
-        return None, f"Schema validation failed: {error}"
+    if not isinstance(data, dict):
+        return _all_dog_errors(f"Top-level payload must be an object, got {type(data).__name__}")
 
-    # Normalize dog actions to shared action classes
-    normalized: MultiDogParsedActions = {}
-    for dog_id in ("dog1", "dog2", "dog3", "dog4", "dog5"):
-        dog_action = getattr(validated, dog_id)
+    parsed_results: MultiDogParseResults = []
 
-        if dog_action.tool_name == "move_spot":
-            normalized[dog_id] = MoveSpotAction(
-                tool_name=dog_action.tool_name,
-                arguments=dog_action.args,
+    # Validate each dog payload independently
+    for dog_id in DOG_IDS:
+        dog_payload = data.get(dog_id)
+        if dog_payload is None:
+            parsed_results.append(
+                {
+                    "dog_id": dog_id,
+                    "action": None,
+                    "error": f"Missing required key: {dog_id}",
+                }
             )
             continue
 
-        if dog_action.tool_name == "rotate_spot":
-            normalized[dog_id] = RotateSpotAction(
-                tool_name=dog_action.tool_name,
-                arguments=dog_action.args,
+        try:
+            dog_action = _DOG_ACTION_ADAPTER.validate_python(dog_payload)
+        except ValidationError as error:
+            parsed_results.append(
+                {
+                    "dog_id": dog_id,
+                    "action": None,
+                    "error": f"Schema validation failed: {error}",
+                }
             )
             continue
 
-        return None, f"Unsupported tool_name for {dog_id}: {dog_action.tool_name}"
+        parsed_results.append(
+            {
+                "dog_id": dog_id,
+                "action": {
+                    "tool_name": dog_action.tool_name,
+                    "args": dog_action.args.model_dump(),
+                },
+                "error": None,
+            }
+        )
 
-    return normalized, None
+    return parsed_results

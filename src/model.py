@@ -99,7 +99,6 @@ def cleanup_model(model: Any | None = None, processor: Any | None = None) -> Non
         except RuntimeError:
             pass
 
-
 # ----- Inference -----
 def ask_model(
     model: Any,

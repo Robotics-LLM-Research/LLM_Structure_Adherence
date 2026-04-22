@@ -39,8 +39,6 @@ def wait_for_robot(
             return
 
         time.sleep(poll_interval_s)
-
-
 def wait_for_all_robots(
     dog_ports: dict[str, int],
     poll_interval_s: float = 0.1,
@@ -160,7 +158,6 @@ def execute_multi_dog_commands(
                     "ok": False,
                     "error": str(error),
                 }
-
     return results
 
 
@@ -197,5 +194,4 @@ def execute_action_sequence(
             break
 
         wait_for_all_robots(dog_ports=dog_ports, timeout_s=wait_timeout_s)
-
     return results
