@@ -5,8 +5,9 @@ This repository evaluates how well vision-language and instruction-tuned models 
 ## What This Repo Contains
 
 - `src/`: shared prompts, schema definitions, parser normalization, simulator logic, model loading, tool declarations, and result helpers.
-- `scripts/run_step_sequence.py`: evaluates one action at a time with simulator feedback after each turn.
-- `scripts/run_full_path.py`: evaluates full plans generated in a single response.
+- `scripts/run_wall_steps.py`: evaluates one action at a time with simulator feedback after each turn.
+- `scripts/run_wall_path.py`: evaluates full plans generated in a single response.
+- `scripts/run_wall_bt.py`: evaluates behavior-tree generation and offline execution.
 - `assets/`: static environment assets such as `wall_crossing_env.png`.
 - `results/`: saved run outputs and experiment summaries.
 - `notebooks/`: analysis and visualization notebooks.
@@ -51,13 +52,19 @@ HF_TOKEN=your_huggingface_token
 Run the step-sequence experiment:
 
 ```bash
-python scripts/run_step_sequence.py
+python scripts/run_wall_steps.py
 ```
 
 Run the full-path experiment:
 
 ```bash
-python scripts/run_full_path.py
+python scripts/run_wall_path.py
+```
+
+Run the behavior-tree experiment:
+
+```bash
+python scripts/run_wall_bt.py
 ```
 
 The SLURM entry point in `run.slurm` activates the expected Conda environment, sets `PYTHONPATH=$PWD`, and launches the step-sequence script.

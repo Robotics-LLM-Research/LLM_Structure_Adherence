@@ -66,14 +66,6 @@ def resolve_uses_image_modes(uses_image_config: Any) -> list[bool]:
 
 
 # ----- Formatting -----
-def _expand_llm_output(raw_output: str) -> Any:
-    # Parse JSON when possible
-    try:
-        return json.loads(raw_output)
-    except Exception:
-        return raw_output
-
-
 def format_run_timestamp(prefix: str | None = None, when: datetime | None = None) -> str:
     # Resolve target timestamp
     if when is None:
