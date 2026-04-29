@@ -64,15 +64,15 @@ BT_TASKS_USER_PROMPT = """
 # ----- Prompt Building -----
 def get_user_prompt(task_type: str, world: dict) -> str:
     if task_type == "go_to_target":
-        task_info += "Move Spot to the target."
+        task_info = "Move Spot to the target."
     elif task_type == "face_target":
-        task_info += "Rotate Spot to face the target."
+        task_info = "Rotate Spot to face the target."
     elif task_type == "move_to_closest_target":
-        task_info += "Move Spot to the target that is closest to the current position."
+        task_info = "Move Spot to the target that is closest to the current position."
     elif task_type == "go_to_multiple_targets":
-        task_info += "Move Spot through all targets in a sequence."
+        task_info = "Move Spot through all targets in a sequence."
     elif task_type == "go_around_obstacle":
-        task_info += "Navigate Spot around the obstacle and reach the target."
+        task_info = "Navigate Spot around the obstacle and reach the target."
     else:
         raise ValueError(f"Unknown task type: {task_type}")
 

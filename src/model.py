@@ -150,7 +150,7 @@ def ask_model(
 
         sampling_params = SamplingParams(
             temperature=0.0,
-            max_tokens=2048,
+            max_tokens=4096,
             structured_outputs=StructuredOutputsParams(
                 json=schema_json,
             ),
