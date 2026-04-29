@@ -91,6 +91,23 @@ WALL_BT_SCHEMA_SAMPLE = """
 }
 """
 
+BT_TASKS_SCHEMA_SAMPLE = """
+The output must have this shape:
+{
+  "schema_version": "bt_json_v1",
+  "root": {
+    "type": "sequence" or "fallback",
+    "children": [...]
+  }
+}
+
+Condition node:
+{"type": "condition", "observation": one allowed observation, "expected": true/false}
+
+Action node:
+{"type": "action", "call": {"tool_name": one allowed action, "arguments": {...}}}
+"""
+
 class WallBTSchema(BaseModel):
     schema_version: Literal["bt_json_v1"]
     root: BTControlNode

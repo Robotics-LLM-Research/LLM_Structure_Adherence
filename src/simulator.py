@@ -424,13 +424,14 @@ def simulate_bt_plan(
     # Result flags
     collided = False
     success = False
+    finished = False
     replan_requested = False
     observations = get_observations(
         spot, obstacles=obstacles, targets=targets, task_type=task_type, visited=visited
     )
 
     def _eval_node(node: BTNode) -> bool:
-        nonlocal spot, collided, success, observations, replan_requested
+        nonlocal spot, collided, success, finished, observations, replan_requested
 
         if isinstance(node, BTConditionNode):
             observations = get_observations(
@@ -451,6 +452,7 @@ def simulate_bt_plan(
                     spot, obstacles=obstacles, targets=targets, task_type=task_type, visited=visited
                 )
                 success = observations["at_goal"]
+                finished = success
                 return success
 
             step_result = simulate_action_step(
@@ -477,12 +479,16 @@ def simulate_bt_plan(
                     return False
                 if collided:
                     return False
+                if finished: 
+                    return True
                 if replan_requested:
                     return False
             return True
 
         if isinstance(node, BTFallbackNode):
             for child in node.children:
+                if finished:
+                    return True
                 if replan_requested:
                     return False
                 if _eval_node(child):
@@ -492,7 +498,7 @@ def simulate_bt_plan(
             return False
 
     for _ in range(max_ticks):
-        if collided or success or replan_requested:
+        if collided or success or finished or replan_requested:
             break
 
         tick_ok = _eval_node(plan.root)

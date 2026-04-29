@@ -14,7 +14,7 @@ import src.utils as utils
 from src.prompts.factory import get_initial_message, append_message
 
 from src.prompts.bt_tasks import get_user_prompt, get_feedback
-from src.schemas.bt import WALL_BT_SCHEMA_CONFIG
+from src.schemas.bt import BT_TASKS_SCHEMA_SAMPLE, WALL_BT_SCHEMA_CONFIG
 from src.parsers.bt import parse_bt_output
 
 TASKS_PATH = PROJECT_ROOT / "src" / "tasks" / "tasks_100.json"
@@ -48,6 +48,7 @@ def episode(
     prompt = get_initial_message(
         "bt_tasks",
         user_prompt=get_user_prompt(task_type, task_world),
+        schema_sample=BT_TASKS_SCHEMA_SAMPLE,
         backend=backend,
     )
 
@@ -82,7 +83,7 @@ def episode(
             feedback = get_feedback(error=error_msg)
             prompt = append_message(
                 messages=prompt,
-                raw_output=raw_output,
+                raw_output=None,
                 user_feedback=feedback,
                 backend=backend,
             )
@@ -110,7 +111,7 @@ def episode(
             )
             prompt = append_message(
                 messages=prompt,
-                raw_output=raw_output,
+                raw_output=None,
                 user_feedback=feedback,
                 backend=backend,
             )
@@ -143,10 +144,10 @@ def experiment(
     avg_inference_time_total = 0.0
     all_task_results = []
 
-    tasks = tasks = json.loads(TASKS_PATH.read_text(encoding="utf-8"))
-    task_count = len(tasks)
-
-    test_tasks = tasks[:10]
+    tasks = json.loads(TASKS_PATH.read_text(encoding="utf-8"))
+    test_task_indices = (0, 1, 20, 21, 40, 41, 60, 61, 80, 81)
+    test_tasks = [tasks[i] for i in test_task_indices]
+    task_count = len(test_tasks)
 
     for task in test_tasks:
         task_result = episode(

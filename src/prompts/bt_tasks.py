@@ -1,42 +1,48 @@
+import json
+
+
 BT_TASKS_SYSTEM_PROMPT = """
-    You are a robot behavior-tree planning model.
-    Your job is to generate one complete behavior tree as valid JSON. The JSON schema is enforced externally, so follow the required structure exactly.
+    You generate one robot behavior tree as valid JSON.
+    The output schema is enforced externally. Follow it exactly.
 
-    Rules:
-    - Output only valid JSON matching the required schema.
-    - Do not include markdown fences.
-    - Do not explain your reasoning.
+    Output rules:
+    - Output only JSON.
+    - Do not use markdown fences.
+    - Do not explain.
     - Do not include comments.
-    - Do not invent node types, observation keys, action names, or argument names.
-    - Use only the observations and actions described by the user message.
-    - The runtime evaluates observations during execution. Do not assume condition values are fixed.
-    - The behavior tree is ticked repeatedly until the task succeeds, the robot collides, call_llm is executed, or the tick limit is reached.
-    - A condition succeeds only when the current observation equals its expected value.
-    - A sequence runs children in order and fails when any child fails.
-    - A fallback tries children in order and succeeds when any child succeeds.
-    - Movement and rotation actions succeed if they execute without collision.
-    - finish_task succeeds only when at_goal is currently true.
-    - call_llm stops the current tree immediately and requests a new behavior tree from the model.
+    - Do not invent fields, node types, observation names, action names, or argument names.
+    - Every condition node must include: type, observation, expected.
+    - Every action node must include: type, call, tool_name, arguments.
 
-    Replanning rules:
-    - call_llm is optional.
-    - Use call_llm only when the current tree should stop early and request replanning.
-    - Do not make call_llm the only useful behavior in the tree.
+    Behavior-tree semantics:
+    - The tree is ticked repeatedly until success, collision, call_llm, or tick limit.
+    - condition succeeds only when the current observation equals expected.
+    - sequence runs children in order and fails when any child fails.
+    - fallback tries children in order and succeeds when any child succeeds.
+    - action nodes execute robot commands.
+    - finish_task succeeds only when at_goal is true.
+    - When finish_task succeeds, the task ends immediately.
+    - call_llm stops the current tree immediately and requests a new tree.
 
     Planning rules:
-    - Generate a complete behavior tree for the whole task, not just a single local reaction.
-    - Always include a success path that checks at_goal and then calls finish_task.
-    - Prefer simple, direct plans when the world has no obstacles.
-    - Avoid moving through obstacle rectangles.
-    - Use the world coordinates to choose movement distances and turns.
-    - If a later feedback message gives a final_spot, plan from that latest final_spot instead of the original initial state.
+    - Keep the tree short: at most 12 total nodes.
+    - Use at most 3 move_spot actions.
+    - Use at most 3 rotate_spot actions.
+    - Prefer shallow trees over deeply nested trees.
+    - Do not repeat the same action-condition pattern.
+    - Do not create long lists of repeated moves or repeated rotations.
+    - Do not start a root sequence with target_ahead unless the target is clearly ahead from the current pose.
+    - If the target may not be ahead, rotate or move first, or use a fallback.
+    - Always include a success path: condition at_goal true, then finish_task.
+    - Use call_llm only when the current tree should stop and ask for a new tree.
+    - If feedback includes final_spot, plan from final_spot instead of the original start.
 
-    Node types:
-    - condition: checks a boolean observation
-    - action: executes a robot command
-    - sequence: runs children in order
-    - fallback: tries children until one succeeds
-
+    Task rules:
+    - For face_target, rotate only. Do not use move_spot.
+    - For go_to_target, move into the target region and then finish.
+    - For move_to_closest_target, choose the closest target by center point.
+    - For go_to_multiple_targets, visit all targets before finishing.
+    - For go_around_obstacle, avoid obstacle rectangles before moving to the target.
 """
 
 
@@ -57,27 +63,32 @@ BT_TASKS_USER_PROMPT = """
 
 # ----- Prompt Building -----
 def get_user_prompt(task_type: str, world: dict) -> str:
-    prompt = "Task: "
-
     if task_type == "go_to_target":
-        prompt += "Move Spot to the target."
+        task_info += "Move Spot to the target."
     elif task_type == "face_target":
-        prompt += "Rotate Spot to face the target."
+        task_info += "Rotate Spot to face the target."
     elif task_type == "move_to_closest_target":
-        prompt += "Move Spot to the target that is closest to the current position."
+        task_info += "Move Spot to the target that is closest to the current position."
     elif task_type == "go_to_multiple_targets":
-        prompt += "Move Spot through all targets in a sequence."
+        task_info += "Move Spot through all targets in a sequence."
     elif task_type == "go_around_obstacle":
-        prompt += "Navigate Spot around the obstacle and reach the target."
+        task_info += "Navigate Spot around the obstacle and reach the target."
     else:
         raise ValueError(f"Unknown task type: {task_type}")
 
-    prompt += (
-        f"\n\nWorld: {world}\n"
-        "Spot starts at x=0, y=0, heading=0"
+    world_json = json.dumps(world, indent=2, sort_keys=True)
+
+    return (
+        f"Task type: {task_type}\n"
+        f"Task: {task_info}\n\n"
+        "World JSON:\n"
+        f"{world_json}\n\n"
+        "Initial Spot state:\n"
+        "- x=0.0\n"
+        "- y=0.0\n"
+        "- heading=0.0\n\n"
+        f"{BT_TASKS_USER_PROMPT}"
     )
-    
-    return f"{prompt}\n\n{BT_TASKS_USER_PROMPT}"
 
 def get_feedback(
     error: str | None = None,
@@ -89,6 +100,7 @@ def get_feedback(
             "Your previous behavior tree could not be parsed/validated.\n"
             f"Error: {error}\n"
             "Generate a corrected COMPLETE behavior tree in valid JSON.\n"
+            "Do not repeat the previous structure.\n"
         )
 
     if plan_results is None:

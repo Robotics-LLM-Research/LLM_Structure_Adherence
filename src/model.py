@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 import torch
 from pydantic import TypeAdapter
-from transformers import AutoProcessor, AutoModelForImageTextToText
+from transformers import AutoTokenizer, AutoProcessor, AutoModelForImageTextToText
 
 from .tools import get_tool_declarations
 
@@ -49,6 +49,18 @@ def init_model(
     if backend == "vllm":
         LLM, _, _ = _import_vllm()
 
+        tokenizer_kwargs = {
+            "cache_dir": str(HF_CACHE_DIR),
+            "trust_remote_code": True,
+        }
+        if token:
+            tokenizer_kwargs["token"] = token
+
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_id,
+            **tokenizer_kwargs,
+        )
+
         llm_kwargs = {
             "model": model_id,
             "trust_remote_code": True,
@@ -56,14 +68,14 @@ def init_model(
             "limit_mm_per_prompt": {"image": 1 if uses_image else 0},
             "skip_mm_profiling": True,
             "gpu_memory_utilization": 0.50,
-            "max_model_len": 1536,
+            "max_model_len": 4096,
             "enforce_eager": True,
         }
         if token:
             llm_kwargs["hf_token"] = token
 
         llm = LLM(**llm_kwargs)
-        return llm, None
+        return llm, tokenizer
 
     # --- Transformers ---
     if backend == "transformers":
@@ -113,26 +125,39 @@ def ask_model(
     if backend == "vllm":
         _, SamplingParams, StructuredOutputsParams = _import_vllm()
 
-        if uses_tools:
-            raise ValueError(
-                "For the vLLM structured-output baseline, keep uses_tools=False. "
-                "Use a separate branch if you want to test vLLM tool calling."
-            )
+        if processor is None:
+            raise ValueError("tokenizer is required when backend='vllm'.")
 
         if schema is None:
             raise ValueError("schema is required when backend='vllm'.")
-
+        
+        tokenizer = processor
         schema_json = get_schema_json(schema)
+
+        if uses_tools:
+            prompt_text = tokenizer.apply_chat_template(
+                messages,
+                tools=get_tool_declarations(),
+                tokenize=False,
+                add_generation_prompt=True,
+            )
+        else:
+            prompt_text = tokenizer.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=True,
+            )
+
         sampling_params = SamplingParams(
             temperature=0.0,
-            max_tokens=256,
+            max_tokens=2048,
             structured_outputs=StructuredOutputsParams(
                 json=schema_json,
             ),
         )
 
-        outputs = model.chat(
-            messages,
+        outputs = model.generate(
+            prompts=[prompt_text],
             sampling_params=sampling_params,
         )
 

@@ -150,19 +150,20 @@ def get_initial_message(
 
 def append_message(
     messages: list[dict[str, Any]],
-    raw_output: str,
+    raw_output: str | None,
     user_feedback: str,
     backend: str = "transformers",
 ) -> list[dict[str, Any]]:
     """ Append raw LLM output and user feedback """
     # --- VLLM ---
     if backend == "vllm":
-        messages.append(
-            {
-                "role": "assistant",
-                "content": raw_output,
-            }
-        )
+        if raw_output is not None:
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": raw_output,
+                }
+            )
         messages.append(
             {
                 "role": "user",
@@ -173,14 +174,15 @@ def append_message(
 
     # --- Transformers ---
     if backend == "transformers":
-        messages.append(
-            {
-                "role": "assistant",
-                "content": [
-                    {"type": "text", "text": raw_output},
-                ],
-            }
-        )
+        if raw_output is not None:
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": [
+                        {"type": "text", "text": raw_output},
+                    ],
+                }
+            )
         messages.append(
             {
                 "role": "user",
