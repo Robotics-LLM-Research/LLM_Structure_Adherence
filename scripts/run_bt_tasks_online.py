@@ -148,13 +148,12 @@ def experiment(
     task_type_completions: dict[str, int] = {}
 
     tasks = json.loads(TASKS_PATH.read_text(encoding="utf-8"))
-    test_task_indices = (0, 1, 20, 21, 40, 41, 60, 61, 80, 81)
-    test_tasks = [tasks[i] for i in test_task_indices]
-    total_tasks = len(test_tasks)
+    total_tasks = len(tasks)
+    
     tasks_out_dir = ep_out_dir / "tasks"
     tasks_out_dir.mkdir(parents=True, exist_ok=True)
 
-    for task in test_tasks:
+    for task in tasks:
         task_type = task["task_type"]
         task_result = episode(
             model=model,
