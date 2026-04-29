@@ -9,12 +9,14 @@ from .wall_path import WALL_PATH_SYSTEM_PROMPT, WALL_PATH_PROMPTS
 from .wall_steps import WALL_STEPS_SYSTEM_PROMPT, WALL_STEPS_PROMPTS
 from .multi_dog_step import MULTI_DOG_STEP_SYSTEM_PROMPT, MULTI_DOG_STEP_PROMPTS
 from .wall_bt import WALL_BT_SYSTEM_PROMPT
+from .bt_tasks import BT_TASKS_SYSTEM_PROMPT
 
 SYSTEM_PROMPTS = {
     "wall_path": WALL_PATH_SYSTEM_PROMPT,
     "wall_steps": WALL_STEPS_SYSTEM_PROMPT,
     "multi_dog_steps": MULTI_DOG_STEP_SYSTEM_PROMPT,
     "wall_bt": WALL_BT_SYSTEM_PROMPT,
+    "bt_tasks": BT_TASKS_SYSTEM_PROMPT,
 }
 
 PROMPT_POOLS_BY_MODE = {
@@ -27,7 +29,7 @@ PROMPT_POOLS_BY_MODE = {
 
 def _build_system_prompt(
     task_name: str,
-    schema_sample: str,
+    schema_sample: str | None = None,
     uses_tools: bool = False,
     uses_image: bool = False,
 ) -> str:
@@ -43,18 +45,19 @@ def _build_system_prompt(
         prompt += f"\n\nAvailable tools:\n {tools_json}"
 
     # Append schema example
-    prompt += (
-        "\n\n"
-        f"Required output format:\n"
-        f"{schema_sample}"
-    )
+    if schema_sample is not None:
+        prompt += (
+            "\n\n"
+            f"Required output format:\n"
+            f"{schema_sample}"
+        )
 
     return prompt
 
 def get_initial_message(
     task_name: str,
     user_prompt: str,
-    schema_sample: str,
+    schema_sample: str | None = None,
     image_path: str | Path | None = None,
     uses_tools: bool = False,
     backend: str = "transformers",
