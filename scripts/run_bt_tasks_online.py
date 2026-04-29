@@ -135,48 +135,81 @@ def experiment(
     model: Any,
     processor: Any,
     backend: str,
+    model_id: str,
 ):
     """ Go through all tasks once per episode """
-    perfect_structure_count = 0
-    valid_structure_count_total = 0
-    bt_count_total = 0
-    completion_count = 0
+    total_perfect_adherence = 0
+    total_structure_adherence = 0
+    total_trees = 0
+    total_task_completion = 0
     avg_inference_time_total = 0.0
-    all_task_results = []
+    all_tasks = []
+    task_type_totals: dict[str, int] = {}
+    task_type_completions: dict[str, int] = {}
 
     tasks = json.loads(TASKS_PATH.read_text(encoding="utf-8"))
     test_task_indices = (0, 1, 20, 21, 40, 41, 60, 61, 80, 81)
     test_tasks = [tasks[i] for i in test_task_indices]
-    task_count = len(test_tasks)
+    total_tasks = len(test_tasks)
+    tasks_out_dir = ep_out_dir / "tasks"
+    tasks_out_dir.mkdir(parents=True, exist_ok=True)
 
     for task in test_tasks:
+        task_type = task["task_type"]
         task_result = episode(
             model=model,
             processor=processor,
             backend=backend,
             task=task,
         )
-        all_task_results.append(task_result)
+        all_tasks.append(
+            {
+                "task_id": task["task_id"],
+                "bt_count": int(task_result["bt_count"]),
+                "perfect_structure": bool(task_result["perfect_structure"]),
+                "valid_structure_count": int(task_result["valid_structure_count"]),
+                "task_completion": bool(task_result["task_completion"]),
+                "avg_inference_time_s": float(task_result["avg_inference_time_s"]),
+            }
+        )
 
-        perfect_structure_count += 1 if task_result["perfect_structure"] else 0
-        valid_structure_count_total += int(task_result["valid_structure_count"])
-        bt_count_total += int(task_result["bt_count"])
-        completion_count += 1 if task_result["task_completion"] else 0
+        total_perfect_adherence += 1 if task_result["perfect_structure"] else 0
+        total_structure_adherence += int(task_result["valid_structure_count"])
+        total_trees += int(task_result["bt_count"])
+        total_task_completion += 1 if task_result["task_completion"] else 0
         avg_inference_time_total += float(task_result["avg_inference_time_s"])
+        task_type_totals[task_type] = task_type_totals.get(task_type, 0) + 1
+        task_type_completions[task_type] = task_type_completions.get(task_type, 0) + (
+            1 if task_result["task_completion"] else 0
+        )
 
-        ep_out_dir.mkdir(parents=True, exist_ok=True)
-        out_path = ep_out_dir / f"task_{task['task_id']}.json"
+        out_path = tasks_out_dir / f"task_{task['task_id']}.json"
         out_path.write_text(json.dumps(task_result, indent=2))
 
+    completion_pct_by_task_type = {}
+    for task_type, task_total in task_type_totals.items():
+        completed = task_type_completions.get(task_type, 0)
+        task_pct = (completed / task_total) * 100 if task_total else 0.0
+        completion_pct_by_task_type[f"{task_type}_pct"] = round(task_pct, 2)
+
     return {
+        "model_id": model_id,
         "max_bt_per_episode": MAX_BT_COUNT,
-        "perfect_structure_count": perfect_structure_count,
-        "completion_count": completion_count,
-        "perfect_structure_adherence_pct": (perfect_structure_count / task_count) * 100,
-        "overall_structure_adherence_pct": (valid_structure_count_total / bt_count_total) * 100,
-        "task_accuracy_pct": (completion_count / task_count) * 100,
-        "avg_inference_time_s": avg_inference_time_total / task_count,
-        "task_results": all_task_results,
+        "total_tasks": total_tasks,
+        "total_structure_adherence": total_structure_adherence,
+        "total_perfect_adherence": total_perfect_adherence,
+        "total_task_completion": total_task_completion,
+        "structure_adherence_pct": (
+            (total_structure_adherence / total_trees) * 100 if total_trees else 0.0
+        ),
+        "task_completion_pct": (
+            (total_task_completion / total_tasks) * 100 if total_tasks else 0.0
+        ),
+        "completion_pct_by_task_type": completion_pct_by_task_type,
+        "avg_inference_time_s": (
+            avg_inference_time_total / total_tasks if total_tasks else 0.0
+        ),
+        "all_tasks": all_tasks,
     }
     
 
@@ -194,12 +227,13 @@ def main():
             ep_out_dir=ep_out_dir, 
             model=model, 
             processor=processor, 
-            backend=backend
+            backend=backend,
+            model_id=model_id,
         )
     finally:
         cleanup_model(model, processor)
 
-    experiment_out_path = ep_out_dir / "experiment.json"
+    experiment_out_path = ep_out_dir / "main_results.json"
     experiment_out_path.write_text(json.dumps(experiment_result, indent=2))
     
 
