@@ -64,11 +64,10 @@ def init_model(
         llm_kwargs = {
             "model": model_id,
             "trust_remote_code": True,
-            "model_impl": "transformers",
             "limit_mm_per_prompt": {"image": 1 if uses_image else 0},
             "skip_mm_profiling": True,
-            "gpu_memory_utilization": 0.50,
-            "max_model_len": 4096,
+            "gpu_memory_utilization": 0.95,
+            "max_model_len": 16384,
             "enforce_eager": True,
         }
         if token:
@@ -89,7 +88,7 @@ def init_model(
         model = AutoModelForImageTextToText.from_pretrained(
             model_id,
             **load_kwargs,
-            dtype=torch.bfloat16 if use_cuda else torch.float32,
+            dtype="bfloat16",
             device_map="auto" if use_cuda else "cpu",
         )
         return model, processor
@@ -150,7 +149,7 @@ def ask_model(
 
         sampling_params = SamplingParams(
             temperature=0.0,
-            max_tokens=4096,
+            max_tokens=16384,
             structured_outputs=StructuredOutputsParams(
                 json=schema_json,
             ),
