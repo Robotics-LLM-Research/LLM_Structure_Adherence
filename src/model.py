@@ -22,18 +22,34 @@ def get_schema_json(schema_type: Any) -> dict[str, Any]:
 
     return TypeAdapter(schema_type).json_schema()
 
+# ----- VLLM -----
+# Older version of vLLM
+# def _import_vllm() -> tuple[Any, Any, Any]:
+#     """Import vLLM symbols lazily so transformers-only runs still work."""
+#     try:
+#         from vllm import LLM, SamplingParams
+#         from vllm.sampling_params import GuidedDecodingParams
+#     except ImportError as error:
+#         raise ImportError(
+#             "backend='vllm' requires vLLM with GuidedDecodingParams. "
+#             "This Newton environment is expected to use vllm==0.6.6."
+#         ) from error
+
+#     return LLM, SamplingParams, GuidedDecodingParams
+
+# Newer version of vLLM
 def _import_vllm() -> tuple[Any, Any, Any]:
     """Import vLLM symbols lazily so transformers-only runs still work."""
     try:
         from vllm import LLM, SamplingParams
-        from vllm.sampling_params import GuidedDecodingParams
+        from vllm.sampling_params import StructuredOutputsParams
     except ImportError as error:
         raise ImportError(
-            "backend='vllm' requires vLLM with GuidedDecodingParams. "
-            "This Newton environment is expected to use vllm==0.6.6."
+            "backend='vllm' requires vLLM with StructuredOutputsParams. "
+            "This Colab environment is expected to use a newer vLLM version."
         ) from error
 
-    return LLM, SamplingParams, GuidedDecodingParams
+    return LLM, SamplingParams, StructuredOutputsParams
 
 # ----- Model Setup -----
 def init_model(
@@ -64,14 +80,11 @@ def init_model(
         llm_kwargs = {
             "model": model_id,
             "trust_remote_code": True,
-            "gpu_memory_utilization": 0.95,
+            "gpu_memory_utilization": 0.80,
             "max_model_len": 16384,
-            "enforce_eager": True,
         }
         if uses_image:
             llm_kwargs["limit_mm_per_prompt"] = {"image": 1}
-        if token:
-            llm_kwargs["hf_token"] = token
 
         llm = LLM(**llm_kwargs)
         return llm, tokenizer
@@ -122,7 +135,8 @@ def ask_model(
     """ Generate one model response """
     # --- VLLM ---
     if backend == "vllm":
-        _, SamplingParams, GuidedDecodingParams = _import_vllm()
+        # _, SamplingParams, GuidedDecodingParams = _import_vllm() # Old
+        _, SamplingParams, StructuredOutputsParams = _import_vllm() # New
 
         if processor is None:
             raise ValueError("tokenizer is required when backend='vllm'.")
@@ -147,7 +161,21 @@ def ask_model(
                 add_generation_prompt=True,
             )
 
-        guided_decoding_params = GuidedDecodingParams(
+        # --- Old ---
+        # guided_decoding_params = GuidedDecodingParams(
+        #     json=schema_json,
+        #     disable_any_whitespace=True,
+        #     disable_fallback=True,
+        # )
+
+        # sampling_params = SamplingParams(
+        #     temperature=0.0,
+        #     max_tokens=8192,
+        #     guided_decoding=guided_decoding_params,
+        # )
+
+        # --- New ---
+        structured_outputs_params = StructuredOutputsParams(
             json=schema_json,
             disable_any_whitespace=True,
             disable_fallback=True,
@@ -156,7 +184,7 @@ def ask_model(
         sampling_params = SamplingParams(
             temperature=0.0,
             max_tokens=8192,
-            guided_decoding=guided_decoding_params,
+            structured_outputs=structured_outputs_params,
         )
 
         outputs = model.generate(

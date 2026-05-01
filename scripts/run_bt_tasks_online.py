@@ -18,7 +18,7 @@ from src.schemas.bt import BT_TASKS_SCHEMA_SAMPLE, WALL_BT_SCHEMA_CONFIG
 from src.parsers.bt import parse_bt_output
 
 TASKS_PATH = PROJECT_ROOT / "src" / "tasks" / "tasks_100.json"
-MAX_BT_COUNT = 5
+MAX_BT_COUNT = 3
 
 
 
@@ -131,7 +131,7 @@ def episode(
     }
 
 def experiment(
-    ep_out_dir: Path,
+    out_dir: Path,
     model: Any,
     processor: Any,
     backend: str,
@@ -154,7 +154,7 @@ def experiment(
 
     total_tasks = len(tasks_idx)
     
-    tasks_out_dir = ep_out_dir / "tasks"
+    tasks_out_dir = out_dir / "tasks"
     tasks_out_dir.mkdir(parents=True, exist_ok=True)
 
     for task_idx in tasks_idx:
@@ -221,18 +221,16 @@ def experiment(
 def main(
     model_id: str,
     tasks_idx: list[int] | None = None,
-    run_id: str | None = None,
+    exp_id: str | None = None,
 ):
     backend = "vllm"
     model, processor = init_model(model_id, backend=backend)
 
-    if run_id is None:
-        run_id = utils.format_run_timestamp("wall_bt")
-    ep_out_dir = utils.RESULTS_DIR / run_id / model_id
+    out_dir = utils.get_exp_model_dir(exp_id, model_id)
 
     try:
         experiment_result = experiment(
-            ep_out_dir=ep_out_dir, 
+            out_dir=out_dir, 
             model=model, 
             processor=processor, 
             backend=backend,
@@ -242,10 +240,5 @@ def main(
     finally:
         cleanup_model(model, processor)
 
-    experiment_out_path = ep_out_dir / "main_results.json"
+    experiment_out_path = out_dir / "main_results.json"
     experiment_out_path.write_text(json.dumps(experiment_result, indent=2))
-    
-
-if __name__ == "__main__":
-    model_id = "Qwen/Qwen2.5-3B-Instruct"
-    main(model_id)

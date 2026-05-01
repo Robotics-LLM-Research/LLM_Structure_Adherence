@@ -81,13 +81,31 @@ def format_run_timestamp(prefix: str | None = None, when: datetime | None = None
 
 
 # ----- Result Saving -----
+def get_root_dir() -> Path:
+    return ROOT_DIR
+
+def get_results_dir(run_id: str | None = None) -> Path:
+    """ Return the results directory (optionally for one run id) """
+    if run_id is None:
+        return RESULTS_DIR
+    return RESULTS_DIR / run_id
+
+def get_exp_model_dir(exp_id: str, model_id: str) -> Path:
+    """Return results/<exp_id>/<normalized-model-id>.
+
+    If model_id is namespaced (e.g. "Qwen/Qwen2.5-3B-Instruct"), keep only the
+    segment after the first slash so we avoid nested directories.
+    """
+    cleaned = model_id.replace("\\", "/").strip()
+    model_dir_name = cleaned.split("/", 1)[1] if "/" in cleaned else cleaned
+    return get_results_dir(exp_id) / model_dir_name
+
+
+
 def save_results(exp_config: dict[str, Any], results: dict[str, Any]) -> Path:
     # Build output directories
     run_id = exp_config["run_id"]
-    run_dir = RESULTS_DIR / run_id
-    run_dir.mkdir(parents=True, exist_ok=True)
-
-    model_dir = run_dir / exp_config["model_id"]
+    model_dir = get_exp_model_dir(run_id, exp_config["model_id"])
     model_dir.mkdir(parents=True, exist_ok=True)
 
     # Build output filename
@@ -110,10 +128,7 @@ def save_run_config(
 ) -> Path:
     """ Save per-config run details """
     # Build output directories
-    root = RESULTS_DIR / run_id
-    root.mkdir(parents=True, exist_ok=True)
-
-    model_dir = root / model_id
+    model_dir = get_exp_model_dir(run_id, model_id)
     image_folder = "with_image" if uses_image else "without_image"
     out_dir = model_dir / image_folder
     out_dir.mkdir(parents=True, exist_ok=True)
