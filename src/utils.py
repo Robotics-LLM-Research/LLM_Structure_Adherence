@@ -91,16 +91,17 @@ def get_results_dir(run_id: str | None = None) -> Path:
         return RESULTS_DIR
     return RESULTS_DIR / run_id
 
-def save_constants_meta(out_dir: str | Path) -> Path:
+def save_exp_meta(out_dir: str | Path, payload: dict[str, Any] | None = None) -> Path:
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    payload: dict[str, Any] = {}
+    constants_part: dict[str, Any] = {}
     for name in dir(project_constants):
         if not name.isupper() or name.startswith("_"):
             continue
-        payload[name] = getattr(project_constants, name)
-    out_path = out_dir / "constants_meta.json"
-    out_path.write_text(json.dumps(payload, indent=2, sort_keys=True))
+        constants_part[name] = getattr(project_constants, name)
+    merged = {**constants_part, **(payload or {})}
+    out_path = out_dir / "exp_meta.json"
+    out_path.write_text(json.dumps(merged, indent=2, sort_keys=True))
     return out_path
 
 

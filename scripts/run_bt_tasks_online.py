@@ -19,6 +19,7 @@ from src.parsers.bt import parse_bt_output
 
 TASKS_PATH = PROJECT_ROOT / "src" / "tasks" / "tasks_100.json"
 MAX_BT_COUNT = 3
+USE_TOOLS = True
 
 
 
@@ -49,6 +50,7 @@ def episode(
         "bt_tasks",
         user_prompt=get_user_prompt(task_type, task_world),
         schema_sample=BT_TASKS_SCHEMA_SAMPLE,
+        uses_tools=USE_TOOLS,
         backend=backend,
     )
 
@@ -61,7 +63,7 @@ def episode(
         raw_output = ask_model(
             model=model,
             processor=processor,
-            uses_tools=False,
+            uses_tools=USE_TOOLS,
             messages=prompt,
             schema=WALL_BT_SCHEMA_CONFIG["schema"],
             backend=backend,
@@ -227,7 +229,11 @@ def main(
     model, processor = init_model(model_id, backend=backend)
 
     if exp_id is not None:
-        utils.save_constants_meta(utils.get_results_dir(exp_id))
+        utils.save_exp_meta(
+            utils.get_results_dir(exp_id),
+            {"MAX_BT_COUNT": MAX_BT_COUNT,
+             "USE_TOOLS": USE_TOOLS},
+        )
 
     out_dir = utils.get_exp_model_dir(exp_id, model_id)
 

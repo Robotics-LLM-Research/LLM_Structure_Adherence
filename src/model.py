@@ -87,6 +87,8 @@ def init_model(
         }
         if uses_image:
             llm_kwargs["limit_mm_per_prompt"] = {"image": 1}
+        if token:
+            llm_kwargs["hf_token"] = token
 
         llm = LLM(**llm_kwargs)
         return llm, tokenizer
@@ -135,6 +137,14 @@ def ask_model(
     backend: str = "transformers",
 ) -> str:
     """ Generate one model response """
+    chat_template_kwargs = {
+        "add_generation_prompt": True,
+    }
+
+    model_name = getattr(processor, "name_or_path", "")
+    if "Qwen3" in model_name:
+        chat_template_kwargs["enable_thinking"] = False
+
     # --- VLLM ---
     if backend == "vllm":
         # _, SamplingParams, GuidedDecodingParams = _import_vllm() # Old
@@ -154,13 +164,13 @@ def ask_model(
                 messages,
                 tools=get_tool_declarations(),
                 tokenize=False,
-                add_generation_prompt=True,
+                **chat_template_kwargs,
             )
         else:
             prompt_text = tokenizer.apply_chat_template(
                 messages,
                 tokenize=False,
-                add_generation_prompt=True,
+                **chat_template_kwargs,
             )
 
         # --- Old ---
@@ -203,17 +213,17 @@ def ask_model(
                 messages,
                 tools=get_tool_declarations(),
                 tokenize=True,
-                add_generation_prompt=True,
                 return_dict=True,
                 return_tensors="pt",
+                **chat_template_kwargs,
             ).to(model.device)
         else:
             inputs = processor.apply_chat_template(
                 messages,
                 tokenize=True,
-                add_generation_prompt=True,
                 return_dict=True,
                 return_tensors="pt",
+                **chat_template_kwargs,
             ).to(model.device)
 
         # Run text generation
