@@ -136,6 +136,7 @@ def experiment(
     processor: Any,
     backend: str,
     model_id: str,
+    tasks_idx: list[int] | None,
 ):
     """ Go through all tasks once per episode """
     total_perfect_adherence = 0
@@ -148,12 +149,16 @@ def experiment(
     task_type_completions: dict[str, int] = {}
 
     tasks = json.loads(TASKS_PATH.read_text(encoding="utf-8"))
-    total_tasks = len(tasks)
+    if tasks_idx is None:
+        tasks_idx = list(range(len(tasks)))
+
+    total_tasks = len(tasks_idx)
     
     tasks_out_dir = ep_out_dir / "tasks"
     tasks_out_dir.mkdir(parents=True, exist_ok=True)
 
-    for task in tasks:
+    for task_idx in tasks_idx:
+        task = tasks[task_idx]
         task_type = task["task_type"]
         task_result = episode(
             model=model,
@@ -213,12 +218,16 @@ def experiment(
     
 
     
-def main():
-    model_id = "Qwen/Qwen2.5-3B-Instruct"
+def main(
+    model_id: str,
+    tasks_idx: list[int] | None = None,
+    run_id: str | None = None,
+):
     backend = "vllm"
     model, processor = init_model(model_id, backend=backend)
 
-    run_id = utils.format_run_timestamp("wall_bt")
+    if run_id is None:
+        run_id = utils.format_run_timestamp("wall_bt")
     ep_out_dir = utils.RESULTS_DIR / run_id / model_id
 
     try:
@@ -228,6 +237,7 @@ def main():
             processor=processor, 
             backend=backend,
             model_id=model_id,
+            tasks_idx=tasks_idx,
         )
     finally:
         cleanup_model(model, processor)
@@ -237,4 +247,5 @@ def main():
     
 
 if __name__ == "__main__":
-    main()
+    model_id = "Qwen/Qwen2.5-3B-Instruct"
+    main(model_id)

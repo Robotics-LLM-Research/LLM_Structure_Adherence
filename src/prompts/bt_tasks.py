@@ -26,8 +26,9 @@ BT_TASKS_SYSTEM_PROMPT = """
 
     Planning rules:
     - Keep the tree short: at most 12 total nodes.
-    - Use at most 3 move_spot actions.
-    - Use at most 3 rotate_spot actions.
+    - Do not use the full token budget.
+    - Stop immediately after the final closing brace of the JSON object.
+    - Generate the smallest valid behavior tree that can solve the task.
     - Prefer shallow trees over deeply nested trees.
     - Do not repeat the same action-condition pattern.
     - Do not create long lists of repeated moves or repeated rotations.
@@ -36,13 +37,6 @@ BT_TASKS_SYSTEM_PROMPT = """
     - Always include a success path: condition at_goal true, then finish_task.
     - Use call_llm only when the current tree should stop and ask for a new tree.
     - If feedback includes final_spot, plan from final_spot instead of the original start.
-
-    Task rules:
-    - For face_target, rotate only. Do not use move_spot.
-    - For go_to_target, move into the target region and then finish.
-    - For move_to_closest_target, choose the closest target by center point.
-    - For go_to_multiple_targets, visit all targets before finishing.
-    - For go_around_obstacle, avoid obstacle rectangles before moving to the target.
 """
 
 

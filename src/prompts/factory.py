@@ -156,14 +156,19 @@ def append_message(
 ) -> list[dict[str, Any]]:
     """ Append raw LLM output and user feedback """
     # --- VLLM ---
+    if raw_output is None:
+        raw_output = (
+            "Previous attempt omitted. It failed parsing, validation, "
+            "or task execution."
+        )
+
     if backend == "vllm":
-        if raw_output is not None:
-            messages.append(
-                {
-                    "role": "assistant",
-                    "content": raw_output,
-                }
-            )
+        messages.append(
+            {
+                "role": "assistant",
+                "content": raw_output,
+            }
+        )
         messages.append(
             {
                 "role": "user",
@@ -174,15 +179,14 @@ def append_message(
 
     # --- Transformers ---
     if backend == "transformers":
-        if raw_output is not None:
-            messages.append(
-                {
-                    "role": "assistant",
-                    "content": [
-                        {"type": "text", "text": raw_output},
-                    ],
-                }
-            )
+        messages.append(
+            {
+                "role": "assistant",
+                "content": [
+                    {"type": "text", "text": raw_output},
+                ],
+            }
+        )
         messages.append(
             {
                 "role": "user",
