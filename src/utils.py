@@ -5,6 +5,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from .prompts.factory import PROMPT_POOLS_BY_MODE
+from . import constants as project_constants
 ROOT_DIR = Path(__file__).parent.parent
 NEW_YORK_TZ = ZoneInfo("America/New_York")
 RESULTS_DIR = ROOT_DIR / "results"
@@ -89,6 +90,19 @@ def get_results_dir(run_id: str | None = None) -> Path:
     if run_id is None:
         return RESULTS_DIR
     return RESULTS_DIR / run_id
+
+def save_constants_meta(out_dir: str | Path) -> Path:
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    payload: dict[str, Any] = {}
+    for name in dir(project_constants):
+        if not name.isupper() or name.startswith("_"):
+            continue
+        payload[name] = getattr(project_constants, name)
+    out_path = out_dir / "constants_meta.json"
+    out_path.write_text(json.dumps(payload, indent=2, sort_keys=True))
+    return out_path
+
 
 def get_exp_model_dir(exp_id: str, model_id: str) -> Path:
     """Return results/<exp_id>/<normalized-model-id>.

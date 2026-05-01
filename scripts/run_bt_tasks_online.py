@@ -226,6 +226,9 @@ def main(
     backend = "vllm"
     model, processor = init_model(model_id, backend=backend)
 
+    if exp_id is not None:
+        utils.save_constants_meta(utils.get_results_dir(exp_id))
+
     out_dir = utils.get_exp_model_dir(exp_id, model_id)
 
     try:

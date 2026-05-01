@@ -9,6 +9,7 @@ from pydantic import TypeAdapter
 from transformers import AutoTokenizer, AutoProcessor, AutoModelForImageTextToText
 
 from .tools import get_tool_declarations
+from . import constants
 
 HF_CACHE_DIR = Path(__file__).resolve().parent.parent / ".hf_cache"
 HF_CACHE_DIR.mkdir(parents=True, exist_ok=True)
@@ -80,8 +81,9 @@ def init_model(
         llm_kwargs = {
             "model": model_id,
             "trust_remote_code": True,
-            "gpu_memory_utilization": 0.80,
-            "max_model_len": 16384,
+            "gpu_memory_utilization": constants.GPU_MEMORY_UTILIZATION,
+            "max_model_len": constants.MAX_MODEL_LEN,
+            "enforce_eager": constants.ENFORCE_EAGER,
         }
         if uses_image:
             llm_kwargs["limit_mm_per_prompt"] = {"image": 1}
@@ -182,8 +184,8 @@ def ask_model(
         )
 
         sampling_params = SamplingParams(
-            temperature=0.0,
-            max_tokens=8192,
+            temperature=constants.TEMPERATURE,
+            max_tokens=constants.MAX_TOKENS,
             structured_outputs=structured_outputs_params,
         )
 
