@@ -1,4 +1,3 @@
-from dotenv import load_dotenv
 from scripts.run_bt_tasks_online import main as run_bt_tasks_online
 from src.utils import format_run_timestamp
 
