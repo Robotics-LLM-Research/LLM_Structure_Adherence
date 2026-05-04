@@ -51,4 +51,4 @@ Targets and obstacles are axis-aligned rectangles: `x1`, `y1`, `x2`, `y2`.
 ## Configuration notes
 
 - `task_type` must be one of the five strings above; unknown values raise in `_check_task_success`.
-- For behavior-tree runs, `task_env` passed into `simulate_bt_plan` should include `task_type`, `obstacles`, and `targets` (see `scripts/run_bt_tasks.py`, which merges `task_type` from the task record with `world`).
+- For behavior-tree runs, `task_env` passed into `simulate_bt_plan` should include `task_type`, `obstacles`, and `targets` (see `scripts/run_bt_tasks_online.py`, which merges `task_type` from the task record with `world`).
