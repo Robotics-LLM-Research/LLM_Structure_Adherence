@@ -22,6 +22,32 @@ MAX_BT_COUNT = 3
 USE_TOOLS = True
 
 
+def _get_pending_task_indices(
+    out_dir: Path,
+    tasks_idx: list[int] | None,
+) -> tuple[list[int], int, int]:
+    """Return pending task indices, total requested, and already-completed count."""
+    tasks = json.loads(TASKS_PATH.read_text(encoding="utf-8"))
+    requested_indices = tasks_idx if tasks_idx is not None else list(range(len(tasks)))
+
+    tasks_out_dir = out_dir / "tasks"
+    if not tasks_out_dir.exists():
+        return requested_indices, len(requested_indices), 0
+
+    # Map task_id in tasks_100.json to its list index, then resolve completed files.
+    task_id_to_index = {str(task["task_id"]): idx for idx, task in enumerate(tasks)}
+    completed_indices: set[int] = set()
+    for task_file in tasks_out_dir.glob("task_*.json"):
+        task_id = task_file.stem.removeprefix("task_")
+        idx = task_id_to_index.get(task_id)
+        if idx is not None:
+            completed_indices.add(idx)
+
+    pending_indices = [idx for idx in requested_indices if idx not in completed_indices]
+    completed_count = len(requested_indices) - len(pending_indices)
+    return pending_indices, len(requested_indices), completed_count
+
+
 
 def episode(
     model: Any,
@@ -226,6 +252,26 @@ def main(
     exp_id: str | None = None,
 ):
     backend = "vllm"
+
+    out_dir = utils.get_exp_model_dir(exp_id, model_id)
+    pending_tasks_idx, total_requested, completed_count = _get_pending_task_indices(
+        out_dir=out_dir,
+        tasks_idx=tasks_idx,
+    )
+    if not pending_tasks_idx:
+        print(
+            f"[SKIP] {model_id}: all {total_requested} requested tasks already have "
+            f"results in {out_dir / 'tasks'}."
+        )
+        return
+
+    if completed_count:
+        print(
+            f"[RESUME] {model_id}: found {completed_count}/{total_requested} tasks "
+            f"already completed. Continuing from task index {pending_tasks_idx[0]} "
+            f"with {len(pending_tasks_idx)} task(s) remaining."
+        )
+
     model, processor = init_model(model_id, backend=backend)
 
     if exp_id is not None:
@@ -235,8 +281,6 @@ def main(
              "USE_TOOLS": USE_TOOLS},
         )
 
-    out_dir = utils.get_exp_model_dir(exp_id, model_id)
-
     try:
         experiment_result = experiment(
             out_dir=out_dir, 
@@ -244,7 +288,7 @@ def main(
             processor=processor, 
             backend=backend,
             model_id=model_id,
-            tasks_idx=tasks_idx,
+            tasks_idx=pending_tasks_idx,
         )
     finally:
         cleanup_model(model, processor)
