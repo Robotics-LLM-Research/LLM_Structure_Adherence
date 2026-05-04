@@ -48,6 +48,92 @@ def _get_pending_task_indices(
     return pending_indices, len(requested_indices), completed_count
 
 
+def _build_main_results(
+    out_dir: Path,
+    model_id: str,
+    tasks_idx: list[int] | None,
+) -> dict:
+    """Build aggregate results from per-task files in out_dir/tasks."""
+    total_perfect_adherence = 0
+    total_structure_adherence = 0
+    total_trees = 0
+    total_task_completion = 0
+    avg_inference_time_total = 0.0
+    all_tasks = []
+    task_type_totals: dict[str, int] = {}
+    task_type_completions: dict[str, int] = {}
+    missing_task_ids: list[str] = []
+
+    tasks = json.loads(TASKS_PATH.read_text(encoding="utf-8"))
+    requested_indices = tasks_idx if tasks_idx is not None else list(range(len(tasks)))
+    tasks_out_dir = out_dir / "tasks"
+
+    for task_idx in requested_indices:
+        task = tasks[task_idx]
+        task_type = task["task_type"]
+        task_id = str(task["task_id"])
+        task_path = tasks_out_dir / f"task_{task_id}.json"
+        if not task_path.exists():
+            missing_task_ids.append(task_id)
+            continue
+
+        task_result = json.loads(task_path.read_text(encoding="utf-8"))
+        task_bt_count = int(task_result.get("bt_count", 0))
+        task_perfect_structure = bool(task_result.get("perfect_structure", False))
+        task_valid_structure_count = int(task_result.get("valid_structure_count", 0))
+        task_completion = bool(task_result.get("task_completion", False))
+        task_avg_inference_s = float(task_result.get("avg_inference_time_s", 0.0))
+
+        all_tasks.append(
+            {
+                "task_id": task["task_id"],
+                "bt_count": task_bt_count,
+                "perfect_structure": task_perfect_structure,
+                "valid_structure_count": task_valid_structure_count,
+                "task_completion": task_completion,
+                "avg_inference_time_s": task_avg_inference_s,
+            }
+        )
+
+        total_perfect_adherence += 1 if task_perfect_structure else 0
+        total_structure_adherence += task_valid_structure_count
+        total_trees += task_bt_count
+        total_task_completion += 1 if task_completion else 0
+        avg_inference_time_total += task_avg_inference_s
+        task_type_totals[task_type] = task_type_totals.get(task_type, 0) + 1
+        task_type_completions[task_type] = task_type_completions.get(task_type, 0) + (
+            1 if task_completion else 0
+        )
+
+    total_tasks = len(all_tasks)
+    completion_pct_by_task_type = {}
+    for task_type, task_total in task_type_totals.items():
+        completed = task_type_completions.get(task_type, 0)
+        task_pct = (completed / task_total) * 100 if task_total else 0.0
+        completion_pct_by_task_type[f"{task_type}_pct"] = round(task_pct, 2)
+
+    return {
+        "model_id": model_id,
+        "max_bt_per_episode": MAX_BT_COUNT,
+        "total_tasks": total_tasks,
+        "total_structure_adherence": total_structure_adherence,
+        "total_perfect_adherence": total_perfect_adherence,
+        "total_task_completion": total_task_completion,
+        "structure_adherence_pct": (
+            (total_structure_adherence / total_trees) * 100 if total_trees else 0.0
+        ),
+        "task_completion_pct": (
+            (total_task_completion / total_tasks) * 100 if total_tasks else 0.0
+        ),
+        "completion_pct_by_task_type": completion_pct_by_task_type,
+        "avg_inference_time_s": (
+            avg_inference_time_total / total_tasks if total_tasks else 0.0
+        ),
+        "all_tasks": all_tasks,
+        "missing_task_ids": missing_task_ids,
+    }
+
+
 
 def episode(
     model: Any,
@@ -259,9 +345,16 @@ def main(
         tasks_idx=tasks_idx,
     )
     if not pending_tasks_idx:
+        experiment_result = _build_main_results(
+            out_dir=out_dir,
+            model_id=model_id,
+            tasks_idx=tasks_idx,
+        )
+        experiment_out_path = out_dir / "main_results.json"
+        experiment_out_path.write_text(json.dumps(experiment_result, indent=2))
         print(
             f"[SKIP] {model_id}: all {total_requested} requested tasks already have "
-            f"results in {out_dir / 'tasks'}."
+            f"results in {out_dir / 'tasks'}. Rebuilt {experiment_out_path.name}."
         )
         return
 
@@ -282,7 +375,7 @@ def main(
         )
 
     try:
-        experiment_result = experiment(
+        experiment(
             out_dir=out_dir, 
             model=model, 
             processor=processor, 
@@ -293,5 +386,10 @@ def main(
     finally:
         cleanup_model(model, processor)
 
+    experiment_result = _build_main_results(
+        out_dir=out_dir,
+        model_id=model_id,
+        tasks_idx=tasks_idx,
+    )
     experiment_out_path = out_dir / "main_results.json"
     experiment_out_path.write_text(json.dumps(experiment_result, indent=2))
