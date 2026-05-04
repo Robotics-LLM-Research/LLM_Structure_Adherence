@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 
-ROOT_DIR = Path.cwd().resolve().parents[1]
+ROOT_DIR = Path.cwd().resolve()
 if str(ROOT_DIR) not in sys.path:
     sys.path.append(str(ROOT_DIR))
 
@@ -22,7 +22,7 @@ def main() -> None:
 
 
     for model_id in models:
-        print(f"\n\nFULL START: {model_id}", flush=True)
+        print(f"\n\n========== FULL START: {model_id} ==========", flush=True)
 
         try:
             run_bt_tasks_online(
@@ -33,7 +33,7 @@ def main() -> None:
             print(f"FULL DONE: {model_id}", flush=True)
 
         except Exception as exc:
-            print(f"FULL FAILED: {model_id}", flush=True)
+            print(f"!!!!!!!!!!!! FULL FAILED: {model_id} !!!!!!!!!!!!", flush=True)
             print(f"ERROR: {repr(exc)}", flush=True)
             continue
 
