@@ -56,7 +56,7 @@ BTControlNode = Annotated[
 
 
 # ---------- Schema ----------
-WALL_BT_SCHEMA_SAMPLE = """
+BT_SCHEMA_SAMPLE = """
 {
     "schema_version": "bt_json_v1",
     "root": {
@@ -118,8 +118,8 @@ WallBTSchema.model_rebuild()
 
 
 # ---------- Single Config ----------
-WALL_BT_SCHEMA_CONFIG = {
+BT_SCHEMA_CONFIG = {
     "id": "bt",
     "schema": WallBTSchema,
-    "sample": WALL_BT_SCHEMA_SAMPLE,
+    "sample": BT_SCHEMA_SAMPLE,
 }

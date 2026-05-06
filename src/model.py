@@ -131,8 +131,8 @@ def cleanup_model(model: Any | None = None, processor: Any | None = None) -> Non
 def ask_model(
     model: Any,
     processor: Any,
-    uses_tools: bool,
     messages: list[dict[str, Any]],
+    uses_tools: bool = False,
     schema: Any | None = None,
     backend: str = "transformers",
 ) -> str:
@@ -154,11 +154,27 @@ def ask_model(
             raise ValueError("tokenizer is required when backend='vllm'.")
 
         if schema is None:
-            raise ValueError("schema is required when backend='vllm'.")
+            sampling_params = SamplingParams(
+                temperature=constants.TEMPERATURE,
+                max_tokens=constants.MAX_TOKENS,
+            )
+        else:
+            schema_json = get_schema_json(schema)
+
+            structured_outputs_params = StructuredOutputsParams(
+                json=schema_json,
+                disable_any_whitespace=True,
+                disable_fallback=True,
+            )
+
+            sampling_params = SamplingParams(
+                temperature=constants.TEMPERATURE,
+                max_tokens=constants.MAX_TOKENS,
+                structured_outputs=structured_outputs_params,
+            )
         
         tokenizer = processor
-        schema_json = get_schema_json(schema)
-
+        
         if uses_tools:
             prompt_text = tokenizer.apply_chat_template(
                 messages,
@@ -172,32 +188,6 @@ def ask_model(
                 tokenize=False,
                 **chat_template_kwargs,
             )
-
-        # --- Old ---
-        # guided_decoding_params = GuidedDecodingParams(
-        #     json=schema_json,
-        #     disable_any_whitespace=True,
-        #     disable_fallback=True,
-        # )
-
-        # sampling_params = SamplingParams(
-        #     temperature=0.0,
-        #     max_tokens=8192,
-        #     guided_decoding=guided_decoding_params,
-        # )
-
-        # --- New ---
-        structured_outputs_params = StructuredOutputsParams(
-            json=schema_json,
-            disable_any_whitespace=True,
-            disable_fallback=True,
-        )
-
-        sampling_params = SamplingParams(
-            temperature=constants.TEMPERATURE,
-            max_tokens=constants.MAX_TOKENS,
-            structured_outputs=structured_outputs_params,
-        )
 
         outputs = model.generate(
             prompts=[prompt_text],
@@ -229,8 +219,8 @@ def ask_model(
         # Run text generation
         outputs = model.generate(
             **inputs,
-            max_new_tokens=128,
-            do_sample=False,
+            max_new_tokens=constants.MAX_TOKENS,
+            do_sample=constants.DO_SAMPLE,
             num_beams=1,
             use_cache=True,
             eos_token_id=processor.tokenizer.eos_token_id,
