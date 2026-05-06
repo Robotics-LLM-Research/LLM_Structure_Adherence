@@ -3,7 +3,7 @@ import json
 from pydantic import ValidationError
 
 from .common import validate_schema
-from ..schemas.bt import WALL_BT_SCHEMA_CONFIG
+from ..schemas.bt import BT_SCHEMA_CONFIG
 
 
 def _clean_raw_bt_output(raw_output: str) -> str:
@@ -35,7 +35,7 @@ def parse_bt_output(raw_output: str):
         return None, f"Invalid JSON: {error}"
 
     # Validate parsed payload
-    schema_model = WALL_BT_SCHEMA_CONFIG["schema"]
+    schema_model = BT_SCHEMA_CONFIG["schema"]
     try:
         validated = validate_schema(schema_model, data)
     except ValidationError as error:

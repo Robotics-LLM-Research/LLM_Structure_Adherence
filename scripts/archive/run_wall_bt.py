@@ -14,7 +14,7 @@ import src.utils as utils
 from src.prompts.factory import get_initial_message, append_message
 
 from src.prompts.wall_bt import WALL_BT_USER_PROMPT, get_feedback
-from src.schemas.bt import WALL_BT_SCHEMA_CONFIG
+from src.schemas.bt import BT_SCHEMA_CONFIG
 from src.parsers.bt import parse_bt_output
 
 EPS_IN_EXP = 1
@@ -47,7 +47,7 @@ def episode(
     prompt = get_initial_message(
         "wall_bt",
         user_prompt=WALL_BT_USER_PROMPT,
-        schema_sample=WALL_BT_SCHEMA_CONFIG["sample"],
+        schema_sample=BT_SCHEMA_CONFIG["sample"],
         backend=backend,
     )
 
@@ -62,7 +62,7 @@ def episode(
             processor=processor,
             uses_tools=False,
             messages=prompt,
-            schema=WALL_BT_SCHEMA_CONFIG["schema"],
+            schema=BT_SCHEMA_CONFIG["schema"],
             backend=backend,
         )
         inference_times_s.append(time.perf_counter() - inference_start)

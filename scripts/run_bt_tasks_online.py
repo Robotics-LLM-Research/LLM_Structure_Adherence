@@ -14,7 +14,7 @@ import src.utils as utils
 from src.prompts.factory import get_initial_message, append_message
 
 from src.prompts.bt_tasks import get_user_prompt, get_feedback
-from src.schemas.bt import BT_TASKS_SCHEMA_SAMPLE, WALL_BT_SCHEMA_CONFIG
+from src.schemas.bt import BT_TASKS_SCHEMA_SAMPLE, BT_SCHEMA_CONFIG
 from src.parsers.bt import parse_bt_output
 
 TASKS_PATH = PROJECT_ROOT / "src" / "tasks" / "tasks_100.json"
@@ -177,7 +177,7 @@ def episode(
             processor=processor,
             uses_tools=USE_TOOLS,
             messages=prompt,
-            schema=WALL_BT_SCHEMA_CONFIG["schema"],
+            schema=BT_SCHEMA_CONFIG["schema"],
             backend=backend,
         )
         inference_times_s.append(time.perf_counter() - inference_start)
