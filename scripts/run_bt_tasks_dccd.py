@@ -130,7 +130,7 @@ def episode(
             )
             planner_prompt = append_message(
                 messages=planner_prompt,
-                raw_output=None,
+                raw_output=planner_output,
                 user_feedback=feedback,
                 backend=backend,
             )
