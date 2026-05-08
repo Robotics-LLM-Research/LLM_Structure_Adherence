@@ -1,0 +1,82 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 7.6233565530001215,
+  "avg_translator_inference_time_s": 13.883246946666683,
+  "avg_inference_time_s": 21.506603499666802,
+  "final_spot": {
+    "x": 64.0,
+    "y": -64.0,
+    "heading": 0.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "planner_output": "1. Move Spot forward until the target is within 10 meters ahead. If an obstacle is detected directly ahead, rotate Spot 90 degrees in place to the right and then move forward.\n2. If the target is reached, call the finish_task function to signal task completion.\n3. If an obstacle blocks the path after reaching a 90-degree rotation, rotate Spot 90 degrees in place to the left and attempt to move forward again.\n4. If the target is still not reached and no obstacles are detected, continue moving forward in small increments (e.g., 0.5 meters) until the target is reached.\n5. If the target cannot be reached after multiple attempts and rotations, call the call_llm function to request a new behavior tree for replanning.\n6. Once the target is reached and at_goal is true, halt further movements and await further instructions.",
+      "translator_output": "{\n  \"schema_version\": \"bt_json_v1\",\n  \"root\": {\n    \"type\": \"sequence\",\n    \"children\": [\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"move_spot\",\n          \"arguments\": {\n            \"meters\": 1\n          }\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\n            \"degrees\": 90\n          }\n        }\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"move_spot\",\n          \"arguments\": {\n            \"meters\": 1\n          }\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"target_ahead\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"finish_task\",\n          \"arguments\": {}\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\n            \"degrees\": -90\n          }\n        }\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"move_spot\",\n          \"arguments\": {\n            \"meters\": 1\n          }\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"target_ahead\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"move_spot\",\n          \"arguments\": {\n            \"meters\": 0.5\n          }\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"target_ahead\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"finish_task\",\n          \"arguments\": {}\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"target_ahead\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"at_goal\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 64.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 2,
+      "planner_output": "Main strategy: Move Spot towards the target by rotating to face the target and then moving forward.\n\n1. Check if the target is ahead using the 'target_ahead' observation. If true, proceed to move towards the target. If false, request a new plan from the LLM as the initial assumptions might be incorrect.\n\n2. If the target is ahead, rotate Spot to face the target by calculating the required degrees of rotation. Use the 'rotate_spot' action to turn Spot towards the target's position.\n\n3. Once facing the target, move Spot forward using the 'move_spot' action. Adjust the meters parameter based on the distance to the target, ensuring Spot moves smoothly and avoids sudden jerks.\n\nFallback behavior:\n- If an obstacle is detected ahead ('obstacle_ahead' is true) while moving, stop and request a new plan from the LLM to navigate around the obstacle.\n- If an obstacle is detected to the left or right ('obstacle_left' or 'obstacle_right' is true), adjust the heading to avoid the obstacle using the 'rotate_spot' action before resuming movement.\n\nReplanning request:\n- Request a new plan from the LLM ('call_llm') if the target is not found ('target_ahead' is false) or if Spot encounters an obstacle that cannot be navigated around.\n- Also, request a new plan if Spot reaches the target but 'at_goal' remains false, indicating an issue with the at_goal detection.\n\nOnce 'at_goal' is true, signal task completion using the 'finish_task' action.",
+      "translator_output": "{\n  \"schema_version\": \"bt_json_v1\",\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"condition\",\n        \"observation\": \"target_ahead\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"call_llm\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_left\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -90\n              }\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_right\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 90\n              }\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"target_ahead\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"at_goal\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 64.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 3,
+      "planner_output": "Main Strategy:\n1. Rotate Spot 90 degrees to the right to face the positive x-direction.\n2. Move Spot forward by 1 meter.\n3. Continue moving forward in increments of 1 meter until the target is reached or an obstacle is detected.\n\nFallback Behavior:\n- If an obstacle is detected ahead, stop and rotate 90 degrees to the left to check the alternative path.\n- If the target is not reached after moving 10 meters forward, request replanning.\n\nReplanning Request:\n- Request replanning if the target is not reached after moving 10 meters forward from the current position.\n\nNew Plan:\n1. Rotate Spot 90 degrees to the right.\n2. Move Spot forward by 1 meter.\n3. Continue moving forward in increments of 1 meter until either the target is reached or an obstacle is detected ahead.\n4. If an obstacle is detected ahead, rotate 90 degrees to the left and attempt to reach the target from the new path.\n5. If the target is not reached after moving 10 meters forward from the current position, request a new behavior tree for replanning.",
+      "translator_output": "{\n  \"schema_version\": \"bt_json_v1\",\n  \"root\": {\n    \"type\": \"sequence\",\n    \"children\": [\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\n            \"degrees\": 90\n          }\n        }\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"move_spot\",\n          \"arguments\": {\n            \"meters\": 1\n          }\n        }\n      },\n      {\n        \"type\": \"fallback\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n                \"tool_name\": \"rotate_spot\",\n                \"arguments\": {\n                    \"degrees\": -90\n                }\n            }\n          },\n          {\n            \"type\": \"sequence\",\n            \"children\": [\n              {\n                \"type\": \"action\",\n                \"call\": {\n                  \"tool_name\": \"move_spot\",\n                  \"arguments\": {\n                    \"meters\": 1\n                  }\n                }\n              }\n            ]\n          }\n        ]\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"target_ahead\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n            \"tool_name\": \"finish_task\",\n            \"arguments\": {}\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"at_goal\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"at_goal\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n            \"tool_name\": \"call_llm\",\n            \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 64.0,
+          "y": -64.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    }
+  ]
+}

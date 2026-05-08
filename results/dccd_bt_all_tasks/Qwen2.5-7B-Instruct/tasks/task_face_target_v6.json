@@ -1,0 +1,60 @@
+{
+  "bt_count": 2,
+  "perfect_structure": true,
+  "valid_structure_count": 2,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 4.6243064044999755,
+  "avg_translator_inference_time_s": 10.472952806500189,
+  "avg_inference_time_s": 15.097259211000164,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 180.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "planner_output": "Plan:\n1. Check if the target is ahead using `target_ahead`. If true, rotate towards the target.\n2. If `target_ahead` is false, rotate left or right to find the target, using `obstacle_left` and `obstacle_right` to avoid obstacles.\n3. Once facing the target, use `rotate_spot` to align Spot's heading with the target.\n4. If `at_goal` becomes true, use `finish_task` to signal completion.\n5. If unable to find the target after reasonable attempts, use `call_llm` to request a new plan.\n6. If an obstacle is detected, use `rotate_spot` to avoid it and try again.\n7. If the target is already reached, use `finish_task` immediately.",
+      "translator_output": "{\n  \"schema_version\": \"bt_json_v1\",\n  \"root\": {\n    \"type\": \"sequence\",\n    \"children\": [\n      {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90}}},\n      {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": false},\n      {\"type\": \"fallback\", \"children\": [\n        {\"type\": \"condition\", \"observation\": \"obstacle_left\", \"expected\": false},\n        {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n        {\"type\": \"condition\", \"observation\": \"obstacle_right\", \"expected\": false},\n        {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45}}}\n      ]},\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 0}}},\n      {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}},\n      {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90}}},\n      {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}},\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 2,
+      "planner_output": "Since Spot is not facing the target and there are no obstacles in the way, the main strategy is to rotate Spot towards the target. Given the lack of a direct path to the target, we will rotate Spot in small increments until it faces the target.\n\n1. Rotate Spot 45 degrees clockwise.\n2. Check if Spot is facing the target using `target_ahead`.\n3. If `target_ahead` is true, the task is complete. Use `finish_task()` to signal completion.\n4. If `target_ahead` is false, repeat the rotation in 45-degree increments until the target is in sight.\n5. If after multiple attempts the target is still not in sight, call `call_llm()` to request a new behavior tree.\n\nIf `at_goal` becomes true during any rotation, use `finish_task()` to complete the task. If `obstacle_ahead`, `obstacle_left`, or `obstacle_right` becomes true during rotation, stop and check the surroundings before continuing. If Spot collides with an obstacle, use `call_llm()` to request a new behavior tree.",
+      "translator_output": "{\n  \"schema_version\": \"bt_json_v1\",\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\n            \"degrees\": 45\n          }\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"target_ahead\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"finish_task\",\n          \"arguments\": {}\n        }\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 45\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"target_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"at_goal\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"finish_task\",\n          \"arguments\": {}\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_left\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_right\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 180.0
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

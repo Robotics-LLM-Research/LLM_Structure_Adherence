@@ -1,0 +1,82 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 6.388158482333438,
+  "avg_translator_inference_time_s": 10.239305634333354,
+  "avg_inference_time_s": 16.627464116666793,
+  "final_spot": {
+    "x": 109.3,
+    "y": 45.3,
+    "heading": 0.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "planner_output": "Plan:\n1. Move forward to get a better view of the target.\n2. If an obstacle is detected ahead, rotate left or right to avoid it, then continue moving forward.\n3. Once facing the target, rotate to align with the target's direction.\n4. If the target is already reached, signal with finish_task().\n5. If the target is not reached and the path is clear, continue moving forward and rotating until the target is aligned.\n6. If the system cannot reach the target despite multiple attempts, call_llm() for a new strategy.\n\nNote: Use target_ahead to determine if the target is in front of Spot. Use obstacle_ahead, obstacle_left, and obstacle_right to navigate around obstacles.",
+      "translator_output": "{\n  \"schema_version\": \"bt_json_v1\",\n  \"root\": {\n    \"type\": \"sequence\",\n    \"children\": [\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n      {\"type\": \"fallback\",\n       \"children\": [\n         {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n         {\"type\": \"sequence\",\n          \"children\": [\n            {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n            {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n            {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45}}}\n          ]\n         },\n         {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false}\n       ]\n      },\n      {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 0}}},\n      {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}},\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 0}}},\n      {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 109.3,
+          "y": 45.3,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 2,
+      "planner_output": "Starting from the final spot at (109.3, 45.3) with a heading of 0.0 degrees, the main strategy is to rotate Spot to face the target located in the area defined by x1=3.5, x2=4.5, y1=3.5, y2=4.5.\n\n1. Check if the target is ahead using the `target_ahead` observation. If true, proceed to the next step. If false, rotate Spot 45 degrees to the left and check again. If the target is still not ahead, rotate Spot 45 degrees to the right and check again.\n2. Once the target is ahead, rotate Spot to face the target. Calculate the required rotation by comparing the current heading with the direction to the target. If the target is to the left, rotate counter-clockwise. If to the right, rotate clockwise.\n3. If the rotation causes an obstacle to be within 10 meters, adjust the rotation to avoid the obstacle. If the obstacle is ahead, rotate 45 degrees to the left or right. If the obstacle is to the left or right, adjust the rotation accordingly.\n4. Once facing the target, use the `at_goal` observation to check if the task is complete. If true, use the `finish_task` action to signal completion. If false, repeat the process.\n5. If the `at_goal` observation remains false after multiple attempts, request a new behavior tree using the `call_llm` action.\n\nContinue this strategy until the task is completed or a new behavior tree is requested.",
+      "translator_output": "{\n  \"schema_version\": \"bt_json_v1\",\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"target_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -45\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"target_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n              \"call\": {\n                \"tool_name\": \"rotate_spot\",\n                \"arguments\": {\n                  \"degrees\": 45\n                }\n              }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"target_ahead\",\n            \"expected\": true\n          }\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\n            \"degrees\": 0\n          }\n        }\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 109.3,
+          "y": 45.3,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 3,
+      "planner_output": "Starting from the final spot at (109.3, 45.3) with a heading of 0.0 degrees, the main strategy is to rotate Spot to face the target located in the region from x1=3.5 to x2=4.5 and y1=3.5 to y2=4.5.\n\n1. Check if the target is ahead using the `target_ahead` observation. If `target_ahead` is true, proceed to the next step. If not, rotate Spot 45 degrees to the left and check again. If the target is still not ahead, rotate Spot 45 degrees to the right and check again.\n2. Once the target is ahead, rotate Spot to face the target. Calculate the required rotation based on the current heading and the target's position.\n3. If the rotation is less than 45 degrees, perform the rotation directly. If the rotation is more than 45 degrees, rotate 45 degrees, then check `target_ahead` again, and repeat as necessary.\n4. If Spot reaches the target region and `at_goal` becomes true, use the `finish_task` action to signal the task completion.\n5. If Spot encounters an obstacle or the path is blocked, rotate 45 degrees to the left or right and check again. If the target is still not ahead, request a new behavior tree using the `call_llm` action.\n\nIf the current strategy does not lead to the target after several attempts, request a new behavior tree using the `call_llm` action.",
+      "translator_output": "{\n  \"schema_version\": \"bt_json_v1\",\n  \"root\": {\n    \"type\": \"sequence\",\n    \"children\": [\n      {\n        \"type\": \"fallback\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"target_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -45\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"target_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 45\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"target_ahead\",\n            \"expected\": true\n          }\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\n            \"degrees\": 0\n          }\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"at_goal\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"finish_task\",\n          \"arguments\": {}\n        }\n      },\n      {\n        \"type\": \"fallback\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": false\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -45\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"target_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 45\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"target_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"call_llm\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 109.3,
+          "y": 45.3,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    }
+  ]
+}
