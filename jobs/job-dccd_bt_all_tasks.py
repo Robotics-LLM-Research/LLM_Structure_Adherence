@@ -57,12 +57,12 @@ def run_model_once(model_id: str, exp_id: str) -> bool:
 
 def main() -> None:
     models = [
-        "Qwen/Qwen2.5-3B-Instruct",
-        "Qwen/Qwen2.5-7B-Instruct",
-        "Qwen/Qwen3-8B",
-        "ibm-granite/granite-3.3-8b-instruct",
+        # "Qwen/Qwen2.5-3B-Instruct",
+        # "Qwen/Qwen2.5-7B-Instruct",
+        # "Qwen/Qwen3-8B",
+        # "ibm-granite/granite-3.3-8b-instruct",
         "meta-llama/Llama-3.2-3B-Instruct",
-        "meta-llama/Llama-3.1-8B-Instruct",
+        # "meta-llama/Llama-3.1-8B-Instruct",
     ]
     exp_id = "dccd_bt_all_tasks"
 
