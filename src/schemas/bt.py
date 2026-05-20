@@ -58,7 +58,6 @@ BTControlNode = Annotated[
 # ---------- Schema ----------
 BT_SCHEMA_SAMPLE = """
 {
-    "schema_version": "bt_json_v1",
     "root": {
         "type": "fallback",
         "children": [
@@ -94,7 +93,6 @@ BT_SCHEMA_SAMPLE = """
 BT_TASKS_SCHEMA_SAMPLE = """
 The output must have this shape:
 {
-  "schema_version": "bt_json_v1",
   "root": {
     "type": "sequence" or "fallback",
     "children": [...]
@@ -109,7 +107,6 @@ Action node:
 """
 
 class WallBTSchema(BaseModel):
-    schema_version: Literal["bt_json_v1"]
     root: BTControlNode
 
 BTSequenceNode.model_rebuild()

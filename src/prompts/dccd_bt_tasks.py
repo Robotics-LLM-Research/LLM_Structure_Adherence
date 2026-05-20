@@ -13,26 +13,24 @@ DCCD_PLANNER_SYSTEM_PROMPT = """
     - Use concrete action names when useful: move_spot, rotate_spot, finish_task, call_llm.
     - Give numeric movement distances in meters.
     - Give numeric rotation angles in degrees.
-    - Do not say "move until", "repeat until", "continue", or "keep moving" unless you also give a small fixed step and a clear stopping or replanning rule.
+    - Never use vague verbs without numeric actions: "move closer", "rotate toward", "calculate direction", "move around", "repeat", "continue", "keep moving", "until reached".
     - Prefer one safe action attempt, then check progress, then replan if needed.
     - Do not create long repeated action lists.
     - Do not assume success unless at_goal is true.
     - If feedback includes final_spot, plan from final_spot instead of the original start.
     - If the task is face_target, prefer rotation only. Do not move unless the plan explicitly needs a small positioning adjustment.
     - If the task is go_to_target or move_to_closest_target, use the target position and current Spot state to estimate direction and distance.
-    - If an obstacle may block the direct path, include a simple avoidance fallback using rotate_spot and a small move_spot step.
     - If the target is already reached, the plan must finish_task.
     - If the next safe action is unclear, the plan must call_llm instead of guessing.
+    - For go_to_target and move_to_closest_target, output explicit numeric actions: one rotate_spot(degrees) and one move_spot(meters) computed from world geometry.
+    - For rectangular targets, center = ((x1+x2)/2, (y1+y2)/2); use Spot (x,y,heading) to estimate rotate angle then forward distance.
 
     Output format:
-    Goal: one sentence.
-    Main plan:
-    1. ...
-    2. ...
+    Main plan: numbered executable actions only (rotate_spot(...), move_spot(...), finish_task, call_llm)
+
     Fallbacks:
     - If at_goal is true: finish_task.
-    - If obstacle_ahead is true: ...
-    - If the plan cannot make clear progress: call_llm.
+    - If numeric next action is unclear: call_llm.
 
     Output only this natural-language plan.
     Do not output JSON.
@@ -40,8 +38,36 @@ DCCD_PLANNER_SYSTEM_PROMPT = """
     Do not explain the schema.
 """
 
-DCCD_TRANSLATOR_SYSTEM_PROMPT = """
-    You are the robot behavior-tree translator.
+DCCD_VERIFIER_SYSTEM_PROMPT = """
+You are the plan verifier in a Plan-Verify-Decode pipeline.
+
+Task:
+Evaluate the planner's natural-language plan only.
+Do not output behavior-tree JSON.
+Do not solve the task from scratch.
+
+Checks (fail if any violated):
+1) Uses only allowed actions: move_spot, rotate_spot, finish_task, call_llm.
+2) Every move_spot has numeric meters; every rotate_spot has numeric degrees.
+3) No vague directives: "move closer", "rotate toward", "calculate direction",
+   "move around", "repeat", "continue", "keep moving", "until reached".
+4) Steps are bounded (no unbounded loops/search behavior).
+5) Plan does not assume success unless at_goal is true.
+6) If next safe numeric action is unclear, plan must call_llm.
+7) For go_to_target / move_to_closest_target, plan should include explicit
+   rotate_spot(...) then move_spot(...), unless already at_goal.
+
+Output rules (strict):
+- If the plan passes all checks, output exactly:
+pass
+- If the plan fails any check, output exactly:
+fail: <reason 1>; <reason 2>; <reason 3>
+- Keep reasons short and concrete.
+- Output plain text only. No JSON. No markdown.
+"""
+
+DCCD_DECODER_SYSTEM_PROMPT = """
+    You are the robot behavior-tree decoder.
 
     Your job is to convert the provided natural-language plan into one valid behavior-tree JSON object.
     The output schema is enforced externally. Follow it exactly.
@@ -76,11 +102,11 @@ DCCD_TRANSLATOR_SYSTEM_PROMPT = """
     - Prefer this root shape:
     fallback:
         1. sequence: at_goal true -> finish_task
-        2. one bounded main action attempt -> at_goal true -> finish_task
-        3. one bounded obstacle or recovery attempt if the plan says so
-        4. call_llm
+        2. sequence: optional obstacle guard -> one bounded action -> condition at_goal true -> finish_task
+        3. call_llm
     - Never place call_llm behind a condition that can prevent it from running.
     - Never place finish_task unless it is immediately after condition at_goal true.
+    - call_llm must be a direct root fallback child, not nested behind a condition.
     - Never put both condition X true and condition X false in the same sequence.
     - Never put a standalone condition as a fallback child if its success would skip the action that should happen next.
     - Never encode loops by repeating many nodes.
@@ -88,13 +114,14 @@ DCCD_TRANSLATOR_SYSTEM_PROMPT = """
     - After any movement that might not complete the task, check at_goal true, then finish_task, otherwise allow call_llm to be reached.
     - Avoid repeated move_spot actions in the same tree unless the plan explicitly gives separate bounded moves.
     - If obstacle_ahead must be false before moving, put that condition immediately before move_spot in the same sequence.
-    - If obstacle_ahead is true and the plan says to avoid it, use one rotate_spot action and then call_llm or one small move_spot action.
+    - If obstacle_ahead is true and avoidance is requested, use at most one bounded rotate_spot and at most one bounded move_spot in the same sequence, then require call_llm to remain reachable.
 
     Translation rules:
     - Preserve the intent of the natural-language plan.
     - Generate the smallest valid behavior tree that expresses the plan.
     - The tree should either finish safely or request replanning.
     - Do not create a tree that can keep moving every tick without eventually reaching finish_task or call_llm.
+    - If the plan lacks numeric distance/angle for required movement, output a minimal tree: fallback(at_goal->finish_task, call_llm).
 """
 
 DCCD_USER_PROMPT = """
@@ -110,6 +137,12 @@ DCCD_USER_PROMPT = """
     - rotate_spot(degrees)
     - finish_task()
     - call_llm()
+
+    Movement semantics:
+    - heading=0.0 means Spot faces the +x direction.
+    - move_spot(meters) moves forward along the current heading.
+    - rotate_spot(degrees) changes Spot's heading by that many degrees using the simulator's sign convention.
+    - World coordinates are in meters.
 """
 
 # ----- Prompt Building -----
@@ -141,7 +174,14 @@ def get_planner_prompt(task_type: str, world: dict) -> str:
         f"{DCCD_USER_PROMPT}"
     )
 
-def get_translator_prompt(planner_output: str) -> str:
+def get_verifier_prompt(task_type: str, planner_output: str) -> str:
+    return (
+        f"Task type: {task_type}\n\n"
+        "Planner output:\n"
+        f"{planner_output}"
+    )
+
+def get_decoder_prompt(planner_output: str) -> str:
     return (
         "Natural-language plan to translate:\n"
         f"{planner_output}\n\n"
@@ -149,37 +189,39 @@ def get_translator_prompt(planner_output: str) -> str:
         "Do not add new task reasoning.\n"
     )
 
-def get_planner_feedback(plan_results: dict) -> str:
-    """ Build feedback for the planner after a translated behavior tree executes. """
-    collided = bool(plan_results.get("collided", False))
-    success = bool(plan_results.get("success", False))
-    replan_requested = bool(plan_results.get("replan_requested", False))
-    observations = plan_results.get("observations")
-    final_spot = plan_results.get("final_spot")
+def get_planner_feedback(plan_results: dict | None, verifier_output: str | None) -> str:
+    """ Build feedback for the planner after verifier assesses the plan or after behavior tree executes. """
+    if plan_results is None and verifier_output is None:
+        raise ValueError("plan_results and verifier_output cannot both be None.")
 
-    return (
-        "Execution finished for the previous translated plan.\n"
-        f"success={success}, collided={collided}, replan_requested={replan_requested}\n"
-        f"observations={observations}\n"
-        f"final_spot={final_spot}\n"
-        "If success is false, generate a revised natural-language plan.\n"
-        "Make the revised plan more concrete than the previous one.\n"
-        "Use bounded numeric actions: move_spot(meters) and rotate_spot(degrees).\n"
-        "Avoid vague phrases like move until, continue, repeat, search, or face the target unless you give exact actions.\n"
-        "If the next useful action is unclear, request call_llm instead of guessing.\n"
-        "Do not output JSON.\n"
-    )
+    # Feedback from verifier before execution
+    if verifier_output is not None:
+        return (
+            "Result: fail.\n"
+            f"Verifier output: {verifier_output}\n"
+            "Revise the previous plan to fix every reason above.\n"
+            "No vague directives. If next safe numeric action is unclear, include call_llm.\n"
+            "Output only the revised natural-language plan.\n"
+        )
+    
+    # Feedback post execution
+    if plan_results is not None:
+        collided = bool(plan_results.get("collided", False))
+        success = bool(plan_results.get("success", False))
+        replan_requested = bool(plan_results.get("replan_requested", False))
+        observations = plan_results.get("observations")
+        final_spot = plan_results.get("final_spot")
 
+        return (
+            "Execution finished for the previous translated plan.\n"
+            f"success={success}, collided={collided}, replan_requested={replan_requested}\n"
+            f"observations={observations}\n"
+            f"final_spot={final_spot}\n"
+            "Generate a revised natural-language plan that is more concrete than the previous one.\n"
+            "Use bounded numeric actions: move_spot(meters) and rotate_spot(degrees).\n"
+            "Give exact actions, not vague phrases like move until, continue, repeat, search, or face the target.\n"
+            "If the next useful action is unclear, request call_llm instead of guessing.\n"
+            "Do not output JSON.\n"
+        )
 
-def get_translator_feedback(error: str) -> str:
-    """ Build feedback for the translator after invalid behavior-tree JSON. """
-    return (
-        "Your previous behavior tree could not be parsed/validated.\n"
-        f"Error: {error}\n"
-        "Generate a corrected COMPLETE behavior tree in valid JSON.\n"
-        "Preserve the same natural-language plan.\n"
-        "Do not add new task reasoning.\n"
-        "Do not infer new target locations, obstacles, or strategy details.\n"
-        "Do not repeat the previous invalid structure.\n"
-        "Output only JSON.\n"
-    )
+    

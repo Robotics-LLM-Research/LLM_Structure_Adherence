@@ -16,16 +16,31 @@ from src.prompts.factory import get_initial_message, append_message
 from src.parsers.bt import parse_bt_output
 from src.prompts.dccd_bt_tasks import (
     get_planner_prompt, 
-    get_translator_prompt, 
+    get_verifier_prompt,
+    get_decoder_prompt, 
     get_planner_feedback,
 )
 from src.schemas.bt import BT_TASKS_SCHEMA_SAMPLE, BT_SCHEMA_CONFIG
 
 TASKS_PATH = PROJECT_ROOT / "src" / "tasks" / "tasks_100.json"
 MAX_BT_COUNT = 3
+MAX_VERIFY_COUNT = 2
 
 
 
+# ----- Helpers -----
+def _verifier_passed(verifier_output: str | None) -> bool:
+    text = (verifier_output or "").strip().lower()
+    has_pass = "pass" in text
+    has_fail = "fail" in text
+    if has_fail:
+        return False
+    if has_pass:
+        return True
+    return False
+
+
+# ----- Main -----
 def episode(
     model: Any,
     processor: Any,
@@ -39,9 +54,11 @@ def episode(
     spot_state = None
 
     bt_count = 0
+    verify_count = 0
     behavior_trees = []
     planner_inference_times_s = []
-    translator_inference_times_s = []
+    verifier_inference_times_s = []
+    decoder_inference_times_s = []
 
     task_type = task["task_type"]
     task_world = task["world"]
@@ -50,7 +67,7 @@ def episode(
         "task_type": task_type,
     }
 
-    # Build planner prompt
+    # Build prompts
     planner_prompt = get_initial_message(
         "dccd_planner",
         user_prompt=get_planner_prompt(task_type, task_world),
@@ -61,48 +78,86 @@ def episode(
     while bt_count < MAX_BT_COUNT:
         bt_count += 1
 
-        # Query the planner
-        planner_inference_start = time.perf_counter()
-        planner_output = ask_model(
-            model=model,
-            processor=processor,
-            messages=planner_prompt,
-            uses_tools=False,
-            backend=backend,
-            schema=None,
-        )
-        planner_inference_times_s.append(time.perf_counter() - planner_inference_start)
+        while verify_count < MAX_VERIFY_COUNT:
+            verify_count += 1
 
-        # Build translator prompt
-        translator_prompt = get_initial_message(
-            "dccd_translator",
-            user_prompt=get_translator_prompt(planner_output),
+            # Query the planner
+            planner_inference_start = time.perf_counter()
+            planner_output = ask_model(
+                model=model,
+                processor=processor,
+                messages=planner_prompt,
+                uses_tools=False,
+                backend=backend,
+                schema=None,
+            )
+            planner_inference_times_s.append(time.perf_counter() - planner_inference_start)
+
+            # Verify planner output
+            verifier_prompt = get_initial_message(
+                "dccd_verifier",
+                user_prompt=get_verifier_prompt(task_type, planner_output),
+                uses_tools=False,
+                backend=backend,
+            )
+
+            verifier_inference_start = time.perf_counter()
+            verifier_output = ask_model(
+                model=model,
+                processor=processor,
+                messages=verifier_prompt,
+                uses_tools=False,
+                backend=backend,
+                schema=None,
+            )
+            verifier_inference_times_s.append(time.perf_counter() - verifier_inference_start)
+
+            if _verifier_passed(verifier_output):
+                break
+            else:
+                feedback = get_planner_feedback(
+                    plan_results=None,
+                    verifier_output=verifier_output,
+                )
+                planner_prompt = append_message(
+                    messages=planner_prompt,
+                    raw_output=planner_output,
+                    user_feedback=feedback,
+                    backend=backend,
+                )
+
+        verify_count = 0
+
+        # Build decoder prompt
+        decoder_prompt = get_initial_message(
+            "dccd_decoder",
+            user_prompt=get_decoder_prompt(planner_output),
             schema_sample=BT_TASKS_SCHEMA_SAMPLE,
             uses_tools=True,
             backend=backend,
         )
 
-        # Query the translator
-        translator_inference_start = time.perf_counter()
-        translator_output = ask_model(
+        # Query the decoder
+        decoder_inference_start = time.perf_counter()
+        decoder_output = ask_model(
             model=model,
             processor=processor,
-            messages=translator_prompt,
+            messages=decoder_prompt,
             uses_tools=True,
             schema=BT_SCHEMA_CONFIG["schema"],
             backend=backend,
         )
-        translator_inference_times_s.append(time.perf_counter() - translator_inference_start)
+        decoder_inference_times_s.append(time.perf_counter() - decoder_inference_start)
 
         # Parse output
-        plan, error_msg = parse_bt_output(translator_output)
+        plan, error_msg = parse_bt_output(decoder_output)
         if error_msg is not None:
             perfect_structure = False
             behavior_trees.append(
                 {
                     "bt_index": bt_count,
                     "planner_output": planner_output,
-                    "translator_output": translator_output,
+                    "decoder_output": decoder_output,
                     "plan_results": {"error": error_msg},
                 }
             )
@@ -117,7 +172,7 @@ def episode(
             {
                 "bt_index": bt_count,
                 "planner_output": planner_output,
-                "translator_output": translator_output,
+                "decoder_output": decoder_output,
                 "plan_results": plan_results,
             }
         )
@@ -127,6 +182,7 @@ def episode(
         else:
             feedback = get_planner_feedback(
                 plan_results=plan_results,
+                verifier_output=None,
             )
             planner_prompt = append_message(
                 messages=planner_prompt,
@@ -140,9 +196,14 @@ def episode(
         if planner_inference_times_s
         else 0.0
     )
-    avg_translator_inference_time_s = (
-        sum(translator_inference_times_s) / len(translator_inference_times_s)
-        if translator_inference_times_s
+    avg_verifier_inference_time_s = (
+        sum(verifier_inference_times_s) / len(verifier_inference_times_s)
+        if verifier_inference_times_s
+        else 0.0
+    )
+    avg_decoder_inference_time_s = (
+        sum(decoder_inference_times_s) / len(decoder_inference_times_s)
+        if decoder_inference_times_s
         else 0.0
     )
 
@@ -152,8 +213,9 @@ def episode(
         "valid_structure_count": structure_count,
         "task_completion": completion,
         "avg_planner_inference_time_s": avg_planner_inference_time_s,
-        "avg_translator_inference_time_s": avg_translator_inference_time_s,
-        "avg_inference_time_s": avg_planner_inference_time_s + avg_translator_inference_time_s,
+        "avg_verifier_inference_time_s": avg_verifier_inference_time_s,
+        "avg_decoder_inference_time_s": avg_decoder_inference_time_s,
+        "avg_inference_time_s": avg_planner_inference_time_s + avg_verifier_inference_time_s + avg_decoder_inference_time_s,
         "final_spot": spot_state,
         "behavior_trees": behavior_trees,
     }
@@ -210,8 +272,11 @@ def experiment(
                 "avg_planner_inference_time_s": float(
                     task_result["avg_planner_inference_time_s"]
                 ),
-                "avg_translator_inference_time_s": float(
-                    task_result["avg_translator_inference_time_s"]
+                "avg_verifier_inference_time_s": float(
+                    task_result["avg_verifier_inference_time_s"]
+                ),
+                "avg_decoder_inference_time_s": float(
+                    task_result["avg_decoder_inference_time_s"]
                 ),
                 "avg_inference_time_s": float(task_result["avg_inference_time_s"]),
             }
@@ -285,7 +350,8 @@ def main(
     if exp_id is not None:
         utils.save_exp_meta(
             utils.get_results_dir(exp_id),
-            {"MAX_BT_COUNT": MAX_BT_COUNT},
+            {"MAX_BT_COUNT": MAX_BT_COUNT,
+             "MAX_VERIFY_COUNT": MAX_VERIFY_COUNT},
         )
 
     try:
