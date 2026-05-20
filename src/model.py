@@ -134,9 +134,19 @@ def ask_model(
     messages: list[dict[str, Any]],
     uses_tools: bool = False,
     schema: Any | None = None,
-    backend: str = "transformers",
+    backend: str = "vllm",
 ) -> str:
-    """ Generate one model response """
+    """ 
+    Generate one model response.
+
+    Args:
+        model: The model to use for inference.
+        processor: The processor to use for inference.
+        messages: The messages to use for inference.
+        uses_tools: Whether to use tools for inference.
+        schema: Schema to enforce on model's output. If None, no constrained decoding. 
+        backend: Which backend to use, "vllm" or "transformers".
+     """
     chat_template_kwargs = {
         "add_generation_prompt": True,
     }
