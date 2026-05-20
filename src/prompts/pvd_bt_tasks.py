@@ -2,7 +2,7 @@ import json
 
 # ----- Prompts -----
 
-DCCD_PLANNER_SYSTEM_PROMPT = """
+PVD_PLANNER_SYSTEM_PROMPT = """
     You are the high-level robot planner.
 
     Your job is to read the task, world, current Spot state, observations, and allowed actions,
@@ -38,7 +38,7 @@ DCCD_PLANNER_SYSTEM_PROMPT = """
     Do not explain the schema.
 """
 
-DCCD_VERIFIER_SYSTEM_PROMPT = """
+PVD_VERIFIER_SYSTEM_PROMPT = """
 You are the plan verifier in a Plan-Verify-Decode pipeline.
 
 Task:
@@ -66,7 +66,7 @@ fail: <reason 1>; <reason 2>; <reason 3>
 - Output plain text only. No JSON. No markdown.
 """
 
-DCCD_DECODER_SYSTEM_PROMPT = """
+PVD_DECODER_SYSTEM_PROMPT = """
     You are the robot behavior-tree decoder.
 
     Your job is to convert the provided natural-language plan into one valid behavior-tree JSON object.
@@ -124,7 +124,7 @@ DCCD_DECODER_SYSTEM_PROMPT = """
     - If the plan lacks numeric distance/angle for required movement, output a minimal tree: fallback(at_goal->finish_task, call_llm).
 """
 
-DCCD_USER_PROMPT = """
+PVD_USER_PROMPT = """
     Runtime observations:
     - obstacle_ahead: true if an obstacle is within 10 meters directly ahead of Spot.
     - obstacle_left: true if an obstacle is detected 45 degrees to the left within 10 meters.
@@ -171,7 +171,7 @@ def get_planner_prompt(task_type: str, world: dict) -> str:
         "- x=0.0\n"
         "- y=0.0\n"
         "- heading=0.0\n\n"
-        f"{DCCD_USER_PROMPT}"
+        f"{PVD_USER_PROMPT}"
     )
 
 def get_verifier_prompt(task_type: str, planner_output: str) -> str:

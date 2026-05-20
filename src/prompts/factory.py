@@ -10,10 +10,10 @@ from .wall_steps import WALL_STEPS_SYSTEM_PROMPT, WALL_STEPS_PROMPTS
 from .multi_dog_step import MULTI_DOG_STEP_SYSTEM_PROMPT, MULTI_DOG_STEP_PROMPTS
 from .wall_bt import WALL_BT_SYSTEM_PROMPT
 from .bt_tasks import BT_TASKS_SYSTEM_PROMPT
-from .dccd_bt_tasks import (
-    DCCD_PLANNER_SYSTEM_PROMPT, 
-    DCCD_VERIFIER_SYSTEM_PROMPT,
-    DCCD_DECODER_SYSTEM_PROMPT,
+from .pvd_bt_tasks import (
+    PVD_PLANNER_SYSTEM_PROMPT, 
+    PVD_VERIFIER_SYSTEM_PROMPT,
+    PVD_DECODER_SYSTEM_PROMPT,
 )
 
 SYSTEM_PROMPTS = {
@@ -22,9 +22,9 @@ SYSTEM_PROMPTS = {
     "multi_dog_steps": MULTI_DOG_STEP_SYSTEM_PROMPT,
     "wall_bt": WALL_BT_SYSTEM_PROMPT,
     "bt_tasks": BT_TASKS_SYSTEM_PROMPT,
-    "dccd_planner": DCCD_PLANNER_SYSTEM_PROMPT,
-    "dccd_verifier": DCCD_VERIFIER_SYSTEM_PROMPT,
-    "dccd_decoder": DCCD_DECODER_SYSTEM_PROMPT,
+    "pvd_planner": PVD_PLANNER_SYSTEM_PROMPT,
+    "pvd_verifier": PVD_VERIFIER_SYSTEM_PROMPT,
+    "pvd_decoder": PVD_DECODER_SYSTEM_PROMPT,
 }
 
 PROMPT_POOLS_BY_MODE = {

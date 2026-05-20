@@ -14,7 +14,7 @@ from src.model import init_model, ask_model, cleanup_model
 from src.prompts.factory import get_initial_message, append_message
 
 from src.parsers.bt import parse_bt_output
-from src.prompts.dccd_bt_tasks import (
+from src.prompts.pvd_bt_tasks import (
     get_planner_prompt, 
     get_verifier_prompt,
     get_decoder_prompt, 
@@ -69,7 +69,7 @@ def episode(
 
     # Build prompts
     planner_prompt = get_initial_message(
-        "dccd_planner",
+        "pvd_planner",
         user_prompt=get_planner_prompt(task_type, task_world),
         uses_tools=False,
         backend=backend,
@@ -95,7 +95,7 @@ def episode(
 
             # Verify planner output
             verifier_prompt = get_initial_message(
-                "dccd_verifier",
+                "pvd_verifier",
                 user_prompt=get_verifier_prompt(task_type, planner_output),
                 uses_tools=False,
                 backend=backend,
@@ -130,7 +130,7 @@ def episode(
 
         # Build decoder prompt
         decoder_prompt = get_initial_message(
-            "dccd_decoder",
+            "pvd_decoder",
             user_prompt=get_decoder_prompt(planner_output),
             schema_sample=BT_TASKS_SCHEMA_SAMPLE,
             uses_tools=True,
