@@ -4,9 +4,9 @@ set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 MODEL_LIST="${1:-$PROJECT_ROOT/jobs/BTBench_evaluation/models.txt}"
 EXP_ID="${2:-bt_cd_full_array_$(date +%F_%H-%M-%S)}"
-TASK_IDX="${3:-0}"
-MAX_BT_COUNT="${4:-1}"
-CONCURRENCY="${5:-4}"
+TASK_IDX="${3:-none}"
+MAX_BT_COUNT="${4:-3}"
+CONCURRENCY="${5:-7}"
 
 cd "$PROJECT_ROOT"
 

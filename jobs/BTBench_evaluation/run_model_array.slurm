@@ -7,6 +7,8 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=96G
 #SBATCH --time=24:00:00
+#SBATCH --mail-user=di246213@ucf.edu
+#SBATCH --mail-type=END,FAIL,ARRAY_TASKS
 #SBATCH --output=logs/BTBench_evaluation/slurm/%x-%A_%a.out
 #SBATCH --error=logs/BTBench_evaluation/slurm/%x-%A_%a.err
 
@@ -57,13 +59,14 @@ apptainer exec --cleanenv --nv \
   bash -lc "
     cd '$PROJECT_ROOT'
 
-    export VLLM_WORKER_MULTIPROC_METHOD=spawn
-    export VLLM_LOGGING_LEVEL=INFO
-    export VLLM_DEEP_GEMM_WARMUP=skip
+    TASK_ARG=\"\"
+    if [[ '$TASK_IDX' != 'none' && '$TASK_IDX' != 'None' && -n '$TASK_IDX' ]]; then
+      TASK_ARG=\"--task-idx $TASK_IDX\"
+    fi
 
     python3 jobs/BTBench_evaluation/run_one_bt_model.py '$MODEL_ID' \
       --use-cd \
-      --task-idx '$TASK_IDX' \
+      \$TASK_ARG \
       --max-bt-count '$MAX_BT_COUNT' \
       --exp-id '$EXP_ID'
   " 2>&1 | tee "$MODEL_LOG"

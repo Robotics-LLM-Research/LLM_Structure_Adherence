@@ -17,7 +17,7 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument("model_id")
     parser.add_argument("--exp-id", default="bt_cd_smoke_one_task")
-    parser.add_argument("--task-idx", type=int, default=0)
+    parser.add_argument("--task-idx", type=int, default=None)
     parser.add_argument("--max-bt-count", type=int, default=1)
     parser.add_argument("--backend", default="vllm")
 
@@ -42,7 +42,7 @@ def main() -> None:
         max_bt_count=args.max_bt_count,
         use_tools=not args.no_tools,
         use_cd=args.use_cd,
-        tasks_idx=[args.task_idx],
+        tasks_idx=None if args.task_idx is None else [args.task_idx],
         exp_id=args.exp_id,
         backend=args.backend,
     )
