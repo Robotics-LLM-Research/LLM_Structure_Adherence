@@ -8,7 +8,7 @@ import torch
 from pydantic import TypeAdapter
 from transformers import AutoTokenizer, AutoProcessor, AutoModelForImageTextToText
 
-from .tools import get_tool_declarations
+from .tools import get_tool_declarations, get_openai_tool_declarations
 from . import constants
 
 HF_CACHE_DIR = Path(__file__).resolve().parent.parent / ".hf_cache"
@@ -152,6 +152,10 @@ def ask_model(
     }
 
     model_name = getattr(processor, "name_or_path", "")
+    is_mistralai_model = "mistralai" in model_name.lower()
+    tool_declarations = (
+        get_openai_tool_declarations() if is_mistralai_model else get_tool_declarations()
+    )
     if "Qwen3" in model_name:
         chat_template_kwargs["enable_thinking"] = False
 
@@ -188,7 +192,7 @@ def ask_model(
         if uses_tools:
             prompt_text = tokenizer.apply_chat_template(
                 messages,
-                tools=get_tool_declarations(),
+                tools=tool_declarations,
                 tokenize=False,
                 **chat_template_kwargs,
             )
@@ -211,7 +215,7 @@ def ask_model(
         if uses_tools:
             inputs = processor.apply_chat_template(
                 messages,
-                tools=get_tool_declarations(),
+                tools=tool_declarations,
                 tokenize=True,
                 return_dict=True,
                 return_tensors="pt",

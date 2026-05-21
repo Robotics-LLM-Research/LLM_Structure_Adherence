@@ -101,7 +101,7 @@ def resolve_tasks(
     out_dir: Path,
     model_id: str,
     tasks_idx: list[int] | None
-) -> tuple[list[int], int, int]:
+) -> list[int]:
     """ Resolve a model's missing tasks from results """
     pending_tasks_idx, total_requested, completed_count = _get_pending_task_indices(
         out_dir=out_dir,
@@ -112,6 +112,7 @@ def resolve_tasks(
         print(
             f"[SKIP] {model_id}: all {total_requested} requested tasks already have results"
         )
+        return pending_tasks_idx
 
     if completed_count:
         print(
