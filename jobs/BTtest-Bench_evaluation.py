@@ -29,7 +29,7 @@ def main() -> None:
     ]
 
     for use_cd in [True, False]:
-        exp_id = f"bt_{'cd' if use_cd else 'no_cd'}_all_tasks"
+        exp_id = f"bt_{'cd' if use_cd else 'no_cd'}_one_task_test"
 
         for model_id in models:
             print(f"\n\n========== FULL START: {model_id} ==========", flush=True)
@@ -40,7 +40,7 @@ def main() -> None:
                     max_bt_count=3,
                     use_tools=True,
                     use_cd=use_cd,
-                    tasks_idx=None,
+                    tasks_idx=[0],
                     exp_id=exp_id,
                 )
                 print(f"FULL DONE: {model_id}", flush=True)
