@@ -7,6 +7,7 @@ EXP_ID="${2:-bt_cd_full_array_$(date +%F_%H-%M-%S)}"
 TASK_IDX="${3:-none}"
 MAX_BT_COUNT="${4:-3}"
 CONCURRENCY="${5:-7}"
+USE_CD="${6:-true}"
 
 cd "$PROJECT_ROOT"
 
@@ -31,8 +32,9 @@ echo "Exp id:       $EXP_ID"
 echo "Task idx:     $TASK_IDX"
 echo "Max BT count: $MAX_BT_COUNT"
 echo "Concurrency:  $CONCURRENCY"
+echo "Use CD:       $USE_CD"
 
 sbatch \
   --array="1-${MODEL_COUNT}%${CONCURRENCY}" \
-  --export=ALL,PROJECT_ROOT="$PROJECT_ROOT",MODEL_LIST="$MODEL_LIST",EXP_ID="$EXP_ID",TASK_IDX="$TASK_IDX",MAX_BT_COUNT="$MAX_BT_COUNT" \
+  --export=ALL,PROJECT_ROOT="$PROJECT_ROOT",MODEL_LIST="$MODEL_LIST",EXP_ID="$EXP_ID",TASK_IDX="$TASK_IDX",MAX_BT_COUNT="$MAX_BT_COUNT",USE_CD="$USE_CD" \
   jobs/BTBench_evaluation/run_model_array.slurm
