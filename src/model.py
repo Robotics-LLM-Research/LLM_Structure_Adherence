@@ -52,6 +52,60 @@ def _import_vllm() -> tuple[Any, Any, Any]:
 
     return LLM, SamplingParams, StructuredOutputsParams
 
+def normalize_messages_for_model(
+    messages: list[dict[str, Any]],
+    model_name: str,
+) -> list[dict[str, Any]]:
+    """Normalize chat messages for model-specific chat template constraints."""
+    if "gemma" not in model_name.lower():
+        return messages
+
+    system_chunks: list[str] = []
+    non_system_messages: list[dict[str, Any]] = []
+
+    for message in messages:
+        role = message.get("role")
+        content = message.get("content", "")
+
+        if role != "system":
+            non_system_messages.append(dict(message))
+            continue
+
+        if isinstance(content, str):
+            if content.strip():
+                system_chunks.append(content.strip())
+            continue
+
+        if isinstance(content, list):
+            text_parts = []
+            for item in content:
+                if isinstance(item, dict) and item.get("type") == "text":
+                    text_value = item.get("text", "")
+                    if isinstance(text_value, str) and text_value.strip():
+                        text_parts.append(text_value.strip())
+            if text_parts:
+                system_chunks.append("\n".join(text_parts))
+
+    if not system_chunks:
+        return non_system_messages
+
+    system_text = "\n\n".join(system_chunks)
+
+    for message in non_system_messages:
+        if message.get("role") != "user":
+            continue
+
+        user_content = message.get("content", "")
+        if isinstance(user_content, str):
+            message["content"] = f"{system_text}\n\n{user_content}".strip()
+        elif isinstance(user_content, list):
+            message["content"] = [{"type": "text", "text": f"{system_text}\n\n"}] + user_content
+        else:
+            message["content"] = f"{system_text}\n\n{user_content}".strip()
+        return non_system_messages
+
+    return [{"role": "user", "content": system_text}] + non_system_messages
+
 # ----- Model Setup -----
 def init_model(
     model_id: str, 
@@ -160,6 +214,8 @@ def ask_model(
         chat_template_kwargs["enable_thinking"] = False
 
     # --- VLLM ---
+    normalized_messages = normalize_messages_for_model(messages=messages, model_name=model_name)
+
     if backend == "vllm":
         # _, SamplingParams, GuidedDecodingParams = _import_vllm() # Old
         _, SamplingParams, StructuredOutputsParams = _import_vllm() # New
@@ -191,14 +247,14 @@ def ask_model(
         
         if uses_tools:
             prompt_text = tokenizer.apply_chat_template(
-                messages,
+                normalized_messages,
                 tools=tool_declarations,
                 tokenize=False,
                 **chat_template_kwargs,
             )
         else:
             prompt_text = tokenizer.apply_chat_template(
-                messages,
+                normalized_messages,
                 tokenize=False,
                 **chat_template_kwargs,
             )
@@ -214,7 +270,7 @@ def ask_model(
     if backend == "transformers":
         if uses_tools:
             inputs = processor.apply_chat_template(
-                messages,
+                normalized_messages,
                 tools=tool_declarations,
                 tokenize=True,
                 return_dict=True,
@@ -223,7 +279,7 @@ def ask_model(
             ).to(model.device)
         else:
             inputs = processor.apply_chat_template(
-                messages,
+                normalized_messages,
                 tokenize=True,
                 return_dict=True,
                 return_tensors="pt",
