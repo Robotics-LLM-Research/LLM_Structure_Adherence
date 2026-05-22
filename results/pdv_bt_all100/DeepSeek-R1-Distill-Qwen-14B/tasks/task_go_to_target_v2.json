@@ -1,0 +1,83 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 6.664724008245685,
+  "avg_verifier_inference_time_s": 3.5645341060007922,
+  "avg_decoder_inference_time_s": 3.59123830733976,
+  "avg_inference_time_s": 13.820496421586236,
+  "final_spot": {
+    "x": 2.9,
+    "y": -6.6,
+    "heading": 89.4
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "planner_output": "Okay, so I need to figure out how to move Spot to the target. The target is a rectangular area with coordinates from (2.4, 0.4) to (3.6, 1.6). Spot starts at (0,0) facing the positive x-direction, which is east.\n\nFirst, I should calculate the center of the target. The center's x-coordinate is the average of 2.4 and 3.6, which is 3.0. The y-coordinate is the average of 0.4 and 1.6, which is 1.0. So the center is at (3.0, 1.0).\n\nSpot is currently at (0,0), so the direction to the target's center is towards (3.0, 1.0). To find the angle, I can use the arctangent of (1.0 / 3.0). That gives me approximately 18.43 degrees. Since Spot is initially facing 0 degrees (east), it needs to rotate clockwise by about 18.43 degrees to face the target.\n\nAfter rotating, Spot should move forward. The distance from (0,0) to (3.0, 1.0) is the square root of (3^2 + 1^2) = sqrt(10) \u2248 3.16 meters. But since the target is a rectangle, moving 3.0 meters should be sufficient to reach it, considering the center is at 3.0 meters in the x-direction.\n\nI should check if there are any obstacles in the way. If there's an obstacle ahead, Spot might need to call the LLM for a new plan. But assuming a clear path, rotating 18 degrees and moving 3.0 meters should get Spot to the target.\n\nWait, the target's y-coordinate is 1.0, so moving 3.0 meters in the new heading should place Spot within the target area. After moving, I should check if at_goal is true. If not, maybe adjust the movement distance or call LLM again.\n\nSo the plan is: rotate 18 degrees clockwise, move 3.0 meters forward, then finish the task if at_goal is true. If not, call LLM for further instructions.\n</think>\n\n1. Rotate Spot 18 degrees clockwise to face the target's center.\n2. Move Spot 3.0 meters forward towards the target.\n3. Finish_task()",
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 18\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 3.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 2.9,
+          "y": -0.9,
+          "heading": 18.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "planner_output": "Okay, so I need to figure out how to help Spot reach the target after the initial plan didn't work. Let me start by understanding the situation.\n\nFirst, the target is a rectangle with coordinates x1=2.4, x2=3.6 and y1=0.4, y2=1.6. That means the center of the target is at ((2.4+3.6)/2, (0.4+1.6)/2) which is (3.0, 1.0). \n\nSpot's initial position was at (0.0, 0.0) facing +x (0 degrees). The first plan was to rotate 18 degrees and move 3 meters. But after execution, Spot ended up at (2.9, -0.9) with a heading of 18 degrees, and it's not at the goal yet.\n\nLooking at the observations, there were no obstacles ahead, left, or right, and the target wasn't directly ahead. So, Spot moved, but didn't reach the target. Now, I need to adjust the plan.\n\nI think the first step is to calculate the new direction Spot should face. Since the target is at (3.0, 1.0) and Spot is at (2.9, -0.9), the vector from Spot to the target is (3.0-2.9, 1.0 - (-0.9)) = (0.1, 1.9). \n\nTo find the angle, I'll use the arctangent of (1.9/0.1) which is 91 degrees. Since Spot is currently facing 18 degrees, it needs to rotate to face 91 degrees. That means rotating 73 degrees clockwise (since 91 - 18 = 73).\n\nNext, I need to determine how far to move. The distance from Spot's current position to the target center can be calculated using the distance formula: sqrt((0.1)^2 + (1.9)^2) \u2248 1.902 meters. So, moving 1.9 meters should get Spot close enough to the target.\n\nI should check if moving 1.9 meters in the new direction would collide, but since there were no obstacles detected last time, it's probably safe. If there's an obstacle now, Spot should call the LLM, but since the observations don't show any, I'll proceed with the movement.\n\nSo, the revised plan is to rotate 73 degrees clockwise and then move 1.9 meters. After that, Spot should finish the task if it's at the goal.\n</think>\n\n1. Rotate Spot 73 degrees clockwise to face the target's new direction.\n2. Move Spot 1.9 meters forward towards the target.\n3. Finish_task()",
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\"\n            ,\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 73\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 1.9\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\"\n            ,\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 2.9,
+          "y": -2.8,
+          "heading": 91.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "planner_output": "Alright, I need to revise the plan based on the feedback. The main issue was that the previous plan assumed success without checking if the goal was actually reached. So, I should incorporate a check for `at_goal` before finishing the task. \n\nFirst, I'll start by having Spot rotate to face the target's center. Since the target is a rectangle, I'll calculate the center point. The target's coordinates are from (2.4, 0.4) to (3.6, 1.6), so the center would be at ((2.4+3.6)/2, (0.4+1.6)/2) = (3.0, 1.0). \n\nSpot's current position is at (2.9, -2.8) with a heading of 91 degrees. To face the target's center, I need to calculate the angle between Spot's current position and the target's center. The change in x is 3.0 - 2.9 = 0.1 meters, and the change in y is 1.0 - (-2.8) = 3.8 meters. \n\nUsing trigonometry, the angle can be found using the arctangent of (\u0394y / \u0394x). So, arctan(3.8 / 0.1) is approximately 89.4 degrees. Since Spot is currently at 91 degrees, the adjustment needed is about -1.6 degrees to face directly towards the target's center.\n\nNext, after rotating, I'll have Spot move forward. The distance from Spot's current position to the target's center is sqrt((0.1)^2 + (3.8)^2) \u2248 3.801 meters. So, moving 3.8 meters should bring Spot close to the target.\n\nHowever, I should include a check after moving to ensure that `at_goal` is true before finishing the task. If not, I might need to adjust the position or call the LLM for further instructions.\n\nPutting it all together, the revised plan should include rotating Spot by the calculated degrees, moving the calculated distance, checking if at_goal, and if not, calling the LLM to reassess the path.\n</think>\n\n1. Rotate Spot -1.6 degrees clockwise to face the target's center.\n2. Move Spot 3.8 meters forward towards the target.\n3. Check if at_goal is true.\n4. If at_goal is true, finish_task().\n5. If at_goal is false, call_llm() to reassess the path.",
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\"\n            ,\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -1.6\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 3.8\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\"\n            ,\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 2.9,
+          "y": -6.6,
+          "heading": 89.4
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}
