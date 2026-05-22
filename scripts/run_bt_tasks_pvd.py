@@ -23,8 +23,6 @@ from src.prompts.pvd_bt_tasks import (
 from src.schemas.bt import BT_TASKS_SCHEMA_SAMPLE, BT_SCHEMA_CONFIG
 
 TASKS_PATH = PROJECT_ROOT / "src" / "tasks" / "tasks_100.json"
-MAX_BT_COUNT = 3
-MAX_VERIFY_COUNT = 2
 
 
 
@@ -46,6 +44,8 @@ def episode(
     processor: Any,
     backend: str,
     task: dict,
+    max_bt_count: int,
+    max_verify_count: int,
 ):
     # Result flags
     perfect_structure = True
@@ -75,10 +75,10 @@ def episode(
         backend=backend,
     )
 
-    while bt_count < MAX_BT_COUNT:
+    while bt_count < max_bt_count:
         bt_count += 1
 
-        while verify_count < MAX_VERIFY_COUNT:
+        while verify_count < max_verify_count:
             verify_count += 1
 
             # Query the planner
@@ -225,6 +225,8 @@ def experiment(
     model: Any,
     processor: Any,
     backend: str,
+    max_bt_count: int,
+    max_verify_count: int,
     model_id: str,
     tasks_idx: list[int] | None,
 ):
@@ -259,6 +261,8 @@ def experiment(
             processor=processor,
             backend=backend,
             task=task,
+            max_bt_count=max_bt_count,
+            max_verify_count=max_verify_count,
         )
 
         # Update totals
@@ -305,7 +309,8 @@ def experiment(
 
     return {
         "model_id": model_id,
-        "max_bt_per_episode": MAX_BT_COUNT,
+        "max_bt_per_episode": max_bt_count,
+        "max_verify_per_episode": max_verify_count,
         "total_tasks": total_tasks,
         "total_structure_adherence": total_structure_adherence,
         "total_perfect_adherence": total_perfect_adherence,
@@ -327,6 +332,8 @@ def experiment(
     
 def main(
     model_id: str,
+    max_bt_count: int,
+    max_verify_count: int,
     tasks_idx: list[int] | None = None,
     exp_id: str | None = None,
     backend: str = "vllm",
@@ -350,8 +357,8 @@ def main(
     if exp_id is not None:
         utils.save_exp_meta(
             utils.get_results_dir(exp_id),
-            {"MAX_BT_COUNT": MAX_BT_COUNT,
-             "MAX_VERIFY_COUNT": MAX_VERIFY_COUNT},
+            {"MAX_BT_COUNT": max_bt_count,
+             "MAX_VERIFY_COUNT": max_verify_count},
         )
 
     try:
@@ -360,6 +367,8 @@ def main(
             model=model, 
             processor=processor, 
             backend=backend,
+            max_bt_count=max_bt_count,
+            max_verify_count=max_verify_count,
             model_id=model_id,
             tasks_idx=pending_tasks_idx,
         )
@@ -371,7 +380,7 @@ def main(
         out_dir=out_dir,
         model_id=model_id,
         tasks_idx=tasks_idx,
-        max_bt_count=MAX_BT_COUNT,
+        max_bt_count=max_bt_count,
     )
     experiment_out_path = out_dir / "main_results.json"
     experiment_out_path.write_text(json.dumps(experiment_result, indent=2))
