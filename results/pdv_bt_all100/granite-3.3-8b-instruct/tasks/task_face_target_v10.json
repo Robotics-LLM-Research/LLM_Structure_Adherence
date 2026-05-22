@@ -1,0 +1,113 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 2.298769095170428,
+  "avg_verifier_inference_time_s": 0.5448325776718169,
+  "avg_decoder_inference_time_s": 3.0195557596647027,
+  "avg_inference_time_s": 5.863157432506948,
+  "final_spot": {
+    "x": 1.8,
+    "y": 1.0,
+    "heading": 248.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Since the task is to face the target, first determine the direction to the target. The target center is at ((1.5+2.5)/2, (4.5+5.5)/2) = (2.0, 5.0).\n2. Calculate the angle to the target from the current heading (0.0). The angle \u03b8 in radians can be calculated using arctan((y2-y1)/(x2-x1)) = arctan((5.0-0.0)/(2.0-0.0)) \u2248 0.983 radians or approximately 56.0 degrees.\n3. Convert this angle to degrees for Spot's rotation: approximately 56.0 degrees.\n4. Execute rotate_spot(56.0) to face the target.\n\nFallbacks:\n- If obstacle_ahead is true before rotating, call_llm to request a new plan.\n- If after rotation, obstacle_ahead is still true, call_llm for further instructions.\n- If at_goal becomes true after rotation, finish_task.\n\nNote: The plan assumes that there are no immediate obstacles blocking the path to the target, and the calculated rotation directly faces the target. If there are obstacles or the calculation needs adjustment, the plan will fall back to calling the LLM for a new strategy.",
+          "verifier_output": "fail: The plan uses vague instructions \"determine the direction to the target\" and \"calculate the angle to the target\"; it assumes success without checking at_goal."
+        },
+        {
+          "planner_output": "1. Execute rotate_spot(56.0) to face the target.\n2. If at_goal is false after the rotation, verify if Spot is facing the target by checking if the difference between the current heading and the target angle (56.0 degrees) is within a small threshold (e.g., 5 degrees). If true, proceed; if false, call_llm.\n3. If obstacle_ahead is true after the rotation, call_llm for further instructions.\n4. If at_goal becomes true after rotation, finish_task.\n\nThis revised plan avoids vague instructions and includes a check for at_goal after the rotation. It also specifies calling the LLM when encountering obstacles or when the initial rotation does not lead to facing the target within a small threshold.",
+          "verifier_output": "fail: The plan uses the action 'face_target' which is not available in the provided tools. The action 'rotate_spot(56.0)' is acceptable as it specifies a numeric degree value. The plan also correctly checks for at_goal and includes a condition to call_llm when encountering obstacles or when the initial rotation does not lead to facing the target within a small threshold. However, the use of 'face_target' violates rule 7."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 56.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": false},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}]\n      },\n      {\"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 56.0}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 112.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Execute rotate_spot(-56.0) to correct the heading towards the target.\n2. Move Spot closer to the target by executing move_spot(1.0) meters.\n3. Verify if Spot is facing the target by checking if the difference between the current heading and the target angle (56.0 degrees) is within a small threshold (e.g., 5 degrees). If true, proceed; if false, call_llm.\n4. If obstacle_ahead becomes true after moving, call_llm for further instructions.\n5. If at_goal becomes true after the rotation and move, finish_task.\n\nThis revised plan provides more concrete actions with bounded numeric values for rotation and movement. It also includes a check for at_goal after the rotation and movement, and specifies calling the LLM when encountering obstacles or when the initial rotation and move do not lead to facing the target within a small threshold.",
+          "verifier_output": "fail: The plan uses vague instructions \"Move Spot closer to the target\" in step 2, which does not provide a specific numeric value for meters to move. Additionally, the plan suggests checking if Spot is facing the target by comparing headings within a small threshold, which is a form of vague instruction."
+        },
+        {
+          "planner_output": "1. Execute rotate_spot(-56.0) to correct the heading towards the target.\n2. Move Spot closer to the target by executing move_spot(1.0) meters.\n3. If at_goal is false after the rotation and move, calculate the difference between the current heading and the target angle (56.0 degrees). If the absolute difference is greater than 5 degrees, call_llm for further instructions.\n4. If obstacle_ahead becomes true after moving, call_llm for further instructions.\n5. If at_goal becomes true after the rotation and move, finish_task.\n\nThis revised plan provides concrete numeric values for rotation and movement. It also specifies calling the LLM when the difference between the current heading and the target angle exceeds a small threshold (5 degrees) or when encountering obstacles after the rotation and move. The plan avoids vague instructions and adheres to the given rules.",
+          "verifier_output": "fail: The plan uses vague instructions \"Move Spot closer to the target\" in step 2, which does not provide a specific numeric value for meters to move."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -56.0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.6,
+          "y": -0.8,
+          "heading": 56.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Execute rotate_spot(-56.0) to correct the heading towards the target.\n2. Move Spot closer to the target by executing move_spot(1.0) meters.\n3. If at_goal is false after the rotation and move, calculate the difference between the current heading and the target angle (56.0 degrees). If the absolute difference is greater than 5 degrees, call_llm for further instructions.\n4. If obstacle_ahead becomes true after moving, call_llm for further instructions.\n5. If at_goal becomes true after the rotation and move, finish_task.\n\nThis revised plan provides concrete numeric values for rotation and movement. It also specifies calling the LLM when the difference between the current heading and the target angle exceeds a small threshold (5 degrees) or when encountering obstacles after the rotation and move. The plan avoids vague instructions and adheres to the given rules.\n\nGiven the final_spot observation, let's refine the plan:\n\n1. Execute rotate_spot(-56.0) to correct the heading towards the target.\n2. Move Spot closer to the target by executing move_spot(1.0) meters.\n3. If at_goal is false after the rotation and move, calculate the difference between the current heading (56.0) and the target angle. If the absolute difference is greater than 5 degrees, call_llm for further instructions.\n4. If obstacle_ahead becomes true after moving, call_llm for further instructions.\n5. If at_goal becomes true after the rotation and move, finish_task.\n\nThis revised plan takes into account the final_spot observation and maintains concrete numeric values for rotation and movement, as well as specifying calling the LLM when necessary.",
+          "verifier_output": "fail: The plan uses vague instructions \"calculate the difference between the current heading and the target angle\" in step 3, which violates rule 4. Instead, it should specify the exact action to compute the difference and compare it to 5 degrees."
+        },
+        {
+          "planner_output": "1. Execute rotate_spot(-56.0) to correct the heading towards the target.\n2. Move Spot closer to the target by executing move_spot(1.0) meters.\n3. Calculate the difference between the current heading (56.0 degrees) and the target angle. If the absolute difference is greater than 5 degrees, call_llm for further instructions.\n4. If obstacle_ahead becomes true after moving, call_llm for further instructions.\n5. If at_goal becomes true after the rotation and move, finish_task.\n\nThis revised plan provides concrete numeric values for rotation and movement. It also specifies calling the LLM when the absolute difference between the current heading and the target angle exceeds 5 degrees or when encountering obstacles after the rotation and move. The plan avoids vague instructions and adheres to the given rules.",
+          "verifier_output": "fail: The plan uses vague instructions \"calculate the difference between the current heading (56.0 degrees) and the target angle\"; \"If the absolute difference is greater than 5 degrees\". These instructions violate rule 4."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -56.0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -56.0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -56.0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 1.8,
+          "y": 1.0,
+          "heading": 248.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

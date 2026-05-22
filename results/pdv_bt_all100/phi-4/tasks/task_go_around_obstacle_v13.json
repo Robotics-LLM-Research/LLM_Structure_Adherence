@@ -1,0 +1,113 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 2.6553489734991067,
+  "avg_verifier_inference_time_s": 0.6579491684921474,
+  "avg_decoder_inference_time_s": 4.12495669433459,
+  "avg_inference_time_s": 7.438254836325844,
+  "final_spot": {
+    "x": 5.0,
+    "y": -3.0,
+    "heading": 0.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "### Main Plan:\n\n1. **Rotate Spot to the Right:**\n   - `rotate_spot(90)` to face +y direction.\n\n2. **Move Spot Forward:**\n   - `move_spot(1.0)` to move away from the wall_1.\n\n3. **Rotate Spot to the Right:**\n   - `rotate_spot(90)` to face -x direction.\n\n4. **Move Spot Forward:**\n   - `move_spot(3.0)` to bypass the wall_1.\n\n5. **Rotate Spot to the Right:**\n   - `rotate_spot(90)` to face +y direction.\n\n6. **Move Spot Forward:**\n   - `move_spot(1.0)` to align with the path towards the target.\n\n7. **Rotate Spot to the Left:**\n   - `rotate_spot(-90)` to face +x direction.\n\n8. **Move Spot Forward:**\n   - `move_spot(5.0)` to approach the target area.\n\n9. **Check for Target:**\n   - If `target_ahead` is true, proceed to finish the task.\n   - If `target_ahead` is false, call `call_llm()` for further instructions.\n\n10. **Finish Task:**\n    - `finish_task()` if `at_goal` is true.\n\n### Fallbacks:\n\n- **If obstacle_ahead is true before moving:**\n  - Rotate Spot to the right by 90 degrees (`rotate_spot(90)`) to attempt a different path.\n\n- **If progress is unclear after the attempt:**\n  - Call `call_llm()` for further guidance.",
+          "verifier_output": "fail: The plan contains a long route instead of one bounded safe step plus replanning; The plan does not check `at_goal` before calling `finish_task`. \n\nThe plan attempts to navigate around the obstacle with multiple moves and rotations, which could be considered a long route. It should instead take one bounded step to avoid the obstacle and then call `call_llm()` for further instructions. Additionally, the plan should check `at_goal` before executing `finish_task` to ensure the task objective has been achieved."
+        },
+        {
+          "planner_output": "### Revised Main Plan:\n\n1. **Rotate Spot to the Right:**\n   - `rotate_spot(90)` to face +y direction.\n\n2. **Move Spot Forward:**\n   - `move_spot(1.0)` to move away from the wall_1.\n\n3. **Call for Further Instructions:**\n   - `call_llm()` to determine the next safe step.\n\n4. **Check for Goal Achievement:**\n   - If `at_goal` is true, proceed to finish the task.\n   - If `at_goal` is false, continue with further instructions from `call_llm()`.\n\n5. **Finish Task:**\n   - `finish_task()` if `at_goal` is true.",
+          "verifier_output": "fail: The plan uses vague instructions \"Call for Further Instructions\" without specifying concrete numeric rotate/move actions; The plan assumes success without checking `at_goal` before calling `call_llm()`."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": -1.0,
+          "heading": 90.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "### Revised Main Plan:\n\n1. **Rotate Spot to the Left:**\n   - `rotate_spot(-90)` to face +x direction.\n\n2. **Move Spot Forward:**\n   - `move_spot(3.0)` to move towards the target area.\n\n3. **Check for Goal Achievement:**\n   - If `at_goal` is true, proceed to finish the task.\n   - If `at_goal` is false, continue with further instructions.\n\n4. **Call for Further Instructions:**\n   - `call_llm()` to determine the next safe step.\n\n5. **Finish Task:**\n   - `finish_task()` if `at_goal` is true.",
+          "verifier_output": "fail: Rotate_spot lacks numeric degrees; Move_spot lacks numeric meters; Plan uses vague instructions: \"Check for Goal Achievement\" and \"Call for Further Instructions\" without specific actions or checks."
+        },
+        {
+          "planner_output": "### Revised Main Plan:\n\n1. **Rotate Spot to the Left:**\n   - `rotate_spot(-90)` to face +x direction.\n\n2. **Move Spot Forward:**\n   - `move_spot(3.0)` to move towards the target area.\n\n3. **Check for Goal Achievement:**\n   - If `at_goal` is true, execute `finish_task()`.\n\n4. **Call for Further Instructions:**\n   - `call_llm()` to determine the next safe step if `at_goal` is false.\n\n5. **Finish Task:**\n   - `finish_task()` if `at_goal` is true.",
+          "verifier_output": "fail: The plan uses vague instructions \"move towards the target area\" without specifying numeric actions; The plan lacks concrete numeric rotate/move actions to go to the target unless already at_goal."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 3.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": true,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 3.0,
+          "y": -1.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "### Revised Main Plan:\n\n1. **Rotate Spot to the Right:**\n   - `rotate_spot(90)` to face +y direction.\n\n2. **Move Spot Forward:**\n   - `move_spot(1.0)` to move away from the obstacle.\n\n3. **Rotate Spot to the Right:**\n   - `rotate_spot(90)` to face -x direction.\n\n4. **Move Spot Forward:**\n   - `move_spot(3.0)` to bypass the obstacle.\n\n5. **Rotate Spot to the Left:**\n   - `rotate_spot(-90)` to face +y direction.\n\n6. **Move Spot Forward:**\n   - `move_spot(1.0)` to align with the path towards the target.\n\n7. **Rotate Spot to the Left:**\n   - `rotate_spot(-90)` to face +x direction.\n\n8. **Move Spot Forward:**\n   - `move_spot(5.0)` to approach the target area.\n\n9. **Check for Goal Achievement:**\n   - If `at_goal` is true, execute `finish_task()`.\n\n10. **Call for Further Instructions:**\n    - `call_llm()` if `at_goal` is false.\n\n11. **Finish Task:**\n    - `finish_task()` if `at_goal` is true.",
+          "verifier_output": "fail: The plan assumes success without checking `at_goal` before moving towards the target; The plan does not verify if the obstacle is bypassed before proceeding with further actions."
+        },
+        {
+          "planner_output": "### Revised Main Plan:\n\n1. **Rotate Spot to the Right:**\n   - `rotate_spot(90)` to face +y direction.\n\n2. **Move Spot Forward:**\n   - `move_spot(1.0)` to move away from the obstacle.\n\n3. **Rotate Spot to the Right:**\n   - `rotate_spot(90)` to face -x direction.\n\n4. **Move Spot Forward:**\n   - `move_spot(3.0)` to bypass the obstacle.\n\n5. **Check for Obstacle Clearance:**\n   - If `obstacle_ahead` is false, proceed to the next step.\n   - If `obstacle_ahead` is true, call `call_llm()` for further instructions.\n\n6. **Rotate Spot to the Left:**\n   - `rotate_spot(-90)` to face +y direction.\n\n7. **Move Spot Forward:**\n   - `move_spot(1.0)` to align with the path towards the target.\n\n8. **Rotate Spot to the Left:**\n   - `rotate_spot(-90)` to face +x direction.\n\n9. **Move Spot Forward:**\n   - `move_spot(5.0)` to approach the target area.\n\n10. **Check for Goal Achievement:**\n    - If `at_goal` is true, execute `finish_task()`.\n\n11. **Call for Further Instructions:**\n    - `call_llm()` if `at_goal` is false.\n\n12. **Finish Task:**\n    - `finish_task()` if `at_goal` is true.",
+          "verifier_output": "fail: The plan contains vague instructions; \"Check for Obstacle Clearance\" and \"Check for Goal Achievement\" lack specific actions or checks. The plan assumes success without checking `at_goal` before moving towards the target. The plan does not specify what to do if `obstacle_ahead` is true after moving 3.0 meters."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 3.0}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 5.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": true,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 5.0,
+          "y": -3.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

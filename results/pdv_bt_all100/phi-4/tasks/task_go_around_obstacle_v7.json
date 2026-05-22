@@ -1,0 +1,113 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 3.849536674499783,
+  "avg_verifier_inference_time_s": 0.7937565714964876,
+  "avg_decoder_inference_time_s": 7.3805934660000885,
+  "avg_inference_time_s": 12.023886711996358,
+  "final_spot": {
+    "x": 4.0,
+    "y": -0.2,
+    "heading": 0.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "### Main Plan:\n\n1. **Rotate Right**: Rotate Spot 90 degrees to the right to face +y direction.\n   - `rotate_spot(90)`\n\n2. **Move Forward**: Move Spot 2.25 meters forward to clear the obstacle.\n   - `move_spot(2.25)`\n\n3. **Rotate Left**: Rotate Spot 90 degrees to the left to face +x direction.\n   - `rotate_spot(-90)`\n\n4. **Move Forward**: Move Spot 7.5 meters forward towards the target.\n   - `move_spot(7.5)`\n\n5. **Check Progress**: If `at_goal` is true, execute `finish_task()`. Otherwise, proceed to the next step.\n\n6. **Rotate Right**: Rotate Spot 45 degrees to the right to adjust towards the target center.\n   - `rotate_spot(45)`\n\n7. **Move Forward**: Move Spot 2.12 meters forward to reach the target center.\n   - `move_spot(2.12)`\n\n8. **Check Progress**: If `at_goal` is true, execute `finish_task()`. Otherwise, call `call_llm()` for further instructions.\n\n### Fallbacks:\n\n- **If obstacle_ahead is true before moving**: \n  - Rotate Spot 90 degrees to the right.\n  - `rotate_spot(90)`\n\n- **If progress is unclear after the attempt**:\n  - Call `call_llm()` for further instructions.",
+          "verifier_output": "fail: go_around_obstacle gives a long route instead of one bounded safe step plus replanning; move_to_closest_target uses move_spot greater than 2.0 meters unless target_ahead is true.\n\nThe plan attempts to navigate around the obstacle with a series of moves and rotations that exceed a single bounded step. Specifically, the move of 7.5 meters in step 4 is too long without confirming the target is directly ahead. Additionally, the plan does not ensure that the target is ahead before moving 7.5 meters, violating the constraint for move_spot actions."
+        },
+        {
+          "planner_output": "### Revised Main Plan:\n\n1. **Rotate Right**: Rotate Spot 90 degrees to the right to face +y direction.\n   - `rotate_spot(90)`\n\n2. **Move Forward**: Move Spot 2.25 meters forward to clear the obstacle.\n   - `move_spot(2.25)`\n\n3. **Rotate Left**: Rotate Spot 90 degrees to the left to face +x direction.\n   - `rotate_spot(-90)`\n\n4. **Check Target Ahead**: If `target_ahead` is true, proceed to step 5. Otherwise, call `call_llm()` for further instructions.\n\n5. **Move Forward**: Move Spot 2.0 meters forward towards the target.\n   - `move_spot(2.0)`\n\n6. **Check Progress**: If `at_goal` is true, execute `finish_task()`. Otherwise, proceed to the next step.\n\n7. **Rotate Right**: Rotate Spot 45 degrees to the right to adjust towards the target center.\n   - `rotate_spot(45)`\n\n8. **Move Forward**: Move Spot 2.0 meters forward.\n   - `move_spot(2.0)`\n\n9. **Check Progress**: If `at_goal` is true, execute `finish_task()`. Otherwise, call `call_llm()` for further instructions.\n\n### Fallbacks:\n\n- **If obstacle_ahead is true before moving**: \n  - Rotate Spot 90 degrees to the right.\n  - `rotate_spot(90)`\n\n- **If progress is unclear after the attempt**:\n  - Call `call_llm()` for further instructions.",
+          "verifier_output": "fail: go_around_obstacle gives a long route instead of one bounded safe step plus replanning; move_to_closest_target uses move_spot greater than 2.0 meters unless target_ahead is true."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 90\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 2.25\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -90\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"target_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 2.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 45\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 2.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 90\n              }\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": true,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": -2.2,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "### Revised Main Plan:\n\n1. **Rotate Left**: Rotate Spot 90 degrees to the left to face -x direction.\n   - `rotate_spot(-90)`\n\n2. **Move Forward**: Move Spot 2.0 meters forward to clear the obstacle.\n   - `move_spot(2.0)`\n\n3. **Rotate Right**: Rotate Spot 90 degrees to the right to face +x direction.\n   - `rotate_spot(90)`\n\n4. **Check Target Ahead**: If `target_ahead` is true, proceed to step 5. Otherwise, call `call_llm()` for further instructions.\n\n5. **Move Forward**: Move Spot 2.0 meters forward towards the target.\n   - `move_spot(2.0)`\n\n6. **Check Progress**: If `at_goal` is true, execute `finish_task()`. Otherwise, proceed to the next step.\n\n7. **Rotate Right**: Rotate Spot 45 degrees to the right to adjust towards the target center.\n   - `rotate_spot(45)`\n\n8. **Move Forward**: Move Spot 2.0 meters forward.\n   - `move_spot(2.0)`\n\n9. **Check Progress**: If `at_goal` is true, execute `finish_task()`. Otherwise, call `call_llm()` for further instructions.\n\n### Fallbacks:\n\n- **If obstacle_ahead is true before moving**: \n  - Rotate Spot 90 degrees to the right.\n  - `rotate_spot(90)`\n\n- **If progress is unclear after the attempt**:\n  - Call `call_llm()` for further instructions.",
+          "verifier_output": "fail: go_around_obstacle gives a long route instead of one bounded safe step plus replanning; move_to_closest_target uses move_spot greater than 2.0 meters unless target_ahead is true."
+        },
+        {
+          "planner_output": "### Revised Main Plan:\n\n1. **Rotate Left**: Rotate Spot 90 degrees to the left to face -x direction.\n   - `rotate_spot(-90)`\n\n2. **Move Forward**: Move Spot 2.0 meters forward to clear the obstacle.\n   - `move_spot(2.0)`\n\n3. **Rotate Right**: Rotate Spot 90 degrees to the right to face +x direction.\n   - `rotate_spot(90)`\n\n4. **Check Target Ahead**: If `target_ahead` is true, proceed to step 5. Otherwise, call `call_llm()` for further instructions.\n\n5. **Move Forward**: Move Spot 2.0 meters forward towards the target.\n   - `move_spot(2.0)`\n\n6. **Check Progress**: If `at_goal` is true, execute `finish_task()`. Otherwise, proceed to the next step.\n\n7. **Rotate Right**: Rotate Spot 45 degrees to the right to adjust towards the target center.\n   - `rotate_spot(45)`\n\n8. **Move Forward**: Move Spot 2.0 meters forward.\n   - `move_spot(2.0)`\n\n9. **Check Progress**: If `at_goal` is true, execute `finish_task()`. Otherwise, call `call_llm()` for further instructions.\n\n### Fallbacks:\n\n- **If obstacle_ahead is true before moving**: \n  - Rotate Spot 90 degrees to the right.\n  - `rotate_spot(90)`\n\n- **If progress is unclear after the attempt**:\n  - Call `call_llm()` for further instructions.",
+          "verifier_output": "fail: go_around_obstacle gives a long route instead of one bounded safe step plus replanning; move_to_closest_target uses move_spot greater than 2.0 meters unless target_ahead is true."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -90\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 2.0\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 90\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"target_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 2.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 45\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 2.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 90\n              }\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": true,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 2.0,
+          "y": -0.2,
+          "heading": 90.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "### Revised Main Plan:\n\n1. **Rotate Left**: Rotate Spot 90 degrees to the left to face 0 degrees (facing +x direction).\n   - `rotate_spot(-90)`\n\n2. **Move Forward**: Move Spot 2.0 meters forward to clear the obstacle.\n   - `move_spot(2.0)`\n\n3. **Check Target Ahead**: If `target_ahead` is true, proceed to step 4. Otherwise, call `call_llm()` for further instructions.\n\n4. **Move Forward**: Move Spot 2.0 meters forward towards the target.\n   - `move_spot(2.0)`\n\n5. **Check Progress**: If `at_goal` is true, execute `finish_task()`. Otherwise, proceed to the next step.\n\n6. **Rotate Right**: Rotate Spot 45 degrees to the right to adjust towards the target center.\n   - `rotate_spot(45)`\n\n7. **Move Forward**: Move Spot 2.0 meters forward.\n   - `move_spot(2.0)`\n\n8. **Check Progress**: If `at_goal` is true, execute `finish_task()`. Otherwise, call `call_llm()` for further instructions.\n\n### Fallbacks:\n\n- **If obstacle_ahead is true before moving**: \n  - Rotate Spot 90 degrees to the right.\n  - `rotate_spot(90)`\n\n- **If progress is unclear after the attempt**:\n  - Call `call_llm()` for further instructions.",
+          "verifier_output": "fail: go_around_obstacle gives a long route instead of one bounded safe step plus replanning; move_to_closest_target uses move_spot greater than 2.0 meters unless target_ahead is true.\n\nThe plan attempts to navigate around the obstacle with multiple moves and rotations, which could lead to a long route rather than a single bounded step. Additionally, the plan includes a move of 2.0 meters without confirming that the target is ahead, which violates the constraint for `move_to_closest_target`."
+        },
+        {
+          "planner_output": "### Revised Main Plan:\n\n1. **Rotate Left**: Rotate Spot 90 degrees to the left to face -x direction.\n   - `rotate_spot(-90)`\n\n2. **Move Forward**: Move Spot 2.0 meters forward to clear the obstacle.\n   - `move_spot(2.0)`\n\n3. **Rotate Right**: Rotate Spot 90 degrees to the right to face +x direction.\n   - `rotate_spot(90)`\n\n4. **Check Target Ahead**: If `target_ahead` is true, proceed to step 5. Otherwise, call `call_llm()` for further instructions.\n\n5. **Move Forward**: Move Spot 2.0 meters forward towards the target.\n   - `move_spot(2.0)`\n\n6. **Check Progress**: If `at_goal` is true, execute `finish_task()`. Otherwise, proceed to the next step.\n\n7. **Rotate Right**: Rotate Spot 45 degrees to the right to adjust towards the target center.\n   - `rotate_spot(45)`\n\n8. **Move Forward**: Move Spot 2.0 meters forward.\n   - `move_spot(2.0)`\n\n9. **Check Progress**: If `at_goal` is true, execute `finish_task()`. Otherwise, call `call_llm()` for further instructions.\n\n### Fallbacks:\n\n- **If obstacle_ahead is true before moving**: \n  - Rotate Spot 90 degrees to the right.\n  - `rotate_spot(90)`\n\n- **If progress is unclear after the attempt**:\n  - Call `call_llm()` for further instructions.",
+          "verifier_output": "fail: go_around_obstacle gives a long route instead of one bounded safe step plus replanning; move_to_closest_target uses move_spot greater than 2.0 meters unless target_ahead is true."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -90\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 2.0\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 90\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"target_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 2.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 45\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 2.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 90\n              }\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": true,
+          "obstacle_left": true,
+          "obstacle_right": true,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 4.0,
+          "y": -0.2,
+          "heading": 0.0
+        },
+        "collided": true,
+        "success": false,
+        "replan_requested": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 4.71161461333395,
+  "avg_verifier_inference_time_s": 1.5926747066744913,
+  "avg_decoder_inference_time_s": 5.773628222348634,
+  "avg_inference_time_s": 12.077917542357074,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 333.4
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "To determine the closest target to Spot's current position, we first calculate the center of each target:\n\n- **goal_1**: Center = ((2.5 + 3.5) / 2, (3.5 + 4.5) / 2) = (3.0, 4.0)\n- **goal_2**: Center = ((-4.5 + -3.5) / 2, (1.5 + 2.5) / 2) = (-4.0, 2.0)\n- **goal_3**: Center = ((6.0 + 7.0) / 2, (-2.0 + -1.0) / 2) = (6.5, -1.5)\n\nNext, we calculate the Euclidean distance from Spot's current position (0.0, 0.0) to each target center:\n\n- Distance to **goal_1**: \\(\\sqrt{(3.0 - 0.0)^2 + (4.0 - 0.0)^2} = \\sqrt{9 + 16} = \\sqrt{25} = 5.0\\)\n- Distance to **goal_2**: \\(\\sqrt{(-4.0 - 0.0)^2 + (2.0 - 0.0)^2} = \\sqrt{16 + 4} = \\sqrt{20} \\approx 4.47\\)\n- Distance to **goal_3**: \\(\\sqrt{(6.5 - 0.0)^2 + (-1.5 - 0.0)^2} = \\sqrt{42.25 + 2.25} = \\sqrt{44.5} \\approx 6.67\\)\n\nThe closest target is **goal_2** with a distance of approximately 4.47 meters.\n\n### Main Plan:\n\n1. **Rotate to Face goal_2**:\n   - Calculate the angle to rotate to face goal_2. The angle \\(\\theta\\) is given by \\(\\tan^{-1}(\\frac{y_2 - y_1}{x_2 - x_1})\\).\n   - \\(\\theta = \\tan^{-1}(\\frac{2.0 - 0.0}{-4.0 - 0.0}) = \\tan^{-1}(-0.5)\\).\n   - \\(\\theta \\approx -26.57\\) degrees (counter-clockwise).\n\n   Action: `rotate_spot(-26.57)`\n\n2. **Move Towards goal_2**:\n   - Check if `target_ahead` is true. If true, move forward.\n   - Action: `move_spot(2.0)`\n\n3. **Check Progress**:\n   - If `at_goal` is true, execute `finish_task`.\n   - If `obstacle_ahead` is true, rotate to avoid the obstacle or call `call_llm` if unsure.\n\n### Fallbacks:\n\n- **If at_goal is true**: Execute `finish_task`.\n- **If obstacle_ahead is true before moving**: Rotate to avoid the obstacle or call `call_llm` if unsure.\n- **If progress is unclear after the attempt**: Call `call_llm`.",
+          "verifier_output": "fail: Rotate to face goal_2 lacks numeric degrees; move_spot lacks numeric meters; move_to_closest_target uses move_spot greater than 2.0 meters unless target_ahead is true.\n\n- The plan specifies `rotate_spot(-26.57)` to face goal_2, but it does not check if the robot is already facing the target, which could lead to unnecessary rotation.\n- The plan includes `move_spot(2.0)` without checking if `target_ahead` is true, which violates the rule that `move_spot` should only be used if `target_ahead` is true or if the move is less than or equal to 2.0 meters.\n- The plan does not ensure that `move_spot` is only used if `target_ahead` is true, as required by the rule for `move_to_closest_target`."
+        },
+        {
+          "planner_output": "### Revised Main Plan:\n\n1. **Check if Already Facing goal_2**:\n   - If `target_ahead` is true, proceed to step 3.\n   - If `target_ahead` is false, calculate the angle to rotate to face goal_2.\n   - Calculate the angle \\(\\theta\\) using \\(\\tan^{-1}(\\frac{2.0 - 0.0}{-4.0 - 0.0}) = \\tan^{-1}(-0.5)\\).\n   - \\(\\theta \\approx -26.57\\) degrees (counter-clockwise).\n\n   Action: `rotate_spot(-26.57)`\n\n2. **Move Towards goal_2**:\n   - Check if `target_ahead` is true.\n   - If true, execute `move_spot(2.0)`.\n   - If false, call `call_llm` to determine the next action.\n\n3. **Check Progress**:\n   - If `at_goal` is true, execute `finish_task`.\n   - If `obstacle_ahead` is true, rotate to avoid the obstacle or call `call_llm` if unsure.\n\n### Fallbacks:\n\n- **If at_goal is true**: Execute `finish_task`.\n- **If obstacle_ahead is true before moving**: Rotate to avoid the obstacle or call `call_llm` if unsure.\n- **If progress is unclear after the attempt**: Call `call_llm`.",
+          "verifier_output": "fail: The plan uses vague instructions \"calculate the angle to rotate to face goal_2\" and \"calculate the angle \\(\\theta\\) using \\(\\tan^{-1}(\\frac{2.0 - 0.0}{-4.0 - 0.0})\\)\" without specifying the exact numeric degrees for `rotate_spot`; the plan assumes success without checking `at_goal` after moving towards goal_2; the plan does not specify a concrete numeric action for `move_spot` if `target_ahead` is false after rotation."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"fallback\",\n            \"children\": [\n              {\n                \"type\": \"sequence\",\n                \"children\": [\n                  {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n                  {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n                  {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n                  {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n                ]\n              },\n              {\n                \"type\": \"sequence\",\n                \"children\": [\n                  {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": false},\n                  {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -26.57}}},\n                  {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n                  {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n                  {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n                  {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n                ]\n              }\n            ]\n          },\n          {\n            \"type\": \"fallback\",\n            \"children\": [\n              {\n                \"type\": \"sequence\",\n                \"children\": [\n                  {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n                  {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90.0}}},  {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n                  {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n                ]\n              },\n              {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n            ]\n          }\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 333.4
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "### Revised Main Plan:\n\n1. **Rotate to Face goal_2**:\n   - Calculate the angle to rotate to face goal_2. The angle \\(\\theta\\) is given by \\(\\tan^{-1}(\\frac{2.0 - 0.0}{-4.0 - 0.0})\\).\n   - \\(\\theta \\approx -26.57\\) degrees (counter-clockwise).\n   - Current heading is 333.4 degrees. To face goal_2, rotate by \\(-26.57 - 333.4 = -359.97\\) degrees.\n   - Since rotating by -359.97 degrees is equivalent to rotating by 0.03 degrees clockwise, execute `rotate_spot(0.03)`.\n\n2. **Check if Target is Ahead**:\n   - If `target_ahead` is true, proceed to step 3.\n   - If `target_ahead` is false, call `call_llm` to determine the next action.\n\n3. **Move Towards goal_2**:\n   - Execute `move_spot(2.0)`.\n\n4. **Check Progress**:\n   - If `at_goal` is true, execute `finish_task`.\n   - If `obstacle_ahead` is true, rotate to avoid the obstacle or call `call_llm` if unsure.\n\n### Fallbacks:\n\n- **If at_goal is true**: Execute `finish_task`.\n- **If obstacle_ahead is true before moving**: Rotate to avoid the obstacle or call `call_llm` if unsure.\n- **If progress is unclear after the attempt**: Call `call_llm`.",
+          "verifier_output": "fail: Rotate to face goal_2 uses vague instructions; move_to_closest_target uses move_spot greater than 2.0 meters unless target_ahead is true.\n\n- The plan uses vague instructions in the calculation of the angle to rotate to face goal_2. It should specify the exact numeric degrees for the `rotate_spot` action.\n- The plan executes `move_spot(2.0)` without checking if `target_ahead` is true, which violates the rule that `move_to_closest_target` should only use `move_spot` greater than 2.0 meters if `target_ahead` is true."
+        },
+        {
+          "planner_output": "### Revised Main Plan:\n\n1. **Calculate and Rotate to Face goal_2**:\n   - Calculate the angle to rotate to face goal_2. The angle \\(\\theta\\) is given by \\(\\tan^{-1}(\\frac{2.0 - 0.0}{-4.0 - 0.0})\\).\n   - \\(\\theta \\approx -26.57\\) degrees (counter-clockwise).\n   - Current heading is 333.4 degrees. To face goal_2, rotate by \\(-26.57 - 333.4 = -359.97\\) degrees.\n   - Since rotating by -359.97 degrees is equivalent to rotating by 0.03 degrees clockwise, execute `rotate_spot(0.03)`.\n\n2. **Check if Target is Ahead**:\n   - If `target_ahead` is true, proceed to step 3.\n   - If `target_ahead` is false, call `call_llm` to determine the next action.\n\n3. **Move Towards goal_2**:\n   - Execute `move_spot(2.0)` only if `target_ahead` is true.\n\n4. **Check Progress**:\n   - If `at_goal` is true, execute `finish_task`.\n   - If `obstacle_ahead` is true, rotate to avoid the obstacle or call `call_llm` if unsure.\n\n### Fallbacks:\n\n- **If at_goal is true**: Execute `finish_task`.\n- **If obstacle_ahead is true before moving**: Rotate to avoid the obstacle or call `call_llm` if unsure.\n- **If progress is unclear after the attempt**: Call `call_llm`.",
+          "verifier_output": "fail: Rotate action lacks numeric degrees; Move action lacks numeric meters.\n\nThe plan specifies a rotation of `0.03` degrees, which is correct, but it does not provide a numeric value for the `move_spot` action in step 3. The plan states \"Execute `move_spot(2.0)` only if `target_ahead` is true,\" but this condition is not executable as written because it lacks a concrete numeric value for the `move_spot` action. Additionally, the plan does not specify the exact number of meters to move towards `goal_2`."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 0.03\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"target_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 2.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"call_llm\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 333.4
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "### Revised Main Plan:\n\n1. **Rotate to Face goal_2**:\n   - Calculate the angle to rotate to face goal_2. The angle \\(\\theta\\) is given by \\(\\tan^{-1}(\\frac{2.0 - 0.0}{-4.0 - 0.0})\\).\n   - \\(\\theta \\approx -26.57\\) degrees (counter-clockwise).\n   - Current heading is 333.4 degrees. To face goal_2, rotate by \\(-26.57 - 333.4 = -359.97\\) degrees.\n   - Since rotating by -359.97 degrees is equivalent to rotating by 0.03 degrees clockwise, execute `rotate_spot(0.03)`.\n\n2. **Check if Target is Ahead**:\n   - If `target_ahead` is true, proceed to step 3.\n   - If `target_ahead` is false, execute `rotate_spot(10)` to attempt a small adjustment and recheck `target_ahead`.\n\n3. **Move Towards goal_2**:\n   - If `target_ahead` is true after adjustment, execute `move_spot(2.0)`.\n\n4. **Check Progress**:\n   - If `at_goal` is true, execute `finish_task`.\n   - If `obstacle_ahead` is true, rotate to avoid the obstacle or call `call_llm` if unsure.\n\n### Fallbacks:\n\n- **If at_goal is true**: Execute `finish_task`.\n- **If obstacle_ahead is true before moving**: Rotate to avoid the obstacle or call `call_llm` if unsure.\n- **If progress is unclear after the attempt**: Call `call_llm`.",
+          "verifier_output": "fail: Rotate to face goal_2 uses vague instructions; move_to_closest_target uses move_spot greater than 2.0 meters unless target_ahead is true.\n\n1. The plan uses vague instructions in the calculation of the angle to rotate to face goal_2. It should specify the exact numeric degrees for the `rotate_spot` action without relying on calculations that are not explicitly defined in the plan.\n\n2. The plan includes a `move_spot(2.0)` action without confirming that `target_ahead` is true, which violates the rule that `move_to_closest_target` should only use `move_spot` greater than 2.0 meters if `target_ahead` is true."
+        },
+        {
+          "planner_output": "### Revised Main Plan:\n\n1. **Rotate to Face goal_2**:\n   - Calculate the angle to rotate to face goal_2. The angle \\(\\theta\\) is given by \\(\\tan^{-1}(\\frac{2.0 - 0.0}{-4.0 - 0.0})\\).\n   - \\(\\theta \\approx -26.57\\) degrees (counter-clockwise).\n   - Current heading is 333.4 degrees. To face goal_2, rotate by \\(-26.57 - 333.4 = -359.97\\) degrees.\n   - Since rotating by -359.97 degrees is equivalent to rotating by 0.03 degrees clockwise, execute `rotate_spot(0.03)`.\n\n2. **Check if Target is Ahead**:\n   - If `target_ahead` is true, proceed to step 3.\n   - If `target_ahead` is false, execute `rotate_spot(10)` to attempt a small adjustment and recheck `target_ahead`.\n\n3. **Move Towards goal_2**:\n   - If `target_ahead` is true after adjustment, execute `move_spot(2.0)`.\n\n4. **Check Progress**:\n   - If `at_goal` is true, execute `finish_task`.\n   - If `obstacle_ahead` is true, rotate to avoid the obstacle or call `call_llm` if unsure.\n\n### Fallbacks:\n\n- **If at_goal is true**: Execute `finish_task`.\n- **If obstacle_ahead is true before moving**: Rotate to avoid the obstacle or call `call_llm` if unsure.\n- **If progress is unclear after the attempt**: Call `call_llm`.",
+          "verifier_output": "fail: Rotate to face goal_2 uses vague instructions; move_to_closest_target uses move_spot greater than 2.0 meters unless target_ahead is true.\n\n1. The plan uses vague instructions in the calculation of the angle to rotate to face goal_2. It should specify the exact numeric degrees to rotate using `rotate_spot`.\n\n2. The plan includes `move_spot(2.0)` without confirming that `target_ahead` is true, which violates the rule that `move_to_closest_target` should only use `move_spot` greater than 2.0 meters if `target_ahead` is true."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 0.03}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\n            \"type\": \"fallback\",\n            \"children\": [\n              {\n                \"type\": \"sequence\",\n                \"children\": [\n                  {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n                  {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n                  {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n                ]\n              },\n              {\n                \"type\": \"sequence\",\n                \"children\": [\n                  {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 10}}},\n                  {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n                  {\n                    \"type\": \"sequence\",\n                    \"children\": [\n                      {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n                      {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n                      {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n                    ]\n                  }\n                ]\n              }\n            ]\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 333.4
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

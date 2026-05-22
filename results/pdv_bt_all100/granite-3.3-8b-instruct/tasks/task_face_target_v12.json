@@ -1,0 +1,113 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 3.25917944466831,
+  "avg_verifier_inference_time_s": 0.6472468913319366,
+  "avg_decoder_inference_time_s": 4.446651657655214,
+  "avg_inference_time_s": 8.35307799365546,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 229.8
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Since the task is to face the target, first determine the angle needed to face the target. The target's center is at ((-5.5 + -4.5)/2, (1.5 + 2.5)/2) = (-5, 2).\n2. Calculate the angle from Spot's current heading (0 degrees, facing +x) to the target's x-coordinate (-5). The angle \u03b8 in degrees is given by \u03b8 = arctan((x_target - x_spot) / distance), where distance is the Euclidean distance from Spot to the target. Here, distance = sqrt((-5 - 0)^2 + (2 - 0)^2) = sqrt(25 + 4) = sqrt(29).\n3. \u03b8 = arctan(-5/sqrt(29)). Using a calculator, this gives \u03b8 \u2248 -60.08 degrees. Since we need to rotate clockwise to face the target, we should rotate counter-clockwise by approximately 60.08 degrees.\n4. Execute rotate_spot(60.08).\n\nFallbacks:\n- If obstacle_ahead is true before rotating, call_llm to request a new plan as the current one is insufficient.\n- If at_goal becomes true after the rotation, finish_task.\n- If the rotation places Spot in an undesired configuration (e.g., stuck), call_llm for further instructions.\n\nNote: The exact degrees to rotate might need adjustment based on Spot's specific rotation granularity and any rounding required by the system. The LLM call is a fallback in case of unexpected complications or if the system does not support precise angle inputs.",
+          "verifier_output": "fail: The plan uses vague instructions \"calculate the angle\" and \"approximately 60.08 degrees\"; rotate_spot lacks concrete numeric degrees."
+        },
+        {
+          "planner_output": "1. Calculate the exact angle needed to face the target using the arctan function: \u03b8 = arctan(-5/sqrt(29)).\n2. Using a calculator, this results in \u03b8 \u2248 -60.08 degrees.\n3. Execute rotate_spot(-60.08).\n\nFallbacks:\n- If obstacle_ahead is true before rotating, call_llm to request a new plan as the current one is insufficient.\n- If at_goal becomes true after the rotation, finish_task.\n- If the rotation places Spot in an undesired configuration (e.g., stuck), call_llm for further instructions.\n\nNote: The exact degrees to rotate are provided, and the LLM call is a fallback in case of unexpected complications or if the system does not support precise angle inputs.",
+          "verifier_output": "fail: The plan uses vague instructions \"Calculate the exact angle needed to face the target using the arctan function\" and \"Using a calculator, this results in \u03b8 \u2248 -60.08 degrees\"; The plan uses rotate_spot without a concrete numeric rotate action unless already at_goal."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"call_llm\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -60.08\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -60.08\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": false\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": false\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": false\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"call_llm\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 229.8
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Since the rotation was unsuccessful, let's try a bounded approach to face the target. Move Spot forward by 1 meter to check if the target becomes visible. Execute move_spot(1).\n2. After moving, check if target_ahead is true. If true, rotate_spot to face the target directly. Calculate the required rotation angle as \u03b8 = arctan(-5/sqrt(29)), which is approximately -60.08 degrees. Execute rotate_spot(-60.08).\n3. If target_ahead is still false after moving, rotate Spot 45 degrees to the left to check for the target in that direction. Execute rotate_spot(-45).\n4. Move Spot forward by 1 meter again. Check if target_ahead is true. If true, rotate_spot to face the target directly using the previously calculated angle (-60.08 degrees). Execute rotate_spot(-60.08).\n5. If target_ahead remains false, call_llm to request a new plan as the current approach is insufficient.\n\nFallbacks:\n- If obstacle_ahead is true before moving or rotating, call_llm to request a new plan as the current one is insufficient.\n- If at_goal becomes true after any action, finish_task.\n- If the rotation or movement places Spot in an undesired configuration (e.g., stuck), call_llm for further instructions.\n\nNote: The plan uses bounded numeric actions and requests call_llm when the next safe action is unclear.",
+          "verifier_output": "fail: The plan uses vague instructions \"calculate the required rotation angle as \u03b8 = arctan(-5/sqrt(29)), which is approximately -60.08 degrees.\" and assumes success without checking at_goal in step 2; \"If true, rotate_spot to face the target directly.\" without verifying at_goal first."
+        },
+        {
+          "planner_output": "1. Move Spot forward by 1 meter to check if the target becomes visible. Execute move_spot(1).\n2. After moving, check if target_ahead is true. If true, calculate the required rotation angle as \u03b8 = arctan(-5/sqrt(29)), which is approximately -60.08 degrees. Execute rotate_spot(-60.08).\n3. If target_ahead is still false, rotate Spot 45 degrees to the left to check for the target in that direction. Execute rotate_spot(-45).\n4. Move Spot forward by 1 meter again. Check if target_ahead is true. If true, rotate_spot to face the target directly using the previously calculated angle (-60.08 degrees). Execute rotate_spot(-60.08).\n5. If target_ahead remains false, call_llm to request a new plan as the current approach is insufficient.\n\nFallbacks:\n- If obstacle_ahead is true before moving or rotating, call_llm to request a new plan as the current one is insufficient.\n- If at_goal becomes true after any action, finish_task.\n- If the rotation or movement places Spot in an undesired configuration (e.g., stuck), call_llm for further instructions.\n\nNote: The plan uses bounded numeric actions, verifies at_goal before rotating, and requests call_llm when the next safe action is unclear.",
+          "verifier_output": "fail: The plan uses vague instructions \"calculate the required rotation angle as \u03b8 = arctan(-5/sqrt(29))\" and \"rotate_spot to face the target directly using the previously calculated angle (-60.08 degrees)\"; <These instructions involve calculation not covered by the available functions and lack precision for direct execution as rotate_spot requires exact degrees, not an approximation.>"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -60.08}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -60.08}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -0.6,
+          "y": 0.8,
+          "heading": 229.8
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Since replan_requested is true, we need to adjust our approach. First, move Spot backward by 1 meter to create some distance between the obstacle and Spot. Execute move_spot(-1).\n2. Check if obstacle_left or obstacle_right is true. If either is true, rotate Spot 45 degrees away from the obstacle to avoid it. Execute rotate_spot(-45) if obstacle_left is true, or rotate_spot(45) if obstacle_right is true.\n3. Move Spot forward by 1 meter to check if the target becomes visible. Execute move_spot(1).\n4. After moving, check if target_ahead is true. If true, calculate the required rotation angle as \u03b8 = arctan(-5/sqrt(29)), which is approximately -60.08 degrees. Execute rotate_spot(-60.08).\n5. If target_ahead is still false, rotate Spot 45 degrees to the left to check for the target in that direction. Execute rotate_spot(-45).\n6. Move Spot forward by 1 meter again. Check if target_ahead is true. If true, rotate_spot to face the target directly using the previously calculated angle (-60.08 degrees). Execute rotate_spot(-60.08).\n7. If target_ahead remains false, call_llm to request a new plan as the current approach is insufficient.\n\nFallbacks:\n- If obstacle_ahead is true before moving or rotating, call_llm to request a new plan as the current one is insufficient.\n- If at_goal becomes true after any action, finish_task.\n- If the rotation or movement places Spot in an undesired configuration (e.g., stuck), call_llm for further instructions.\n\nNote: The plan uses bounded numeric actions, verifies at_goal before rotating, and requests call_llm when the next safe action is unclear.",
+          "verifier_output": "fail: The plan uses vague instructions \"rotate Spot 45 degrees away from the obstacle\" and \"rotate Spot to the left\"; it also assumes success without checking at_goal in steps 4, 6, and 7."
+        },
+        {
+          "planner_output": "1. Since replan_requested is true, we need to adjust our approach. First, move Spot backward by 1 meter to create some distance between the obstacle and Spot. Execute move_spot(-1).\n2. Check if obstacle_left is true. If true, rotate Spot 45 degrees to the right to avoid the obstacle. Execute rotate_spot(45). If obstacle_right is true, rotate Spot 45 degrees to the left. Execute rotate_spot(-45).\n3. Move Spot forward by 1 meter to check if the target becomes visible. Execute move_spot(1).\n4. After moving, check if target_ahead is true. If true, calculate the required rotation angle as \u03b8 = arctan(-5/sqrt(29)), which is approximately -60.08 degrees. Execute rotate_spot(-60.08).\n5. If target_ahead is still false, rotate Spot 45 degrees to the left to check for the target in that direction. Execute rotate_spot(-45).\n6. Move Spot forward by 1 meter again. Check if target_ahead is true. If true, rotate_spot to face the target directly using the previously calculated angle (-60.08 degrees). Execute rotate_spot(-60.08).\n7. If target_ahead remains false, call_llm to request a new plan as the current approach is insufficient.\n\nFallbacks:\n- If obstacle_ahead is true before moving or rotating, call_llm to request a new plan as the current one is insufficient.\n- If at_goal becomes true after any action, finish_task.\n- If the rotation or movement places Spot in an undesired configuration (e.g., stuck), call_llm for further instructions.\n\nNote: The plan uses bounded numeric actions, verifies at_goal before rotating, and requests call_llm when the next safe action is unclear.",
+          "verifier_output": "fail: The plan uses vague instructions \"rotate Spot 45 degrees to the right to avoid the obstacle\" and \"rotate Spot 45 degrees to the left to check for the target in that direction\"; The plan also uses vague instruction \"calculate the required rotation angle as \u03b8 = arctan(-5/sqrt(29)), which is approximately -60.08 degrees\" which should be replaced with a concrete rotate_spot action."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": -1}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_left\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_right\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -60.08}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -60.08}}}\n        ]\n      },\n      {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n      {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}},\n      {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 229.8
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

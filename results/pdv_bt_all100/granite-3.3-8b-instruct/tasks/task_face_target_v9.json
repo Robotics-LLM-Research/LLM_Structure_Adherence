@@ -1,0 +1,49 @@
+{
+  "bt_count": 1,
+  "perfect_structure": true,
+  "valid_structure_count": 1,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 1.8272865835024277,
+  "avg_verifier_inference_time_s": 0.3908900685055414,
+  "avg_decoder_inference_time_s": 2.3321458569844253,
+  "avg_inference_time_s": 4.550322508992394,
+  "final_spot": {
+    "x": 0.5,
+    "y": -0.2,
+    "heading": 19.5
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Since the task is to face the target, we need to rotate Spot to align with the target's center.\n2. Calculate the target's center: ((5.5+6.5)/2, (-2.0+-1.0)/2) = (6.0, -1.5).\n3. Compute the angle to the target from the current heading (0.0, facing +x): arctan(-1.5/6.0) \u2248 -19.5 degrees.\n4. Execute rotate_spot(-19.5) to align Spot's heading towards the target.\n\nFallbacks:\n- If obstacle_ahead is true before rotating, call_llm to request a new plan as the current one is insufficient.\n- If at_goal becomes true unexpectedly, finish_task.\n- If after rotation, obstacle_ahead is still true, call_llm for further instructions.\n\nNote: The exact degrees might need adjustment based on the robot's rotation precision and the specifics of how negative angles are handled. If the LLM call is necessary due to unforeseen circumstances, provide the current state and observations for better planning.",
+          "verifier_output": "fail: The plan uses vague instructions \"calculate the target's center\" and \"compute the angle to the target from the current heading\"; go_to_target lacks concrete numeric rotate/move actions unless already at_goal."
+        },
+        {
+          "planner_output": "1. Rotate Spot 19.5 degrees clockwise using rotate_spot(19.5).\n2. Move Spot 0.5 meters forward using move_spot(0.5).\n3. Verify if at_goal is true. If true, finish_task.\n4. If not at_goal, check for obstacles. If obstacle_ahead is true, call_llm.\n\nFallbacks:\n- If at_goal becomes true unexpectedly, finish_task.\n- If obstacle_ahead is still true after moving, call_llm for further instructions.",
+          "verifier_output": "fail: The plan uses vague instructions \"check for obstacles\" and \"if obstacle_ahead is true\", which are not among the allowed actions."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 19.5}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 0.5}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 0.5,
+          "y": -0.2,
+          "heading": 19.5
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

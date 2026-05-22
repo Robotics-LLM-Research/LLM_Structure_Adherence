@@ -1,0 +1,113 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 4.805152167997828,
+  "avg_verifier_inference_time_s": 1.5687927495018812,
+  "avg_decoder_inference_time_s": 4.774912638327805,
+  "avg_inference_time_s": 11.148857555827515,
+  "final_spot": {
+    "x": 2.5,
+    "y": -4.5,
+    "heading": 90.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n\n1. **Calculate Target Center:**\n   - Target center for \"goal_1\" is at ((1.8 + 3.2) / 2, (1.8 + 3.2) / 2) = (2.5, 2.5).\n\n2. **Rotate to Face Target:**\n   - Current heading is 0.0 (facing +x).\n   - Target is at (2.5, 2.5), which requires a rotation to face the target.\n   - Calculate angle to target: \\(\\theta = \\text{atan2}(2.5, 2.5)\\).\n   - \\(\\theta = 45\\) degrees.\n   - Rotate Spot by 45 degrees: `rotate_spot(45)`.\n\n3. **Move Towards Target:**\n   - Check if `target_ahead` is true.\n   - If true, move forward: `move_spot(2.0)`.\n\n4. **Check Progress:**\n   - If `at_goal` is true, execute `finish_task()`.\n   - If `obstacle_ahead` is true, execute `call_llm()`.\n\nFallbacks:\n\n- If `obstacle_ahead` is true before moving:\n  - Execute `call_llm()`.\n\n- If `progress` is unclear after the attempt:\n  - Execute `call_llm()`.",
+          "verifier_output": "fail: Rotate to Face Target lacks numeric degrees; Move Towards Target lacks numeric meters.\n\nThe plan specifies a rotation to face the target using `rotate_spot(45)`, which is correct. However, the calculation of the angle to the target is not explicitly shown in the plan, and the assumption that the angle is 45 degrees needs verification based on the current position of Spot.\n\nAdditionally, the plan states to \"move forward: `move_spot(2.0)`\" if `target_ahead` is true, but it does not specify the current position of Spot, which is necessary to determine the exact distance to move. The plan should include a calculation of the distance to the target center to ensure the move is appropriate."
+        },
+        {
+          "planner_output": "Main plan:\n\n1. **Calculate Target Center:**\n   - Target center for \"goal_1\" is at ((1.8 + 3.2) / 2, (1.8 + 3.2) / 2) = (2.5, 2.5).\n\n2. **Calculate Angle to Target:**\n   - Current position of Spot is (0.0, 0.0).\n   - Calculate angle to target using \\(\\theta = \\text{atan2}(2.5 - 0.0, 2.5 - 0.0)\\).\n   - \\(\\theta = 45\\) degrees.\n\n3. **Rotate to Face Target:**\n   - Current heading is 0.0 (facing +x).\n   - Rotate Spot by 45 degrees: `rotate_spot(45)`.\n\n4. **Calculate Distance to Target:**\n   - Calculate distance to target center using \\(\\text{distance} = \\sqrt{(2.5 - 0.0)^2 + (2.5 - 0.0)^2}\\).\n   - \\(\\text{distance} = \\sqrt{6.25 + 6.25} = \\sqrt{12.5} \\approx 3.54\\) meters.\n\n5. **Move Towards Target:**\n   - Check if `target_ahead` is true.\n   - If true, move forward: `move_spot(3.54)`.\n\n6. **Check Progress:**\n   - If `at_goal` is true, execute `finish_task()`.\n   - If `obstacle_ahead` is true, execute `call_llm()`.\n\nFallbacks:\n\n- If `obstacle_ahead` is true before moving:\n  - Execute `call_llm()`.\n\n- If `progress` is unclear after the attempt:\n  - Execute `call_llm()`.",
+          "verifier_output": "fail: Rotate to face target lacks numeric degrees; Move towards target lacks numeric meters; Assumes success without checking at_goal; Move_to_closest_target uses move_spot greater than 2.0 meters unless target_ahead is true.\n\n1. **Rotate to Face Target:** The plan specifies `rotate_spot(45)`, but it does not check the current heading of Spot to determine the exact degrees needed to face the target. The plan assumes a heading of 0.0 degrees, which may not be accurate.\n\n2. **Move Towards Target:** The plan suggests `move_spot(3.54)` without verifying if `target_ahead` is true. This violates the rule that `move_spot` should not exceed 2.0 meters unless `target_ahead` is confirmed.\n\n3. **Assumes Success Without Checking at_goal:** The plan does not include a check for `at_goal` after moving towards the target, which is necessary to confirm task completion.\n\n4. **Move_to_closest_target uses move_spot greater than 2.0 meters unless target_ahead is true:** The plan attempts to move 3.54 meters without confirming `target_ahead`, which is against the specified constraints."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 45\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 3.54\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"call_llm\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 2.5,
+          "y": -2.5,
+          "heading": 45.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n\n1. **Calculate Target Center:**\n   - Target center for \"goal_1\" is at ((1.8 + 3.2) / 2, (1.8 + 3.2) / 2) = (2.5, 2.5).\n\n2. **Calculate Angle to Target:**\n   - Current position of Spot is (2.5, -2.5).\n   - Calculate angle to target using \\(\\theta = \\text{atan2}(2.5 - (-2.5), 2.5 - 2.5)\\).\n   - \\(\\theta = 90\\) degrees.\n\n3. **Rotate to Face Target:**\n   - Current heading is 45.0 degrees.\n   - Rotate Spot by 45 degrees: `rotate_spot(45)`.\n\n4. **Calculate Distance to Target:**\n   - Calculate distance to target center using \\(\\text{distance} = \\sqrt{(2.5 - 2.5)^2 + (2.5 - (-2.5))^2}\\).\n   - \\(\\text{distance} = \\sqrt{0 + 25} = 5.0\\) meters.\n\n5. **Move Towards Target:**\n   - Check if `target_ahead` is true.\n   - If true, move forward: `move_spot(2.0)`.\n   - Re-evaluate `target_ahead` and repeat `move_spot(2.0)` until reaching the target or `at_goal` is true.\n\n6. **Check Progress:**\n   - If `at_goal` is true, execute `finish_task()`.\n   - If `obstacle_ahead` is true, execute `call_llm()`.\n\nFallbacks:\n\n- If `obstacle_ahead` is true before moving:\n  - Execute `call_llm()`.\n\n- If `progress` is unclear after the attempt:\n  - Execute `call_llm()`.",
+          "verifier_output": "fail: Rotate to face target uses vague instruction; Move towards target lacks numeric meters; Move action lacks progress check; Move action lacks at_goal check.\n\n1. The instruction \"Rotate to face target\" is vague. It should specify the exact degrees to rotate using `rotate_spot` with a numeric value.\n2. The move action \"move forward: `move_spot(2.0)`\" lacks a check for `target_ahead` before moving, which is required to ensure the target is directly ahead.\n3. The plan does not include a check for `at_goal` after each move action to confirm progress towards the target.\n4. The plan does not specify what to do if `at_goal` is true after moving, which is necessary to ensure the task is completed."
+        },
+        {
+          "planner_output": "Main plan:\n\n1. **Calculate Target Center:**\n   - Target center for \"goal_1\" is at ((1.8 + 3.2) / 2, (1.8 + 3.2) / 2) = (2.5, 2.5).\n\n2. **Calculate Angle to Target:**\n   - Current position of Spot is (2.5, -2.5).\n   - Calculate angle to target using \\(\\theta = \\text{atan2}(2.5 - (-2.5), 2.5 - 2.5)\\).\n   - \\(\\theta = 90\\) degrees.\n\n3. **Rotate to Face Target:**\n   - Current heading is 45.0 degrees.\n   - Rotate Spot by 45 degrees: `rotate_spot(45)`.\n\n4. **Calculate Distance to Target:**\n   - Calculate distance to target center using \\(\\text{distance} = \\sqrt{(2.5 - 2.5)^2 + (2.5 - (-2.5))^2}\\).\n   - \\(\\text{distance} = \\sqrt{0 + 25} = 5.0\\) meters.\n\n5. **Move Towards Target:**\n   - Check if `target_ahead` is true.\n   - If true, move forward: `move_spot(2.0)`.\n   - After moving, check if `at_goal` is true.\n     - If `at_goal` is true, execute `finish_task()`.\n     - If `at_goal` is false, re-evaluate `target_ahead` and repeat `move_spot(2.0)` until reaching the target or `at_goal` is true.\n\n6. **Check Progress:**\n   - If `obstacle_ahead` is true, execute `call_llm()`.\n\nFallbacks:\n\n- If `obstacle_ahead` is true before moving:\n  - Execute `call_llm()`.\n\n- If `progress` is unclear after the attempt:\n  - Execute `call_llm()`.",
+          "verifier_output": "fail: Rotate to face target uses vague instruction; `move_spot(2.0)` lacks condition for `target_ahead`; `move_spot(2.0)` lacks check for `at_goal` before repeating; `move_spot(2.0)` may lead to unbounded loop; `move_spot(2.0)` may exceed 2.0 meters without `target_ahead` check."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 45\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 2.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"call_llm\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 2.5,
+          "y": -4.5,
+          "heading": 90.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n\n1. **Calculate Target Center:**\n   - Target center for \"goal_1\" is at ((1.8 + 3.2) / 2, (1.8 + 3.2) / 2) = (2.5, 2.5).\n\n2. **Calculate Angle to Target:**\n   - Current position of Spot is (2.5, -4.5).\n   - Calculate angle to target using \\(\\theta = \\text{atan2}(2.5 - (-4.5), 2.5 - 2.5)\\).\n   - \\(\\theta = 90\\) degrees.\n\n3. **Rotate to Face Target:**\n   - Current heading is 90.0 degrees.\n   - No rotation needed as Spot is already facing the target.\n\n4. **Calculate Distance to Target:**\n   - Calculate distance to target center using \\(\\text{distance} = \\sqrt{(2.5 - 2.5)^2 + (2.5 - (-4.5))^2}\\).\n   - \\(\\text{distance} = \\sqrt{0 + 49} = 7.0\\) meters.\n\n5. **Move Towards Target:**\n   - Check if `target_ahead` is true.\n   - If true, move forward: `move_spot(2.0)`.\n   - After moving, check if `at_goal` is true.\n     - If `at_goal` is true, execute `finish_task()`.\n     - If `at_goal` is false, re-evaluate `target_ahead` and repeat `move_spot(2.0)` until reaching the target or `at_goal` is true.\n\n6. **Check Progress:**\n   - If `obstacle_ahead` is true, execute `call_llm()`.\n\nFallbacks:\n\n- If `obstacle_ahead` is true before moving:\n  - Execute `call_llm()`.\n\n- If `progress` is unclear after the attempt:\n  - Execute `call_llm()`.",
+          "verifier_output": "fail: Rotate to face target uses vague instructions; Move towards target lacks numeric meters for initial move; Plan assumes success without checking at_goal before moving; Move_to_closest_target uses move_spot greater than 2.0 meters without target_ahead check; Plan contains a potentially unbounded loop with repeated move_spot actions without progress check."
+        },
+        {
+          "planner_output": "Main plan:\n\n1. **Calculate Target Center:**\n   - Target center for \"goal_1\" is at ((1.8 + 3.2) / 2, (1.8 + 3.2) / 2) = (2.5, 2.5).\n\n2. **Calculate Angle to Target:**\n   - Current position of Spot is (2.5, -4.5).\n   - Calculate angle to target using \\(\\theta = \\text{atan2}(2.5 - (-4.5), 2.5 - 2.5)\\).\n   - \\(\\theta = 90\\) degrees.\n\n3. **Rotate to Face Target:**\n   - Current heading is 90.0 degrees.\n   - No rotation needed as Spot is already facing the target.\n\n4. **Calculate Distance to Target:**\n   - Calculate distance to target center using \\(\\text{distance} = \\sqrt{(2.5 - 2.5)^2 + (2.5 - (-4.5))^2}\\).\n   - \\(\\text{distance} = \\sqrt{0 + 49} = 7.0\\) meters.\n\n5. **Move Towards Target:**\n   - Check if `target_ahead` is true.\n   - If true, move forward: `move_spot(2.0)`.\n   - After moving, check if `at_goal` is true.\n     - If `at_goal` is true, execute `finish_task()`.\n     - If `at_goal` is false, re-evaluate `target_ahead`.\n\n6. **Re-evaluate and Move Again:**\n   - If `target_ahead` is still true, move forward: `move_spot(2.0)`.\n   - After moving, check if `at_goal` is true.\n     - If `at_goal` is true, execute `finish_task()`.\n     - If `at_goal` is false, re-evaluate `target_ahead`.\n\n7. **Check Progress:**\n   - If `obstacle_ahead` is true, execute `call_llm()`.\n\nFallbacks:\n\n- If `obstacle_ahead` is true before moving:\n  - Execute `call_llm()`.\n\n- If `progress` is unclear after the attempt:\n  - Execute `call_llm()`.",
+          "verifier_output": "fail: Rotate to Face Target uses vague instructions; Move Towards Target lacks numeric meters for initial move.\n\n1. **Rotate to Face Target** uses vague instructions: \"No rotation needed as Spot is already facing the target.\" It should specify `rotate_spot(0)` to ensure clarity and correctness.\n\n2. **Move Towards Target** lacks numeric meters for the initial move. It should specify `move_spot(2.0)` explicitly in the plan to ensure the action is executable."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"target_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 2.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"target_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 2.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"call_llm\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 2.5,
+          "y": -4.5,
+          "heading": 90.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}
