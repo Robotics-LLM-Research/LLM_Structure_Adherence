@@ -132,11 +132,15 @@ def init_model(
             **tokenizer_kwargs,
         )
 
+        max_model_len = constants.MAX_MODEL_LEN
+        if "gemma" in model_id.lower():
+            max_model_len = min(max_model_len, 8192)
+
         llm_kwargs = {
             "model": model_id,
             "trust_remote_code": True,
             "gpu_memory_utilization": constants.GPU_MEMORY_UTILIZATION,
-            "max_model_len": constants.MAX_MODEL_LEN,
+            "max_model_len": max_model_len,
             "enforce_eager": constants.ENFORCE_EAGER,
         }
         if uses_image:

@@ -1,5 +1,6 @@
 import sys
 import json
+import re
 import time
 from typing import Any
 from pathlib import Path
@@ -27,15 +28,30 @@ TASKS_PATH = PROJECT_ROOT / "src" / "tasks" / "tasks_100.json"
 
 
 # ----- Helpers -----
+_VERIFIER_VERDICT_RE = re.compile(r"\b(pass|fail)\b", re.IGNORECASE)
+
 def _verifier_passed(verifier_output: str | None) -> bool:
-    text = (verifier_output or "").strip().lower()
-    has_pass = "pass" in text
-    has_fail = "fail" in text
-    if has_fail:
+    text = (verifier_output or "").strip()
+    if not text:
         return False
-    if has_pass:
-        return True
+
+    first_line = next(
+        (line.strip() for line in text.splitlines() if line.strip()),
+        "",
+    )
+    first_line_match = _VERIFIER_VERDICT_RE.match(first_line)
+    if first_line_match:
+        return first_line_match.group(1).lower() == "pass"
+
+    any_match = _VERIFIER_VERDICT_RE.search(text)
+    if any_match:
+        return any_match.group(1).lower() == "pass"
+
     return False
+
+def _copy_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Shallow-copy message entries to avoid mutating shared history."""
+    return [dict(message) for message in messages]
 
 
 # ----- Main -----
@@ -68,12 +84,13 @@ def episode(
     }
 
     # Build prompts
-    planner_prompt = get_initial_message(
+    planner_base_prompt = get_initial_message(
         "pvd_planner",
         user_prompt=get_planner_prompt(task_type, task_world),
         uses_tools=False,
         backend=backend,
     )
+    planner_prompt = _copy_messages(planner_base_prompt)
 
     while bt_count < max_bt_count:
         bt_count += 1
@@ -127,8 +144,9 @@ def episode(
                 verifier_output=verifier_output,
             )
             plans.append(exchange)
+            # Keep only the latest verifier failure context for retries.
             planner_prompt = append_message(
-                messages=planner_prompt,
+                messages=_copy_messages(planner_base_prompt),
                 raw_output=planner_output,
                 user_feedback=feedback,
                 backend=backend,
@@ -196,8 +214,10 @@ def episode(
                 plan_results=plan_results,
                 verifier_output=None,
             )
+            # After execution, drop prior verifier chatter and carry only
+            # the executed plan plus simulator feedback into the next BT.
             planner_prompt = append_message(
-                messages=planner_prompt,
+                messages=_copy_messages(planner_base_prompt),
                 raw_output=planner_output,
                 user_feedback=feedback,
                 backend=backend,
@@ -266,6 +286,8 @@ def experiment(
     for task_idx in tasks_idx:
         task = tasks[task_idx]
         task_type = task["task_type"]
+
+        print(f"=== Running task {task_idx} of {total_tasks}: {task_type} ===")
 
         # Run episode
         task_result = episode(

@@ -21,13 +21,22 @@ Rules:
 - Prefer one short action attempt, then check progress, then replan.
 - If feedback includes final_spot, plan from final_spot, not from the original start.
 - If the previous attempt failed, do not repeat the same first rotate_spot + move_spot pair.
-- If the next useful numeric action is unclear, use call_llm.
 
 Motion facts:
 - heading=0 means Spot faces +x.
 - move_spot moves forward along the current heading.
 - positive rotate_spot turns toward -y; negative rotate_spot turns toward +y.
-- Rectangular target center = ((x1+x2)/2, (y1+y2)/2).
+- rotate_spot changes heading only; move_spot changes position only.
+
+Geometry recipe:
+- For a target rectangle, compute center: cx=(x1+x2)/2 and cy=(y1+y2)/2.
+- From current Spot pose (x, y, heading), compute dx=cx-x and dy=cy-y.
+- Desired world bearing = atan2(dy, dx) in degrees.
+- Spot forward bearing = -heading in degrees.
+- rotate_spot degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180].
+- distance_to_center = sqrt(dx^2 + dy^2).
+- move_spot meters = min(distance_to_center, 2.0), unless a shorter safe step is needed.
+- Never put "calculate", "toward", "closer", or angle/distance placeholders in the final plan. Show the numeric result.
 
 Task rules:
 - go_to_target: choose the target center; if no obstacle blocks the path, use one numeric rotation if needed and one numeric move toward it.
@@ -44,7 +53,6 @@ Main plan:
 Fallbacks:
 - If at_goal is true: finish_task.
 - If obstacle_ahead is true before moving: rotate_spot(<numeric angle>) or call_llm.
-- If progress is unclear after the attempt: call_llm.
 """
 
 PVD_VERIFIER_SYSTEM_PROMPT = """
@@ -199,7 +207,7 @@ def get_planner_feedback(plan_results: dict | None, verifier_output: str | None)
             "Result: fail.\n"
             f"Verifier output: {verifier_output}\n"
             "Revise the previous plan to fix every reason above.\n"
-            "No vague directives. If next safe numeric action is unclear, include call_llm.\n"
+            "No vague directives.\n"
             "Output only the revised natural-language plan.\n"
         )
     
