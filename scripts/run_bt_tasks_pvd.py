@@ -77,6 +77,7 @@ def episode(
 
     while bt_count < max_bt_count:
         bt_count += 1
+        plans: list[dict[str, str]] = []
 
         while verify_count < max_verify_count:
             verify_count += 1
@@ -96,7 +97,7 @@ def episode(
             # Verify planner output
             verifier_prompt = get_initial_message(
                 "pvd_verifier",
-                user_prompt=get_verifier_prompt(task_type, planner_output),
+                user_prompt=get_verifier_prompt(task_type, task_world, planner_output),
                 uses_tools=False,
                 backend=backend,
             )
@@ -112,21 +113,30 @@ def episode(
             )
             verifier_inference_times_s.append(time.perf_counter() - verifier_inference_start)
 
+            exchange: dict[str, str] = {
+                "planner_output": planner_output,
+                "verifier_output": verifier_output,
+            }
+
             if _verifier_passed(verifier_output):
+                plans.append(exchange)
                 break
-            else:
-                feedback = get_planner_feedback(
-                    plan_results=None,
-                    verifier_output=verifier_output,
-                )
-                planner_prompt = append_message(
-                    messages=planner_prompt,
-                    raw_output=planner_output,
-                    user_feedback=feedback,
-                    backend=backend,
-                )
+
+            feedback = get_planner_feedback(
+                plan_results=None,
+                verifier_output=verifier_output,
+            )
+            plans.append(exchange)
+            planner_prompt = append_message(
+                messages=planner_prompt,
+                raw_output=planner_output,
+                user_feedback=feedback,
+                backend=backend,
+            )
 
         verify_count = 0
+        # Planner revisions before the accepted plan (0 if first plan passed).
+        bt_verify_count = max(0, len(plans) - 1)
 
         # Build decoder prompt
         decoder_prompt = get_initial_message(
@@ -156,7 +166,8 @@ def episode(
             behavior_trees.append(
                 {
                     "bt_index": bt_count,
-                    "planner_output": planner_output,
+                    "verify_count": bt_verify_count,
+                    "Plans": plans,
                     "decoder_output": decoder_output,
                     "plan_results": {"error": error_msg},
                 }
@@ -171,7 +182,8 @@ def episode(
         behavior_trees.append(
             {
                 "bt_index": bt_count,
-                "planner_output": planner_output,
+                "verify_count": bt_verify_count,
+                "Plans": plans,
                 "decoder_output": decoder_output,
                 "plan_results": plan_results,
             }
