@@ -1,0 +1,113 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 1.0666822519948862,
+  "avg_verifier_inference_time_s": 0.43141505933211494,
+  "avg_decoder_inference_time_s": 2.089329197672972,
+  "avg_inference_time_s": 3.587426508999973,
+  "final_spot": {
+    "x": 2.5,
+    "y": 4.3,
+    "heading": 270.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. rotate_spot(-45)  # Turn left to avoid the obstacle on the right.\n2. move_spot(2.0)    # Move forward to get around the obstacle.\n3. rotate_spot(45)   # Turn right to face the target.\n4. move_to_closest_target()  # Continue moving to the target using bounded moves.\n\nFallbacks:\n- If obstacle_ahead is true before moving: rotate_spot(-45) or call_llm.",
+          "verifier_output": "fail: long route; unbounded loop\n\nThe plan contains an unbounded loop through the use of `move_to_closest_target()` without specifying a bounded distance or condition to stop. This could lead to Spot continuously moving without making progress towards the goal."
+        },
+        {
+          "planner_output": "Main plan:\n1. rotate_spot(-45)  # Turn left to avoid the obstacle on the right.\n2. move_spot(2.0)    # Move forward to get around the obstacle.\n3. rotate_spot(45)   # Turn right to face the target.\n4. move_spot(1.5)    # Move towards the target.\n5. if_at_goal: finish_task  # Check if the goal is reached.\n6. else: call_llm()      # If not, request a new plan.\n\nFallbacks:\n- If obstacle_ahead is true before moving: rotate_spot(-45) or call_llm.",
+          "verifier_output": "fail: long route; unbounded loop\n\nThe plan contains a long route in the fallbacks, which could lead to an unbounded loop if the obstacle is consistently ahead. The fallback should provide a bounded, safe step and then re-plan, not a long route."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.5}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": true,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 2.9,
+          "y": 1.4,
+          "heading": 315.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. rotate_spot(-45)  # Turn left to avoid the obstacle on the right.\n2. move_spot(2.0)    # Move forward to get around the obstacle.\n3. rotate_spot(45)   # Turn right to face the target.\n4. move_spot(1.5)    # Move towards the target.\n5. if_at_goal: finish_task  # Check if the goal is reached.\n6. else: call_llm()      # If not, request a new plan.\n\nGiven the final spot and observations, revise the plan:\n1. rotate_spot(-45)  # Turn left to avoid the obstacle on the right.\n2. move_spot(2.0)    # Move forward to get around the obstacle.\n3. rotate_spot(45)   # Turn right to face the target.\n4. move_spot(1.5)    # Move towards the target.\n5. if_at_goal: finish_task  # Check if the goal is reached.\n6. else: call_llm()      # If not, request a new plan.\n\nFallbacks:\n- If obstacle_ahead is true before moving: rotate_spot(-45) or call_llm.",
+          "verifier_output": "fail: long route given instead of one bounded safe step plus replanning; repeated failed action pattern described in feedback\n\nExplanation:\n1. The plan provides a long route to go around the obstacle (move_spot(2.0) and move_spot(1.5)) instead of a single bounded safe step.\n2. The fallbacks suggest repeating the same pattern of actions (rotate_spot(-45), move_spot(2.0), rotate_spot(45), move_spot(1.5)) if the goal is not reached, which is an unbounded loop."
+        },
+        {
+          "planner_output": "Main plan:\n1. rotate_spot(-45)  # Turn left to avoid the obstacle on the right.\n2. move_spot(1.0)    # Move forward to get around the obstacle.\n3. if obstacle_ahead: rotate_spot(-45) else: rotate_spot(45)  # Turn right to face the target if an obstacle is ahead, otherwise face the target.\n4. move_spot(1.0)    # Move towards the target.\n5. if_at_goal: finish_task  # Check if the goal is reached.\n6. else: call_llm()      # If not, request a new plan.\n\nGiven the final spot and observations, revise the plan:\n1. rotate_spot(-45)  # Turn left to avoid the obstacle on the right.\n2. move_spot(1.0)    # Move forward to get around the obstacle.\n3. if obstacle_ahead: rotate_spot(-45) else: rotate_spot(45)  # Turn right to face the target if an obstacle is ahead, otherwise face the target.\n4. move_spot(1.0)    # Move towards the target.\n5. if_at_goal: finish_task  # Check if the goal is reached.\n6. else: call_llm()      # If not, request a new plan.",
+          "verifier_output": "fail: go_around_obstacle should provide a bounded safe step plus replanning, not a long route; use of if obstacle_ahead without a bounded step."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 2.9,
+          "y": 3.4,
+          "heading": 270.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. rotate_spot(-45)  # Turn left to avoid the obstacle on the right.\n2. move_spot(1.0)    # Move forward to get around the obstacle.\n3. rotate_spot(45)   # Turn right to face the target.\n4. move_spot(1.0)    # Move towards the target.\n5. if_at_goal: finish_task  # Check if the goal is reached.\n6. else: call_llm()      # If not, request a new plan.",
+          "verifier_output": "fail: long route; unbounded loop\n\nThe plan attempts to go around an obstacle but provides a long route without specifying bounded safe steps. Instead of moving 1.0 meters and then checking if the goal is reached, the plan should suggest a more precise and bounded movement around the obstacle, followed by a check with `at_goal`. Additionally, the plan should not assume success without checking `at_goal`."
+        },
+        {
+          "planner_output": "Main plan:\n1. rotate_spot(-45)  # Turn left to avoid the obstacle on the right.\n2. move_spot(0.5)    # Move forward 0.5 meters to get around the obstacle.\n3. rotate_spot(45)   # Turn right to face the target.\n4. move_spot(0.5)    # Move forward 0.5 meters towards the target.\n5. if_at_goal: finish_task  # Check if the goal is reached.\n6. else: call_llm()      # If not, request a new plan.",
+          "verifier_output": "fail: long route; unbounded loop\n\nThe plan attempts to go around an obstacle but does not provide a bounded safe step. Instead, it suggests an unbounded loop of moving and checking if the goal is reached, which could lead to infinite retries if the goal is not immediately reachable."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 0.5}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 0.5}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 2.5,
+          "y": 4.3,
+          "heading": 270.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

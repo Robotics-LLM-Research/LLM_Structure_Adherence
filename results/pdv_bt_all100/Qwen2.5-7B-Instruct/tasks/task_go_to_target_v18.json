@@ -1,0 +1,113 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 1.0333518831757829,
+  "avg_verifier_inference_time_s": 0.5333839376689866,
+  "avg_decoder_inference_time_s": 2.877705270657316,
+  "avg_inference_time_s": 4.444441091502085,
+  "final_spot": {
+    "x": 7.4,
+    "y": -7.4,
+    "heading": 0.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. rotate_spot(90)  # Turn to face +y direction to check for the target.\n2. move_spot(2.0)   # Move forward 2.0 meters to approach the target area.\n3. if target_ahead is true:\n     finish_task\n4. else:\n     rotate_spot(-90)  # Turn back to face +x direction.\n     move_spot(2.0)    # Move back to the original position.\n     call_llm          # Request a new plan if the target is not found.",
+          "verifier_output": "fail: rotate_spot lacks numeric degrees; move_spot lacks numeric meters; call_llm is used without checking at_goal; long search pattern without bounded steps.\n\n1. rotate_spot(90) is missing a numeric degrees value.\n2. move_spot(2.0) is missing a numeric meters value.\n3. The plan lacks a check for at_goal before calling call_llm.\n4. The search pattern is unbounded and long, as it involves moving back and requesting a new plan if the target is not found."
+        },
+        {
+          "planner_output": "Main plan:\n1. rotate_spot(90)  # Turn to face +y direction to check for the target.\n2. move_spot(2.0)   # Move forward 2.0 meters to approach the target area.\n3. if target_ahead is true:\n     finish_task\n4. else:\n     rotate_spot(-90)  # Turn back to face +x direction.\n     move_spot(2.0)    # Move back to the original position.\n     if at_goal is true:\n         finish_task\n     else:\n         call_llm          # Request a new plan if the target is not found.",
+          "verifier_output": "fail: Unchecked at_goal condition; Potential infinite loop if target is not found.\n\nExplanation:\n1. The plan lacks a check for the at_goal condition after the initial move_spot(2.0). This means if the target is not ahead, the robot will keep moving back and forth without checking if it has reached the target.\n2. If the target is not found and the call_llm action is triggered repeatedly without a mechanism to break the loop, it could lead to an infinite loop of planning and re-planning."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 2.0,
+          "y": -2.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. rotate_spot(90)  # Turn to face +y direction to check for the target.\n2. move_spot(2.0)   # Move forward 2.0 meters to approach the target area.\n3. if target_ahead is true:\n     finish_task\n4. else:\n     rotate_spot(-90)  # Turn back to face +x direction.\n     move_spot(2.0)    # Move back to the original position.\n     if at_goal is true:\n         finish_task\n     else:\n         call_llm          # Request a new plan if the target is not found.",
+          "verifier_output": "fail: long search pattern; unbounded loop\n\n\nThe plan contains a long search pattern and an unbounded loop. The robot moves forward, checks if the target is ahead, and if not, it moves back to the original position and repeats the process without a clear termination condition. This could lead to an infinite loop if the target is never found."
+        },
+        {
+          "planner_output": "Main plan:\n1. rotate_spot(90)  # Turn to face +y direction to check for the target.\n2. move_spot(2.0)   # Move forward 2.0 meters to approach the target area.\n3. if target_ahead is true:\n     finish_task\n4. else:\n     rotate_spot(-90)  # Turn back to face +x direction.\n     move_spot(2.0)    # Move back to the original position.\n     if at_goal is true:\n         finish_task\n     else:\n         rotate_spot(45)  # Turn 45 degrees to the right to avoid an unbounded loop.\n         move_spot(2.0)   # Move forward 2.0 meters to a new position.\n         if target_ahead is true:\n             finish_task\n         else:\n             call_llm        # Request a new plan if the target is not found.",
+          "verifier_output": "fail: unbounded loop; long search pattern\n\nExplanation:\n1. The plan contains an unbounded loop due to the repeated pattern of rotating 45 degrees and moving forward 2.0 meters without a clear termination condition.\n2. The search pattern is long and non-progressive, as it does not ensure that the robot is getting closer to the target with each iteration."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 5.4,
+          "y": -5.4,
+          "heading": 45.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. rotate_spot(45)  # Turn to face +y direction.\n2. move_spot(2.0)   # Move forward 2.0 meters.\n3. if target_ahead is true:\n     finish_task\n4. else:\n     rotate_spot(-90)  # Turn back to face +x direction.\n     move_spot(2.0)    # Move back to the original position.\n     if at_goal is true:\n         finish_task\n     else:\n         rotate_spot(45)  # Turn 45 degrees to the right.\n         move_spot(2.0)   # Move forward 2.0 meters.\n         if target_ahead is true:\n             finish_task\n         else:\n             call_llm        # Request a new plan if the target is not found.",
+          "verifier_output": "fail: Unbounded loop; Repeated non-progressing actions\n\nThe plan contains an unbounded loop due to the repeated pattern of rotating and moving back to the original position if the target is not immediately ahead. This pattern can lead to infinite retries without making progress."
+        },
+        {
+          "planner_output": "Main plan:\n1. rotate_spot(45)  # Turn to face +y direction.\n2. move_spot(2.0)   # Move forward 2.0 meters.\n3. if target_ahead is true:\n     finish_task\n4. else:\n     rotate_spot(-90)  # Turn back to face +x direction.\n     move_spot(2.0)    # Move back to the original position.\n     if at_goal is true:\n         finish_task\n     else:\n         rotate_spot(90)  # Turn to face -y direction.\n         move_spot(2.0)   # Move forward 2.0 meters.\n         if target_ahead is true:\n             finish_task\n         else:\n             rotate_spot(-135)  # Turn to face -x direction.\n             move_spot(2.0)    # Move forward 2.0 meters.\n             if target_ahead is true:\n                 finish_task\n             else:\n                 call_llm        # Request a new plan if the target is not found.",
+          "verifier_output": "fail: Unbounded loop; Repeated non-progressing actions\n\nThe plan contains an unbounded loop with repeated non-progressing actions. Specifically, if the target is not ahead after the initial move, the robot repeatedly moves back and forth in a square pattern without checking if the target is now ahead. This pattern will continue indefinitely if the target is not found, leading to an unbounded loop."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -135}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 7.4,
+          "y": -7.4,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

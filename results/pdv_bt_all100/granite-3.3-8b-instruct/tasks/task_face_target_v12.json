@@ -1,0 +1,49 @@
+{
+  "bt_count": 1,
+  "perfect_structure": true,
+  "valid_structure_count": 1,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 2.4306750190153252,
+  "avg_verifier_inference_time_s": 0.4278851180279162,
+  "avg_decoder_inference_time_s": 2.8096020109951496,
+  "avg_inference_time_s": 5.668162148038391,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 210.9
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot to face the target.\n\n1. Compute the desired bearing to the target:\n   - dx = goal_1.cx - Spot.x = (-5.5 + -4.5)/2 - 0 = -5.0\n   - dy = goal_1.cy - Spot.y = (1.5 + 2.5)/2 - 0 = 2.0\n   - Desired bearing = atan2(dy, dx) = atan2(2.0, -5.0) \u2248 -1.107 radians or -63.435 degrees.\n   - Spot forward bearing = -Spot.heading = 0 degrees.\n   - rotate_spot degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180] = normalize(-(-63.435 - 0)) \u2248 63.435 degrees.\n\n2. Execute the rotation:\n   - rotate_spot(63.435)\n\nFallbacks:\n- If obstacle_ahead is true before rotating, call_llm for further instructions.\n- If at_goal is true after rotating, finish_task.",
+          "verifier_output": "fail: The plan uses vague instructions \"Compute the desired bearing to the target\" and \"Rotate Spot to face the target\"; it also uses rotate_spot without specifying numeric degrees."
+        },
+        {
+          "planner_output": "1. Calculate the rotation angle to face the target:\n   - dx = (-5.5 + -4.5)/2 - 0 = -5.0\n   - dy = (1.5 + 2.5)/2 - 0 = 2.0\n   - Desired bearing = atan2(dy, dx) \u2248 -1.107 radians or -63.435 degrees.\n   - Spot forward bearing = 0 degrees.\n   - rotate_spot degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180] \u2248 63.435 degrees.\n\n2. Rotate Spot by 63.435 degrees to face the target:\n   - rotate_spot(63.435)\n\nFallbacks:\n- If obstacle_ahead is true before rotating, call_llm for further instructions.\n- If at_goal is true after rotating, finish_task.",
+          "verifier_output": "fail: The plan uses vague instructions \"normalize(-(desired_bearing - forward_bearing)) into [-180, 180]\"; Spot's rotation should directly use calculated degrees without normalization."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"call_llm\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 63.435\n              }\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 210.9
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

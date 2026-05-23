@@ -1,0 +1,113 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 1.972889522992773,
+  "avg_verifier_inference_time_s": 1.1106671943271067,
+  "avg_decoder_inference_time_s": 3.419128248351626,
+  "avg_inference_time_s": 6.502684965671506,
+  "final_spot": {
+    "x": -2.0,
+    "y": 0.0,
+    "heading": 270.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "### Main Plan:\n\n1. **Rotate Right to Avoid Obstacle:**\n   - Rotate Spot 90 degrees to the right to face +y direction.\n   - `rotate_spot(90)`\n\n2. **Move Forward to Clear Obstacle:**\n   - Move Spot 2.0 meters forward along the new heading (+y direction).\n   - `move_spot(2.0)`\n\n3. **Rotate Left to Align with Target:**\n   - Rotate Spot 90 degrees to the left to face +x direction.\n   - `rotate_spot(-90)`\n\n4. **Move Forward Towards Target:**\n   - Move Spot 5.0 meters forward along the +x direction.\n   - `move_spot(5.0)`\n\n5. **Check for Target:**\n   - If `target_ahead` is true, proceed to finish the task.\n   - If not, call LLM for further instructions.\n   - `finish_task()` or `call_llm()`\n\n### Fallbacks:\n\n- **If at_goal is true:**\n  - `finish_task()`\n\n- **If obstacle_ahead is true before moving:**\n  - Rotate Spot 90 degrees to the right.\n  - `rotate_spot(90)`\n\nThis plan ensures Spot navigates around the obstacle and progresses towards the target, with checks and fallbacks to handle unexpected situations.",
+          "verifier_output": "fail: go_around_obstacle gives a long route instead of one bounded safe step plus replanning; move_to_closest_target uses move_spot greater than 2.0 meters unless target_ahead is true.\n\nThe plan involves moving 5.0 meters forward towards the target without confirming that the target is directly ahead, which violates the constraint for `move_to_closest_target`. Additionally, the plan does not include a bounded safe step to navigate around the obstacle, followed by a call to `call_llm` for replanning, which is required for `go_around_obstacle`."
+        },
+        {
+          "planner_output": "### Revised Main Plan:\n\n1. **Rotate Right to Avoid Obstacle:**\n   - Rotate Spot 90 degrees to the right to face +y direction.\n   - `rotate_spot(90)`\n\n2. **Move Forward to Clear Obstacle:**\n   - Move Spot 2.0 meters forward along the new heading (+y direction).\n   - `move_spot(2.0)`\n\n3. **Call LLM for Replanning:**\n   - Request new instructions for further navigation.\n   - `call_llm()`\n\nThis revised plan ensures Spot takes a bounded safe step to navigate around the obstacle and then calls for replanning, adhering to the constraints for `go_around_obstacle`.",
+          "verifier_output": "pass\n\nThe plan is executable as written. It adheres to the constraints by using a bounded safe step to navigate around the obstacle and then calls for replanning. The actions `rotate_spot(90)` and `move_spot(2.0)` are specified with numeric values, and the plan does not contain vague instructions or unbounded loops. Additionally, it does not assume success without checking `at_goal`, and it correctly uses `call_llm()` for further navigation instructions."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 90\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 2.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": -2.0,
+          "heading": 90.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "### Revised Main Plan:\n\n1. **Rotate Left to Face +x Direction:**\n   - Rotate Spot 90 degrees to the left to face the +x direction.\n   - `rotate_spot(-90)`\n\n2. **Move Forward to Approach Target:**\n   - Move Spot 2.0 meters forward along the new heading (+x direction).\n   - `move_spot(2.0)`\n\n3. **Call LLM for Replanning:**\n   - Request new instructions for further navigation.\n   - `call_llm()`\n\nThis plan adjusts Spot's heading to face the target area and takes a bounded step forward, followed by a call for replanning to ensure progress towards the goal.",
+          "verifier_output": "fail: go_around_obstacle gives a long route instead of one bounded safe step plus replanning; move_to_closest_target uses move_spot greater than 2.0 meters unless target_ahead is true.\n\nThe plan attempts to move Spot 2.0 meters forward without confirming that the target is directly ahead, which could lead to a collision with the obstacle. Additionally, the plan does not specify a bounded safe step around the obstacle before calling for replanning."
+        },
+        {
+          "planner_output": "### Revised Main Plan:\n\n1. **Rotate Right to Avoid Obstacle:**\n   - Rotate Spot 90 degrees to the right to face the +y direction.\n   - `rotate_spot(90)`\n\n2. **Move Forward to Bypass Obstacle:**\n   - Move Spot 2.0 meters forward along the new heading (+y direction) to bypass the obstacle.\n   - `move_spot(2.0)`\n\n3. **Call LLM for Replanning:**\n   - Request new instructions for further navigation.\n   - `call_llm()`\n\nThis plan ensures Spot takes a bounded step to safely bypass the obstacle and then calls for replanning to continue towards the target.",
+          "verifier_output": "fail: The plan assumes Spot is initially facing the +x direction; it should check current orientation before rotating; The move_spot action does not ensure Spot is clear of the obstacle; The plan lacks a check to confirm Spot is not still within the obstacle's bounds after moving."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 90\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 2.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -2.0,
+          "y": -2.0,
+          "heading": 180.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "### Revised Main Plan:\n\n1. **Rotate Left to Face +x Direction:**\n   - Rotate Spot 180 degrees to face the +x direction.\n   - `rotate_spot(180)`\n\n2. **Move Forward to Approach Target:**\n   - Move Spot 2.0 meters forward along the new heading (+x direction).\n   - `move_spot(2.0)`\n\n3. **Call LLM for Replanning:**\n   - Request new instructions for further navigation towards the target.\n   - `call_llm()`\n\nThis plan adjusts Spot's heading to face the target area and takes a bounded step forward, followed by a call for replanning to ensure progress towards the goal.",
+          "verifier_output": "fail: go_around_obstacle gives a long route instead of one bounded safe step plus replanning; move_to_closest_target uses move_spot greater than 2.0 meters unless target_ahead is true.\n\nThe plan attempts to move Spot 2.0 meters forward without confirming that the target is directly ahead, which could lead to a collision with the obstacle. Additionally, the plan does not specify a safe step around the obstacle before calling for replanning."
+        },
+        {
+          "planner_output": "### Revised Main Plan:\n\n1. **Rotate Left to Avoid Obstacle:**\n   - Rotate Spot 90 degrees to face the +y direction.\n   - `rotate_spot(90)`\n\n2. **Move Forward to Safe Position:**\n   - Move Spot 2.0 meters forward along the new heading (+y direction).\n   - `move_spot(2.0)`\n\n3. **Call LLM for Replanning:**\n   - Request new instructions for further navigation towards the target.\n   - `call_llm()` \n\nThis plan ensures Spot takes a safe step around the obstacle by moving in the +y direction, followed by a call for replanning to continue towards the target.",
+          "verifier_output": "fail: go_around_obstacle gives a long route instead of one bounded safe step plus replanning; move_to_closest_target uses move_spot greater than 2.0 meters unless target_ahead is true.\n\nThe plan involves moving Spot 2.0 meters forward in the +y direction, which may not be a bounded safe step if the obstacle is close to the current position. Additionally, the plan does not verify if the target is ahead before moving, which could lead to inefficient navigation."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 90\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 2.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -2.0,
+          "y": 0.0,
+          "heading": 270.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

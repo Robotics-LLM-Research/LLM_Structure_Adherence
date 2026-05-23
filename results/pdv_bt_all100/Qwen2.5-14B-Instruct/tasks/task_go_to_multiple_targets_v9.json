@@ -1,0 +1,105 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 1.8706192355020903,
+  "avg_verifier_inference_time_s": 0.38383034577418584,
+  "avg_decoder_inference_time_s": 3.0496543013335518,
+  "avg_inference_time_s": 5.304103882609828,
+  "final_spot": {
+    "x": 34.5,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Calculate the center of goal_1: cx=(2.0+3.0)/2=2.5, cy=(\u22120.5+0.5)/2=0.\n2. Compute dx=2.5-0.0=2.5, dy=0-0.0=0.\n3. Desired world bearing = atan2(0, 2.5) = 0 degrees.\n4. Spot forward bearing = -0.0 = 0 degrees.\n5. rotate_spot degrees = normalize(-(0 - 0)) = 0 degrees.\n6. Since no rotation is needed, proceed to move_spot.\n7. distance_to_center = sqrt(2.5^2 + 0^2) = 2.5 meters.\n8. move_spot 2.0 meters.\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: rotate_spot(45) or call_llm.",
+          "verifier_output": "fail: move_to_closest_target uses move_spot greater than 2.0 meters unless target_ahead is true; plan assumes success without checking at_goal"
+        },
+        {
+          "planner_output": "Main plan:\n1. Calculate the center of goal_1: cx=(2.0+3.0)/2=2.5, cy=(\u22120.5+0.5)/2=0.\n2. Compute dx=2.5-0.0=2.5, dy=0-0.0=0.\n3. Desired world bearing = atan2(0, 2.5) = 0 degrees.\n4. Spot forward bearing = -0.0 = 0 degrees.\n5. rotate_spot degrees = normalize(-(0 - 0)) = 0 degrees.\n6. Since no rotation is needed, proceed to move_spot.\n7. distance_to_center = sqrt(2.5^2 + 0^2) = 2.5 meters.\n8. move_spot 2.0 meters.\n9. If at_goal is true: finish_task.\n10. If obstacle_ahead is true: rotate_spot(45) or call_llm.\n11. If not at_goal and not obstacle_ahead: move_spot 0.5 meters.\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: rotate_spot(45) or call_llm.",
+          "verifier_output": "fail: Step 8 uses move_spot 2.0 meters without checking if it's the final move to the target; it should use the exact distance to the center (2.5 meters) or check at_goal after each move; The fallback plan does not align with the main plan's action sequence; The plan does not specify how to handle the situation after the first target is reached and before moving to the next target."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\n            \"type\": \"fallback\",\n            \"children\": [\n              {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45}}},\n              {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n            ]\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": false},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 0.5}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 2.5,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Since Spot is already at the center of goal_1 (x=2.5, y=0.0), and target_ahead is true, it means Spot is at or very close to the target.\n2. finish_task.\n\nFallbacks:\n- If obstacle_ahead is true before moving: call_llm.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"sequence\",\n    \"children\": [\n      {\n        \"type\": \"condition\",\n        \"observation\": \"at_goal\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"finish_task\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 2.5,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Since Spot is already at the center of goal_1 (x=2.5, y=0.0) and target_ahead is true, no rotation is needed.\n2. move_spot(0.5) to ensure Spot is within the target's bounds.\n\nFallbacks:\n- If obstacle_ahead is true before moving: call_llm.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 0.5}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 34.5,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    }
+  ]
+}
