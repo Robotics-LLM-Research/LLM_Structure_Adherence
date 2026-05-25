@@ -9,6 +9,7 @@ EXP_ID="${2:-pvd_bt_smoke_one_task}"
 TASK_IDX="${3:-0}"
 MAX_BT_COUNT="${4:-3}"
 MAX_VERIFY_COUNT="${5:-2}"
+BOT_MODEL_ID="${6:-}"
 
 cd "$PROJECT_ROOT" || exit 1
 
@@ -28,24 +29,50 @@ echo "Exp ID:       $EXP_ID"
 echo "Task idx:     $TASK_IDX"
 echo "Max BT count: $MAX_BT_COUNT"
 echo "Max verify:   $MAX_VERIFY_COUNT"
+echo "Bot model:    ${BOT_MODEL_ID:-<none>}"
 
-while IFS= read -r model_id; do
-    if [[ -z "$model_id" || "$model_id" == \#* ]]; then
+while IFS= read -r model_spec; do
+    if [[ -z "$model_spec" || "$model_spec" == \#* ]]; then
         continue
     fi
 
-    safe_model="${model_id//\//__}"
+    # Each line can be either:
+    # - top_model_id
+    # - top_model_id|bot_model_id
+    top_model_id="$model_spec"
+    bot_model_id_from_spec=""
+    if [[ "$model_spec" == *"|"* ]]; then
+        IFS='|' read -r top_model_id bot_model_id_from_spec <<< "$model_spec"
+    fi
+
+    active_bot_model_id="$BOT_MODEL_ID"
+    if [[ -n "$bot_model_id_from_spec" ]]; then
+        active_bot_model_id="$bot_model_id_from_spec"
+    fi
+
+    safe_model="${top_model_id//\//__}"
+    if [[ -n "$active_bot_model_id" ]]; then
+        safe_model="${safe_model}__${active_bot_model_id//\//__}"
+    fi
     safe_model="${safe_model//:/_}"
     timestamp="$(date +%F_%H-%M-%S)"
     log_path="logs/PDV_vs/${EXP_ID}_${safe_model}_${timestamp}.log"
 
     echo
     echo "======================================================================"
-    echo "START: $model_id"
+    echo "START: $model_spec"
+    echo "TOP:   $top_model_id"
+    echo "BOT:   ${active_bot_model_id:-<none>}"
     echo "LOG:   $log_path"
     echo "======================================================================"
 
-    python3 jobs/PDV_vs/run_one_pvd_model.py "$model_id" \
+    BOT_ARGS=()
+    if [[ -n "$active_bot_model_id" ]]; then
+        BOT_ARGS+=(--bot-model-id "$active_bot_model_id")
+    fi
+
+    python3 jobs/PDV_vs/run_one_pvd_model.py "$top_model_id" \
+        "${BOT_ARGS[@]}" \
         --task-idx "$TASK_IDX" \
         --max-bt-count "$MAX_BT_COUNT" \
         --max-verify-count "$MAX_VERIFY_COUNT" \
@@ -56,7 +83,7 @@ while IFS= read -r model_id; do
 
     echo
     echo "======================================================================"
-    echo "DONE: $model_id"
+    echo "DONE: $model_spec"
     echo "EXIT CODE: $status"
     echo "======================================================================"
 

@@ -15,7 +15,8 @@ def parse_args() -> argparse.Namespace:
         description="Run one PVD model in one Python process."
     )
 
-    parser.add_argument("model_id")
+    parser.add_argument("top_model_id")
+    parser.add_argument("--bot-model-id", default=None)
     parser.add_argument("--exp-id", default="pvd_bt_smoke_one_task")
     parser.add_argument("--task-idx", type=int, default=None)
     parser.add_argument("--max-bt-count", type=int, default=3)
@@ -29,7 +30,8 @@ def main() -> None:
     args = parse_args()
 
     run_bt_tasks_pvd(
-        model_id=args.model_id,
+        top_model_id=args.top_model_id,
+        bot_model_id=args.bot_model_id,
         max_bt_count=args.max_bt_count,
         max_verify_count=args.max_verify_count,
         tasks_idx=None if args.task_idx is None else [args.task_idx],

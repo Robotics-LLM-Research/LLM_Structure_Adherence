@@ -235,12 +235,12 @@ def main(
     backend: str = "vllm",
 ):
     # Build output directory
-    out_dir = utils.get_exp_model_dir(exp_id, model_id)
+    out_dir, _ = utils.get_exp_model_dir(exp_id, model_id)
 
     # Handle pending tasks
     pending_tasks_idx = utils.resolve_tasks(
         out_dir=out_dir,
-        model_id=model_id,
+        model_str=model_id,
         tasks_idx=tasks_idx,
     )
     if not pending_tasks_idx:

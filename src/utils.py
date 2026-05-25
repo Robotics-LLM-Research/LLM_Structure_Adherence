@@ -99,7 +99,7 @@ def _get_pending_task_indices(
 
 def resolve_tasks(
     out_dir: Path,
-    model_id: str,
+    model_str: str,
     tasks_idx: list[int] | None
 ) -> list[int]:
     """ Resolve a model's missing tasks from results """
@@ -110,13 +110,13 @@ def resolve_tasks(
 
     if not pending_tasks_idx:
         print(
-            f"[SKIP] {model_id}: all {total_requested} requested tasks already have results"
+            f"[SKIP] {model_str}: all {total_requested} requested tasks already have results"
         )
         return pending_tasks_idx
 
     if completed_count:
         print(
-            f"[RESUME] {model_id}: found {completed_count}/{total_requested} tasks "
+            f"[RESUME] {model_str}: found {completed_count}/{total_requested} tasks "
             f"already completed. Continuing from task index {pending_tasks_idx[0]} "
             f"with {len(pending_tasks_idx)} task(s) remaining."
         )
@@ -131,14 +131,25 @@ def get_results_dir(run_id: str | None = None) -> Path:
         return RESULTS_DIR
     return RESULTS_DIR / run_id
 
-def get_exp_model_dir(exp_id: str, model_id: str) -> Path:
-    """Return results/<exp_id>/<normalized-model-id>.
-
-    If model_id is namespaced (e.g. "Qwen/Qwen2.5-3B-Instruct"), keep only the
-    segment after the first slash so we avoid nested directories """
+def _short_model_name(model_id: str) -> str:
+    """ Strip the namespace prefix """
     cleaned = model_id.replace("\\", "/").strip()
-    model_dir_name = cleaned.split("/", 1)[1] if "/" in cleaned else cleaned
-    return get_results_dir(exp_id) / model_dir_name
+    return cleaned.split("/", 1)[1] if "/" in cleaned else cleaned
+
+def get_exp_model_dir(exp_id: str, top_model_id: str, bot_model_id: str | None = None) -> tuple[Path, str]:
+    """ Return (results/<exp_id>/<dir-name>, model_str).
+
+    If bot_model_id is provided, dir-name joins both short names with '__'.
+    Otherwise dir-name is just the top model's short name."""
+    top_short = _short_model_name(top_model_id)
+
+    if bot_model_id is None:
+        return get_results_dir(exp_id) / top_short, top_short
+    
+    bot_short = _short_model_name(bot_model_id)
+    combined = f"{top_short}__{bot_short}"
+    return get_results_dir(exp_id) / combined, combined
+    
 
 # ----- Formatting -----
 def format_run_timestamp(prefix: str | None = None, when: datetime | None = None) -> str:
@@ -179,7 +190,7 @@ def save_exp_meta(
 def save_results(exp_config: dict[str, Any], results: dict[str, Any]) -> Path:
     # Build output directories
     run_id = exp_config["run_id"]
-    model_dir = get_exp_model_dir(run_id, exp_config["model_id"])
+    model_dir, _ = get_exp_model_dir(run_id, exp_config["model_id"])
     model_dir.mkdir(parents=True, exist_ok=True)
 
     # Build output filename
@@ -201,7 +212,7 @@ def save_run_config(
 ) -> Path:
     """ Save per-config run details """
     # Build output directories
-    model_dir = get_exp_model_dir(run_id, model_id)
+    model_dir, _ = get_exp_model_dir(run_id, model_id)
     image_folder = "with_image" if uses_image else "without_image"
     out_dir = model_dir / image_folder
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -220,7 +231,7 @@ def save_run_config(
 
 def build_tasks_aggregate_results(
     out_dir: Path,
-    model_id: str,
+    model_str: str,
     tasks_idx: list[int] | None,
     max_bt_count: int,
 ) -> dict:
@@ -284,7 +295,7 @@ def build_tasks_aggregate_results(
         completion_pct_by_task_type[f"{task_type}_pct"] = round(task_pct, 2)
 
     return {
-        "model_id": model_id,
+        "model_str": model_str,
         "max_bt_per_episode": max_bt_count,
         "total_tasks": total_tasks,
         "total_structure_adherence": total_structure_adherence,

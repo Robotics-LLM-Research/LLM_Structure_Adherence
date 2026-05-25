@@ -20,6 +20,10 @@ from src.prompts.pvd_bt_tasks import (
     get_verifier_prompt,
     get_decoder_prompt, 
     get_planner_feedback,
+    PVD_PLANNER_SYSTEM_PROMPT,
+    PVD_VERIFIER_SYSTEM_PROMPT,
+    PVD_DECODER_SYSTEM_PROMPT,
+    PVD_USER_PROMPT,
 )
 from src.schemas.bt import BT_TASKS_SCHEMA_SAMPLE, BT_SCHEMA_CONFIG
 
@@ -56,8 +60,10 @@ def _copy_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 # ----- Main -----
 def episode(
-    model: Any,
-    processor: Any,
+    top_model: Any,
+    top_processor: Any,
+    bot_model: Any | None,
+    bot_processor: Any | None,
     backend: str,
     task: dict,
     max_bt_count: int,
@@ -102,8 +108,8 @@ def episode(
             # Query the planner
             planner_inference_start = time.perf_counter()
             planner_output = ask_model(
-                model=model,
-                processor=processor,
+                model=top_model,
+                processor=top_processor,
                 messages=planner_prompt,
                 uses_tools=False,
                 backend=backend,
@@ -121,8 +127,8 @@ def episode(
 
             verifier_inference_start = time.perf_counter()
             verifier_output = ask_model(
-                model=model,
-                processor=processor,
+                model=bot_model if bot_model is not None else top_model,
+                processor=bot_processor if bot_processor is not None else top_processor,
                 messages=verifier_prompt,
                 uses_tools=False,
                 backend=backend,
@@ -168,8 +174,8 @@ def episode(
         # Query the decoder
         decoder_inference_start = time.perf_counter()
         decoder_output = ask_model(
-            model=model,
-            processor=processor,
+            model=bot_model if bot_model is not None else top_model,
+            processor=bot_processor if bot_processor is not None else top_processor,
             messages=decoder_prompt,
             uses_tools=True,
             schema=BT_SCHEMA_CONFIG["schema"],
@@ -254,12 +260,14 @@ def episode(
 
 def experiment(
     out_dir: Path,
-    model: Any,
-    processor: Any,
+    top_model: Any,
+    top_processor: Any,
+    bot_model: Any | None,
+    bot_processor: Any | None,
     backend: str,
     max_bt_count: int,
     max_verify_count: int,
-    model_id: str,
+    model_str: str,
     tasks_idx: list[int] | None,
 ):
     """ Go through all tasks once per episode """
@@ -291,8 +299,10 @@ def experiment(
 
         # Run episode
         task_result = episode(
-            model=model,
-            processor=processor,
+            top_model=top_model,
+            top_processor=top_processor,
+            bot_model=bot_model,
+            bot_processor=bot_processor,
             backend=backend,
             task=task,
             max_bt_count=max_bt_count,
@@ -342,7 +352,7 @@ def experiment(
         completion_pct_by_task_type[f"{task_type}_pct"] = round(task_pct, 2)
 
     return {
-        "model_id": model_id,
+        "model_str": model_str,
         "max_bt_per_episode": max_bt_count,
         "max_verify_per_episode": max_verify_count,
         "total_tasks": total_tasks,
@@ -365,7 +375,8 @@ def experiment(
 
     
 def main(
-    model_id: str,
+    top_model_id: str,
+    bot_model_id: str | None,
     max_bt_count: int,
     max_verify_count: int,
     tasks_idx: list[int] | None = None,
@@ -373,46 +384,59 @@ def main(
     backend: str = "vllm",
 ):
     # Build output directory
-    out_dir = utils.get_exp_model_dir(exp_id, model_id)
+    out_dir, model_str = utils.get_exp_model_dir(exp_id, top_model_id, bot_model_id)
 
     # Handle pending tasks
     pending_tasks_idx = utils.resolve_tasks(
         out_dir=out_dir,
-        model_id=model_id,
+        model_str=model_str,
         tasks_idx=tasks_idx,
     )
     if not pending_tasks_idx:
         return
 
-    # Initialize model
-    model, processor = init_model(model_id, backend=backend)
+    # Initialize models
+    top_model, top_processor = init_model(top_model_id, backend=backend)
+    bot_model, bot_processor = (
+        init_model(bot_model_id, backend=backend)
+        if bot_model_id is not None
+        else (None, None)
+    )
 
     # Save experiment metadata
     if exp_id is not None:
         utils.save_exp_meta(
             utils.get_results_dir(exp_id),
             {"MAX_BT_COUNT": max_bt_count,
-             "MAX_VERIFY_COUNT": max_verify_count},
+             "MAX_VERIFY_COUNT": max_verify_count,
+             "PVD_PLANNER_SYSTEM_PROMPT": PVD_PLANNER_SYSTEM_PROMPT,
+             "PVD_VERIFIER_SYSTEM_PROMPT": PVD_VERIFIER_SYSTEM_PROMPT,
+             "PVD_DECODER_SYSTEM_PROMPT": PVD_DECODER_SYSTEM_PROMPT,
+             "PVD_USER_PROMPT": PVD_USER_PROMPT},
         )
 
     try:
         experiment(
             out_dir=out_dir, 
-            model=model, 
-            processor=processor, 
+            top_model=top_model, 
+            top_processor=top_processor,
+            bot_model=bot_model if bot_model_id is not None else None,
+            bot_processor=bot_processor if bot_model_id is not None else None,
             backend=backend,
             max_bt_count=max_bt_count,
             max_verify_count=max_verify_count,
-            model_id=model_id,
+            model_str=model_str,
             tasks_idx=pending_tasks_idx,
         )
     finally:
-        cleanup_model(model, processor)
+        cleanup_model(top_model, top_processor)
+        if bot_model is not None:
+            cleanup_model(bot_model, bot_processor)
 
     # Build main results
     experiment_result = utils.build_tasks_aggregate_results(
         out_dir=out_dir,
-        model_id=model_id,
+        model_str=model_str,
         tasks_idx=tasks_idx,
         max_bt_count=max_bt_count,
     )
