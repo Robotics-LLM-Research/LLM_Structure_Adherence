@@ -19,8 +19,10 @@ Rules:
 - Every move_spot must have numeric meters. Every rotate_spot must have numeric degrees.
 - Do not use vague instructions such as: move closer, rotate toward, calculate direction, move around, repeat, continue, search, until reached.
 - Prefer one short action attempt, then check progress, then replan.
+- Prefer one bounded progress chunk per attempt (usually one rotate + one move), then check at_goal.
 - If feedback includes final_spot, plan from final_spot, not from the original start.
 - If the previous attempt failed, do not repeat the same first rotate_spot + move_spot pair.
+- If two attempts in a row keep target_ahead=false and at_goal=false, change heading strategy before moving again.
 
 Motion facts:
 - heading=0 means Spot faces +x.
@@ -39,11 +41,11 @@ Geometry recipe:
 - Never put "calculate", "toward", "closer", or angle/distance placeholders in the final plan. Show the numeric result.
 
 Task rules:
-- go_to_target: choose the target center; if no obstacle blocks the path, use one numeric rotation if needed and one numeric move toward it.
-- move_to_closest_target: choose the closest target center from the current Spot position. Use bounded moves, usually 0.5 to 2.0 meters. If target_ahead is false, rotate before moving.
+- go_to_target: compute the target center (cx, cy), derive numeric rotate_spot and bounded move_spot from current Spot pose, and execute one short rotate/move attempt if no obstacle blocks the path. Recompute from final_spot on retry.
+- move_to_closest_target: compute each target-center distance from current Spot (x, y), pick the minimum, then act on that target. Use bounded moves, usually 0.5 to 2.0 meters. If target_ahead is false, rotate before moving.
 - face_target: rotate only. Do not move.
 - go_around_obstacle: choose one safe bounded step around the blocking obstacle, then rely on replanning. Do not write a long route.
-- go_to_multiple_targets: choose the next target that makes progress and give a short bounded action sequence.
+- go_to_multiple_targets: at each step, choose the nearest unvisited target center from current Spot (greedy nearest-next), then give a short bounded rotate/move sequence toward it. Recompute nearest-next after each reached target.
 
 Output format:
 Main plan:
@@ -65,6 +67,8 @@ Pipeline:
 - The Decoder only translates; it cannot fix missing reasoning.
 
 Evaluate whether the plan is executable as written.
+Only apply checks that are relevant to the current task type.
+Do not fail a plan for rules from other task types.
 
 Fail the plan if:
 1. It uses actions outside move_spot, rotate_spot, finish_task, call_llm.
@@ -78,6 +82,7 @@ Fail the plan if:
 9. move_to_closest_target uses move_spot greater than 2.0 meters unless target_ahead is true.
 10. go_around_obstacle gives a long route instead of one bounded safe step plus replanning.
 11. It repeats a failed action pattern described in feedback.
+12. It proposes more than one bounded progress chunk for the next attempt instead of short progress + check + replan.
 
 Output exactly one of:
 pass

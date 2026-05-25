@@ -9,6 +9,7 @@ MAX_BT_COUNT="${4:-3}"
 MAX_VERIFY_COUNT="${5:-2}"
 CONCURRENCY="${6:-7}"
 BOT_MODEL_ID="${7:-}"
+TEMPERATURE="${8:-0.0}"
 
 cd "$PROJECT_ROOT"
 
@@ -35,9 +36,10 @@ echo "Max BT count: $MAX_BT_COUNT"
 echo "Max verify:   $MAX_VERIFY_COUNT"
 echo "Concurrency:  $CONCURRENCY"
 echo "Bot model:    ${BOT_MODEL_ID:-<none>}"
+echo "Temperature:  $TEMPERATURE"
 echo "List format:  top_model OR top_model|bot_model"
 
 sbatch \
   --array="1-${MODEL_COUNT}%${CONCURRENCY}" \
-  --export=ALL,PROJECT_ROOT="$PROJECT_ROOT",MODEL_LIST="$MODEL_LIST",EXP_ID="$EXP_ID",TASK_IDX="$TASK_IDX",MAX_BT_COUNT="$MAX_BT_COUNT",MAX_VERIFY_COUNT="$MAX_VERIFY_COUNT",BOT_MODEL_ID="$BOT_MODEL_ID" \
+  --export=ALL,PROJECT_ROOT="$PROJECT_ROOT",MODEL_LIST="$MODEL_LIST",EXP_ID="$EXP_ID",TASK_IDX="$TASK_IDX",MAX_BT_COUNT="$MAX_BT_COUNT",MAX_VERIFY_COUNT="$MAX_VERIFY_COUNT",BOT_MODEL_ID="$BOT_MODEL_ID",TEMPERATURE="$TEMPERATURE" \
   jobs/PDV_vs/run_model_array.slurm

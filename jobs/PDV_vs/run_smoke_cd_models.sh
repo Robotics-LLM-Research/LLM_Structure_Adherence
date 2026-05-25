@@ -10,6 +10,7 @@ TASK_IDX="${3:-0}"
 MAX_BT_COUNT="${4:-3}"
 MAX_VERIFY_COUNT="${5:-2}"
 BOT_MODEL_ID="${6:-}"
+TEMPERATURE="${7:-0.0}"
 
 cd "$PROJECT_ROOT" || exit 1
 
@@ -30,6 +31,7 @@ echo "Task idx:     $TASK_IDX"
 echo "Max BT count: $MAX_BT_COUNT"
 echo "Max verify:   $MAX_VERIFY_COUNT"
 echo "Bot model:    ${BOT_MODEL_ID:-<none>}"
+echo "Temperature:  $TEMPERATURE"
 
 while IFS= read -r model_spec; do
     if [[ -z "$model_spec" || "$model_spec" == \#* ]]; then
@@ -76,6 +78,7 @@ while IFS= read -r model_spec; do
         --task-idx "$TASK_IDX" \
         --max-bt-count "$MAX_BT_COUNT" \
         --max-verify-count "$MAX_VERIFY_COUNT" \
+        --temperature "$TEMPERATURE" \
         --exp-id "$EXP_ID" \
         2>&1 | tee "$log_path"
 

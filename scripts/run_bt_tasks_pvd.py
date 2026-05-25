@@ -68,6 +68,7 @@ def episode(
     task: dict,
     max_bt_count: int,
     max_verify_count: int,
+    temperature: float,
 ):
     # Result flags
     perfect_structure = True
@@ -114,6 +115,7 @@ def episode(
                 uses_tools=False,
                 backend=backend,
                 schema=None,
+                temperature=temperature,
             )
             planner_inference_times_s.append(time.perf_counter() - planner_inference_start)
 
@@ -133,6 +135,7 @@ def episode(
                 uses_tools=False,
                 backend=backend,
                 schema=None,
+                temperature=temperature,
             )
             verifier_inference_times_s.append(time.perf_counter() - verifier_inference_start)
 
@@ -180,6 +183,7 @@ def episode(
             uses_tools=True,
             schema=BT_SCHEMA_CONFIG["schema"],
             backend=backend,
+            temperature=temperature,
         )
         decoder_inference_times_s.append(time.perf_counter() - decoder_inference_start)
 
@@ -267,6 +271,7 @@ def experiment(
     backend: str,
     max_bt_count: int,
     max_verify_count: int,
+    temperature: float,
     model_str: str,
     tasks_idx: list[int] | None,
 ):
@@ -307,6 +312,7 @@ def experiment(
             task=task,
             max_bt_count=max_bt_count,
             max_verify_count=max_verify_count,
+            temperature=temperature,
         )
 
         # Update totals
@@ -355,6 +361,7 @@ def experiment(
         "model_str": model_str,
         "max_bt_per_episode": max_bt_count,
         "max_verify_per_episode": max_verify_count,
+        "temperature": temperature,
         "total_tasks": total_tasks,
         "total_structure_adherence": total_structure_adherence,
         "total_perfect_adherence": total_perfect_adherence,
@@ -382,6 +389,7 @@ def main(
     tasks_idx: list[int] | None = None,
     exp_id: str | None = None,
     backend: str = "vllm",
+    temperature: float = 0.0,
 ):
     # Build output directory
     out_dir, model_str = utils.get_exp_model_dir(exp_id, top_model_id, bot_model_id)
@@ -409,6 +417,7 @@ def main(
             utils.get_results_dir(exp_id),
             {"MAX_BT_COUNT": max_bt_count,
              "MAX_VERIFY_COUNT": max_verify_count,
+             "TEMPERATURE": temperature,
              "PVD_PLANNER_SYSTEM_PROMPT": PVD_PLANNER_SYSTEM_PROMPT,
              "PVD_VERIFIER_SYSTEM_PROMPT": PVD_VERIFIER_SYSTEM_PROMPT,
              "PVD_DECODER_SYSTEM_PROMPT": PVD_DECODER_SYSTEM_PROMPT,
@@ -425,6 +434,7 @@ def main(
             backend=backend,
             max_bt_count=max_bt_count,
             max_verify_count=max_verify_count,
+            temperature=temperature,
             model_str=model_str,
             tasks_idx=pending_tasks_idx,
         )

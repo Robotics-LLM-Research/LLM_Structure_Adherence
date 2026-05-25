@@ -193,6 +193,7 @@ def ask_model(
     uses_tools: bool = False,
     schema: Any | None = None,
     backend: str = "vllm",
+    temperature: float = 0.0,
 ) -> str:
     """ 
     Generate one model response.
@@ -204,6 +205,7 @@ def ask_model(
         uses_tools: Whether to use tools for inference.
         schema: Schema to enforce on model's output. If None, no constrained decoding. 
         backend: Which backend to use, "vllm" or "transformers".
+        temperature: Sampling temperature.
      """
     chat_template_kwargs = {
         "add_generation_prompt": True,
@@ -229,7 +231,7 @@ def ask_model(
 
         if schema is None:
             sampling_params = SamplingParams(
-                temperature=constants.TEMPERATURE,
+                temperature=temperature,
                 max_tokens=constants.MAX_TOKENS,
             )
         else:
@@ -242,7 +244,7 @@ def ask_model(
             )
 
             sampling_params = SamplingParams(
-                temperature=constants.TEMPERATURE,
+                temperature=temperature,
                 max_tokens=constants.MAX_TOKENS,
                 structured_outputs=structured_outputs_params,
             )

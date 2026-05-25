@@ -21,6 +21,7 @@ TASK_IDX="${TASK_IDX:-none}"
 MAX_BT_COUNT="${MAX_BT_COUNT:-3}"
 MAX_VERIFY_COUNT="${MAX_VERIFY_COUNT:-2}"
 BOT_MODEL_ID="${BOT_MODEL_ID:-}"
+TEMPERATURE="${TEMPERATURE:-0.0}"
 CONTAINER_PATH="${CONTAINER_PATH:-$HOME/containers/vllm-openai-latest.sif}"
 
 cd "$PROJECT_ROOT" || exit 1
@@ -67,6 +68,7 @@ echo "Exp id: $EXP_ID"
 echo "Task idx: $TASK_IDX"
 echo "Max BT count: $MAX_BT_COUNT"
 echo "Max verify count: $MAX_VERIFY_COUNT"
+echo "Temperature: $TEMPERATURE"
 echo "Bot model id (global): ${BOT_MODEL_ID:-<none>}"
 echo "Container path: $CONTAINER_PATH"
 echo "Model log: $MODEL_LOG"
@@ -108,6 +110,7 @@ apptainer exec --cleanenv --nv \
   "${TASK_ARGS[@]}" \
   --max-bt-count "$MAX_BT_COUNT" \
   --max-verify-count "$MAX_VERIFY_COUNT" \
+  --temperature "$TEMPERATURE" \
   --exp-id "$EXP_ID" \
   2>&1 | tee "$MODEL_LOG"
 
