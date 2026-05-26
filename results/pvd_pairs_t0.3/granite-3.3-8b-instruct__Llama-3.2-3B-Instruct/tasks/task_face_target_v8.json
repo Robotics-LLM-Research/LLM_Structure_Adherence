@@ -1,0 +1,85 @@
+{
+  "bt_count": 3,
+  "perfect_structure": false,
+  "valid_structure_count": 1,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 2.04717506361582,
+  "avg_verifier_inference_time_s": 0.1013405056631503,
+  "avg_decoder_inference_time_s": 35.38777951772014,
+  "avg_inference_time_s": 37.53629508699911,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 250.5
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot to face the target.\n   - Compute the desired world bearing to the target: desired_bearing = atan2(cx - y, x - x) where cx=(5.5+6.5)/2 and cy=(1.0+2.0)/2.\n   - Compute Spot's forward bearing: forward_bearing = -0 (Spot's initial heading).\n   - Compute rotate_spot degrees: rotate_spot = normalize(-(desired_bearing - forward_bearing)) into [-180, 180].\n   - Execute rotate_spot action with the computed degrees.\n\nFallbacks:\n- If at_goal is true after rotation: finish_task.\n- If obstacle_ahead is true before rotating: call_llm to request a new plan considering the obstacle.",
+          "verifier_output": "fail: missing concrete numeric meters in move_spot; missing concrete numeric degrees in rotate_spot"
+        },
+        {
+          "planner_output": "1. Rotate Spot to face the target:\n   - Compute the target center: cx = (5.5 + 6.5) / 2 = 6.0, cy = (1.0 + 2.0) / 2 = 1.5.\n   - Compute desired world bearing to the target: desired_bearing = atan2(1.5 - 0, 6.0 - 0) \u2248 109.47 degrees.\n   - Compute Spot's forward bearing: forward_bearing = -0 degrees (Spot's initial heading).\n   - Compute rotate_spot degrees: rotate_spot = normalize(-(109.47 - 0)) \u2248 -109.47 degrees.\n   - Execute rotate_spot action with -109.47 degrees.\n\nFallbacks:\n- If at_goal is true after rotation: finish_task.\n- If obstacle_ahead is true before rotating: call_llm to request a new plan considering the obstacle.",
+          "verifier_output": "fail: missing concrete numeric degrees in rotate_spot action; rotate_spot degrees should be 109.47 degrees."
+        }
+      ],
+      "decoder_output": "{\"root\": {\"type\": \"fallback\", \"children\": [{\"type\": \"sequence\", \"children\": [{\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false}, {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -109.47}}}, {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true}, {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}]}, {\"type\": \"sequence\", \"children\": [{\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}]}]}}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 250.5
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Re-attempt to face the target:\n   - Rotate Spot by 109.47 degrees clockwise (positive).\n   - Execute rotate_spot action with 109.47 degrees.\n\n2. Move Spot forward to face the target:\n   - Compute distance_to_center = sqrt((6.0 - 0)^2 + (1.5 - 0)^2) \u2248 6.71 meters.\n   - Execute move_spot action with 1.0 meter (bounded move).\n   - Check progress: if at_goal is true, finish_task; otherwise, recompute heading and move again.\n\nFallbacks:\n- If obstacle_ahead is true before moving: call_llm to request a new plan considering the obstacle.\n- If target_ahead remains false after rotation and move, request call_llm for further instructions.",
+          "verifier_output": "fail: face_target uses face_target action; face_target does not specify a numeric target position."
+        },
+        {
+          "planner_output": "1. Rotate Spot to align with the target's center:\n   - Calculate desired_bearing = atan2(1.5 - 0, 6.5 - 0) \u2248 30.96 degrees.\n   - Rotate Spot by 30.96 degrees clockwise (positive).\n   - Execute rotate_spot action with 30.96 degrees.\n\n2. Move Spot forward to face the target:\n   - Compute distance_to_center = sqrt((6.0 - 0)^2 + (1.5 - 0)^2) \u2248 6.71 meters.\n   - Execute move_spot action with 1.0 meter (bounded move).\n   - Check progress: if at_goal is true, finish_task; otherwise, recompute heading and move again.\n\nFallbacks:\n- If obstacle_ahead is true before moving: call_llm to request a new plan considering the obstacle.\n- If target_ahead remains false after rotation and move, request call_llm for further instructions.",
+          "verifier_output": "fail: missing concrete numeric degrees in rotate_spot action."
+        }
+      ],
+      "decoder_output": "{\"root\": {\"type\": \"fallback\", \"children\": [{\"type\": \"sequence\", \"children\": [{\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false}, {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}, {\"type\": \"sequence\", \"children\": [{\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false}, {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}, {\"type\": \"sequence\", \"children\": [{\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": false}, {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}, {\"type\": \"sequence\", \"children\": [{\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true}, {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}]}, {\"type\": \"sequence\", \"children\": [{\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": false}, {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}, {\"type\": \"sequence\", \"children\": [{\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": false}, {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}, {\"type\": \"sequence\", \"children\": [{\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true}, {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}]}]}]}]}, {\"type\": \"sequence\", \"children\": [{\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true}, {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 30.96}}}, {\"type\": \"sequence\", \"children\": [{\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true}, {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}, {\"type\": \"sequence\", \"children\": [{\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true}, {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}}, {\"type\": \"sequence\", \"children\": [{\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true}, {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}, {\"type\": \"sequence\", \"children\": [{\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true}, {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}}, {\"type\": \"sequence\", \"children\": [{\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true}, {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}]}]}]}]}]}]}",
+      "plan_results": {
+        "error": "Invalid JSON: Expecting ',' delimiter: line 1 column 2414 (char 2413)"
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot to align with the target's center:\n   - Calculate desired_bearing = atan2(1.5 - 0, 6.5 - 0) \u2248 30.96 degrees.\n   - Rotate Spot by 30.96 degrees clockwise (positive).\n   - Execute rotate_spot action with 30.96 degrees.\n\n2. Move Spot forward to face the target:\n   - Compute distance_to_center = sqrt((6.0 - 0)^2 + (1.5 - 0)^2) \u2248 6.71 meters.\n   - Execute move_spot action with 1.0 meter (bounded move).\n   - Check progress: if at_goal is true, finish_task; otherwise, recompute heading and move again.\n\nFallbacks:\n- If obstacle_ahead is true before moving: call_llm to request a new plan considering the obstacle.\n- If target_ahead remains false after rotation and move, request call_llm for further instructions.",
+          "verifier_output": "fail: missing concrete numeric degrees in rotate_spot action."
+        },
+        {
+          "planner_output": "1. Rotate Spot to align with the target's center:\n   - Calculate desired_bearing = atan2(1.5 - 0, 6.5 - 0) \u2248 30.96 degrees.\n   - Rotate Spot by 30.96 degrees clockwise (positive).\n   - Execute rotate_spot action with 30.96 degrees.\n\n2. Move Spot forward to face the target:\n   - Compute distance_to_center = sqrt((6.0 - 0)^2 + (1.5 - 0)^2) \u2248 6.71 meters.\n   - Execute move_spot action with 1.0 meter (bounded move).\n   - Check progress: if at_goal is true, finish_task; otherwise, recompute heading and move again.\n\nFallbacks:\n- If obstacle_ahead is true before moving: call_llm to request a new plan considering the obstacle.\n- If target_ahead remains false after rotation and move, request call_llm for further instructions.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\"root\": {\"type\": \"fallback\", \"children\": [{\"type\": \"sequence\", \"children\": [{\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false}, {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}, {\"type\": \"sequence\", \"children\": [{\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": false}, {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}, {\"type\": \"sequence\", \"children\": [{\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}}, {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true}, {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}]}, {\"type\": \"sequence\", \"children\": [{\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 30.96}}}, {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true}, {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}]}, {\"type\": \"sequence\", \"children\": [{\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}}, {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true}, {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}]}]}",
+      "plan_results": {
+        "error": "Invalid JSON: Expecting ',' delimiter: line 1 column 1201 (char 1200)"
+      }
+    }
+  ]
+}

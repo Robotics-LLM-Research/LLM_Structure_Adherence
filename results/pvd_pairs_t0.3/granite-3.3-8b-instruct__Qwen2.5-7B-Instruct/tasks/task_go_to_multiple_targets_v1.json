@@ -1,0 +1,101 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 5.3363642089922605,
+  "avg_verifier_inference_time_s": 0.02738111330351482,
+  "avg_decoder_inference_time_s": 1.672626321669668,
+  "avg_inference_time_s": 7.036371643965444,
+  "final_spot": {
+    "x": 11.3,
+    "y": -1.6,
+    "heading": 10.2
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Identify the nearest target from the current Spot position. In this case, it's \"goal_1\" since Spot is initially at (0, 0) and \"goal_1\" is at (2.5, -0.5) to (3.5, 0.5).\n2. Compute the distance_to_center for \"goal_1\":\n   - dx = 2.5 - 0 (current x) = 2.5\n   - dy = -0.5 - 0 (current y) = -0.5\n   - distance_to_center = sqrt(2.5^2 + (-0.5)^2) \u2248 2.618 meters\n3. Compute the desired world bearing for \"goal_1\":\n   - desired_bearing = atan2(-0.5, 2.5) \u2248 -11.3 degrees (since Spot initially faces +x, which is 0 degrees)\n4. Compute the forward bearing of Spot:\n   - forward_bearing = -0.0 degrees (Spot initially faces +x)\n5. Calculate the rotate_spot degrees needed to align Spot's forward bearing with the desired bearing for \"goal_1\":\n   - rotate_spot_degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180]\n   - rotate_spot_degrees \u2248 11.3 degrees\n6. Execute the rotate_spot action with the calculated degrees.\n7. Check if obstacle_ahead is true. If true, call_llm to request a new plan as no forward movement is safe. If false, proceed to move Spot.\n8. Execute the move_spot action with meters = 2.618 (min of distance_to_center and maximum safe move of 2.0 meters).\n9. Verify if Spot has reached \"goal_1\" by checking at_goal. If true, finish_task. If false, proceed to the next target.\n10. Update the current Spot position to the final position reached after the move.\n11. Identify the next nearest target, which is \"goal_2\" at (5.5, -0.5) to (6.5, 0.5).\n12. Repeat steps 2-10 for \"goal_2\".\n\nFallbacks:\n- If at_goal is true after reaching a target, finish_task.\n- If obstacle_ahead is true before moving, call_llm for a new plan. Ensure to change the heading strategy if two consecutive attempts result in target_ahead=false and at_goal=false.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.618}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 2.6,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "1. With Spot at (2.6, 0.0, 0.0), identify the next nearest target, which is still \"goal_2\" at (5.5, -0.5) to (6.5, 0.5).\n2. Compute the distance_to_center for \"goal_2\":\n   - dx = 5.5 - 2.6 = 2.9\n   - dy = -0.5 - 0.0 = -0.5\n   - distance_to_center = sqrt(2.9^2 + (-0.5)^2) \u2248 3.147 meters\n3. Compute the desired world bearing for \"goal_2\":\n   - desired_bearing = atan2(-0.5, 2.9) \u2248 -10.2 degrees\n4. Compute the forward bearing of Spot:\n   - forward_bearing = 0.0 degrees\n5. Calculate the rotate_spot degrees needed to align Spot's forward bearing with the desired bearing for \"goal_2\":\n   - rotate_spot_degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180]\n   - rotate_spot_degrees \u2248 10.2 degrees\n6. Execute the rotate_spot action with the calculated degrees.\n7. Check if obstacle_ahead is true. If true, call_llm to request a new plan as no forward movement is safe. If false, proceed to move Spot.\n8. Execute the move_spot action with meters = 3.147 (min of distance_to_center and maximum safe move of 2.0 meters).\n9. Verify if Spot has reached \"goal_2\" by checking at_goal. If true, finish_task. If false, proceed to the next target.\n10. Update the current Spot position to the final position reached after the move.\n11. Since \"goal_2\" was not reached, identify the next nearest target, which does not exist in this case. Request call_llm for a new plan as there are no more targets.\n\nFallbacks:\n- If at_goal is true after reaching a target, finish_task.\n- If obstacle_ahead is true before moving, call_llm for a new plan. Ensure to change the heading strategy if two consecutive attempts result in target_ahead=false and at_goal=false.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 10.2}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 3.147}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 5.7,
+          "y": -0.6,
+          "heading": 10.2
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "1. With Spot at (5.7, -0.6, 10.2), identify the next nearest target, which is still \"goal_2\" at (5.5, -0.5) to (6.5, 0.5).\n2. Compute the distance_to_center for \"goal_2\":\n   - dx = 5.5 - 5.7 = -0.2\n   - dy = -0.5 - (-0.6) = 0.1\n   - distance_to_center = sqrt((-0.2)^2 + (0.1)^2) \u2248 0.245 meters\n3. Compute the desired world bearing for \"goal_2\":\n   - desired_bearing = atan2(0.1, -0.2) \u2248 75.0 degrees\n4. Compute the forward bearing of Spot:\n   - forward_bearing = 10.2 degrees\n5. Calculate the rotate_spot degrees needed to align Spot's forward bearing with the desired bearing for \"goal_2\":\n   - rotate_spot_degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180]\n   - rotate_spot_degrees \u2248 -64.8 degrees\n6. Execute the rotate_spot action with the calculated degrees.\n7. Check if obstacle_ahead is true. If true, call_llm to request a new plan as no forward movement is safe. If false, proceed to move Spot.\n8. Execute the move_spot action with meters = 0.245 (min of distance_to_center and maximum safe move of 2.0 meters).\n9. Verify if Spot has reached \"goal_2\" by checking at_goal. If true, finish_task. If false, proceed to the next target.\n10. Update the current Spot position to the final position reached after the move.\n11. Since \"goal_2\" was not reached, request call_llm for a new plan as there are no more targets.\n\nFallbacks:\n- If at_goal is true after reaching a target, finish_task.\n- If obstacle_ahead is true before moving, call_llm for a new plan. Ensure to change the heading strategy if two consecutive attempts result in target_ahead=false and at_goal=false.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 5.7}} },\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 11.3,
+          "y": -1.6,
+          "heading": 10.2
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

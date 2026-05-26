@@ -1,0 +1,113 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 4.299861894959274,
+  "avg_verifier_inference_time_s": 0.3425184311539245,
+  "avg_decoder_inference_time_s": 2.9899186350327605,
+  "avg_inference_time_s": 7.632298961145958,
+  "final_spot": {
+    "x": 1.4,
+    "y": -1.4,
+    "heading": 305.2
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Since obstacle_ahead is false, proceed to rotate Spot to face the target.\n2. Compute the desired bearing to the target:\n   - cx = (6.0 + 7.0) / 2 = 6.5\n   - cy = (-3.0 + -2.0) / 2 = -2.5\n   - dx = cx - 0.0 = 6.5\n   - dy = cy - 0.0 = -2.5\n   - Desired world bearing = atan2(-2.5, 6.5) \u2248 -21.8 degrees\n3. Compute Spot's forward bearing:\n   - Spot's forward bearing = -0.0 degrees (since heading=0.0)\n4. Calculate the rotation required to face the target:\n   - rotate_spot degrees = normalize(-(\u221221.8 - 0)) \u2248 21.8 degrees\n5. Execute the rotation:\n   - rotate_spot(21.8)\n6. Check progress:\n   - Verify target_ahead is true after rotation.\n7. If target_ahead is true, proceed to move Spot towards the target:\n   - Compute distance to the target center: distance_to_center = sqrt(6.5^2 + 2.5^2) \u2248 7.81 meters\n   - Execute a bounded move: move_spot(min(7.81, 2.0)) = move_spot(2.0)\n8. Check progress:\n   - Verify at_goal is true after moving.\n9. If at_goal is true, finish the task: finish_task()\n10. If at_goal is false, recompute the nearest target center and repeat from step 6 until at_goal is true or an obstacle is detected ahead.\n\nFallbacks:\n- If obstacle_ahead becomes true before moving, adjust the rotation strategy:\n  - Rotate Spot away from the obstacle by a safe angle (e.g., 45 degrees) to avoid getting stuck.\n  - rotate_spot(-45) or rotate_spot(45) depending on the side of the obstacle.\n  - Then call_llm() to request a new plan.\n- If two consecutive attempts fail to make progress (i.e., neither rotation nor movement succeeds), change the heading strategy before moving again.",
+          "verifier_output": "fail: It contains an unbounded loop, long search pattern, or repeated non-progressing actions; It repeats a failed action pattern described in feedback."
+        },
+        {
+          "planner_output": "1. Rotate Spot to face the target:\n   - Compute the desired bearing to the target:\n     - cx = (6.0 + 7.0) / 2 = 6.5\n     - cy = (-3.0 + -2.0) / 2 = -2.5\n     - dx = cx - 0.0 = 6.5\n     - dy = cy - 0.0 = -2.5\n     - Desired world bearing = atan2(-2.5, 6.5) \u2248 -21.8 degrees\n   - Compute Spot's forward bearing:\n     - Spot's forward bearing = -0.0 degrees (since heading=0.0)\n   - Calculate the rotation required to face the target:\n     - rotate_spot degrees = normalize(-(\u221221.8 - 0)) \u2248 21.8 degrees\n   - Execute the rotation:\n     - rotate_spot(21.8)\n2. Check progress:\n   - Verify target_ahead is true after rotation.\n3. If target_ahead is true, proceed to move Spot towards the target:\n   - Compute distance to the target center: distance_to_center = sqrt(6.5^2 + 2.5^2) \u2248 7.81 meters\n   - Execute a bounded move: move_spot(min(7.81, 2.0)) = move_spot(2.0)\n4. Check progress:\n   - Verify at_goal is true after moving.\n5. If at_goal is true, finish the task: finish_task()\n6. If at_goal is false, recompute the nearest target center and repeat from step 3, but if two consecutive attempts fail to make progress (i.e., neither rotation nor movement succeeds), change the heading strategy before moving again:\n   - Rotate Spot by an additional 45 degrees in the same direction and call_llm() to request a new plan.\n\nThis revised plan avoids unbounded loops and long search patterns by limiting the movement to bounded steps and changing the heading strategy if two consecutive attempts fail to make progress.",
+          "verifier_output": "fail: vague instructions; unbounded loop or long search pattern\n\nReasons:\n1. The plan uses vague instructions like \"Compute the desired bearing to the target\" and \"Compute distance to the target center,\" which are not directly executable actions.\n2. The plan contains an unbounded loop or long search pattern because it suggests repeating the process if two consecutive attempts fail to make progress without a clear limit on the number of attempts."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 21.8}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 1.4,
+          "y": -1.4,
+          "heading": 88.6
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot to face the target again:\n   - rotate_spot(21.8)\n2. Check progress:\n   - Verify target_ahead is true after rotation.\n3. If target_ahead is true, proceed to move Spot towards the target:\n   - Compute distance to the target center: distance_to_center = sqrt((6.5 - 1.4)^2 + (-2.5 + 1.4)^2) \u2248 6.80 meters\n   - Execute a bounded move: move_spot(min(6.80, 2.0)) = move_spot(2.0)\n4. Check progress:\n   - Verify at_goal is true after moving.\n5. If at_goal is true, finish the task: finish_task()\n6. If at_goal is false, recompute the nearest target center and repeat from step 3, but if two consecutive attempts fail to make progress (i.e., neither rotation nor movement succeeds), change the heading strategy before moving again:\n   - Rotate Spot by an additional 45 degrees in the same direction: rotate_spot(88.6 + 45) = rotate_spot(133.6)\n   - Call for a new plan: call_llm()\n\nThis revised plan uses the final_spot coordinates to recompute the heading and distance to the target, ensuring that Spot continues to make progress toward the target. If two consecutive attempts fail to make progress, the plan requests a new strategy using call_llm().",
+          "verifier_output": "fail: It contains an unbounded loop, long search pattern, or repeated non-progressing actions; It repeats a failed action pattern described in feedback."
+        },
+        {
+          "planner_output": "1. Rotate Spot to face the target again:\n   - rotate_spot(21.8)\n2. Check progress:\n   - Verify target_ahead is true after rotation.\n3. If target_ahead is true, proceed to move Spot towards the target:\n   - Compute distance to the target center: distance_to_center = sqrt((6.5 - 1.4)^2 + (-2.5 + 1.4)^2) \u2248 6.80 meters\n   - Execute a bounded move: move_spot(min(6.80, 2.0)) = move_spot(2.0)\n4. Check progress:\n   - Verify at_goal is true after moving.\n5. If at_goal is true, finish the task: finish_task()\n6. If at_goal is false, recompute the nearest target center and repeat from step 3, but if two consecutive attempts fail to make progress (i.e., neither rotation nor movement succeeds), change the heading strategy before moving again:\n   - Rotate Spot by an additional 45 degrees in the same direction: rotate_spot(88.6 + 45) = rotate_spot(133.6)\n   - If two consecutive attempts fail, rotate Spot by an additional 90 degrees in the same direction: rotate_spot(133.6 + 90) = rotate_spot(223.6)\n   - Call for a new plan: call_llm()\n\nThis revised plan addresses the verifier's feedback by ensuring that Spot does not repeat a failed action pattern for more than two consecutive attempts. Instead, it changes the heading strategy by rotating Spot by an additional 90 degrees if two consecutive attempts fail to make progress.",
+          "verifier_output": "fail: It contains an unbounded loop, long search pattern, or repeated non-progressing actions; It repeats a failed action pattern described in feedback."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 21.8}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 21.8}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 133.6}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 223.6}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 1.4,
+          "y": -1.4,
+          "heading": 129.4
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot to face the target again:\n   - rotate_spot(133.6)\n2. Check progress:\n   - Verify target_ahead is true after rotation.\n3. If target_ahead is true, proceed to move Spot towards the target:\n   - Compute distance to the target center: distance_to_center = sqrt((6.5 - 1.4)^2 + (-2.5 + 1.4)^2) \u2248 6.80 meters\n   - Execute a bounded move: move_spot(min(6.80, 2.0)) = move_spot(2.0)\n4. Check progress:\n   - Verify at_goal is true after moving.\n5. If at_goal is true, finish the task: finish_task()\n6. If at_goal is false, recompute the nearest target center and repeat from step 1, but if two attempts in a row fail to make progress (i.e., neither rotation nor movement succeeds), change the heading strategy before moving again:\n   - Rotate Spot by an additional 45 degrees in the same direction: rotate_spot(133.6 + 45) = rotate_spot(178.6)\n   - If two consecutive attempts fail, rotate Spot by an additional 90 degrees in the same direction: rotate_spot(178.6 + 90) = rotate_spot(268.6)\n   - Call for a new plan: call_llm()\n\nThis revised plan is more concrete, using bounded numeric actions and avoiding vague phrases. It also addresses the verifier's feedback by ensuring that Spot does not repeat a failed action pattern for more than two consecutive attempts. Instead, it changes the heading strategy by rotating Spot by an additional 90 degrees if two consecutive attempts fail to make progress.",
+          "verifier_output": "fail: It contains an unbounded loop, long search pattern, or repeated non-progressing actions; It assumes success without checking at_goal; It repeats a failed action pattern described in feedback.\n\nThe plan still contains an unbounded loop in the sense that it will repeatedly attempt to move towards the target without a clear stopping condition if the target is not immediately reachable. Additionally, it assumes success without explicitly checking at_goal, and it repeats the same action pattern (rotating and moving) without a clear mechanism to stop if these actions fail."
+        },
+        {
+          "planner_output": "1. Rotate Spot to face the target again:\n   - rotate_spot(133.6)\n2. Check progress:\n   - Verify target_ahead is true after rotation.\n3. If target_ahead is true, proceed to move Spot towards the target:\n   - Compute distance to the target center: distance_to_center = sqrt((6.5 - 1.4)^2 + (-2.5 + 1.4)^2) \u2248 6.80 meters\n   - Execute a bounded move: move_spot(min(6.80, 2.0)) = move_spot(2.0)\n4. Check progress:\n   - Verify at_goal is true after moving.\n5. If at_goal is true, finish the task: finish_task()\n6. If at_goal is false and obstacle_ahead is false, rotate Spot to adjust heading:\n   - Rotate Spot by 45 degrees in the same direction: rotate_spot(133.6 + 45) = rotate_spot(178.6)\n7. If at_goal remains false and obstacle_ahead is still false after rotation, repeat step 6 with an additional 45 degrees: rotate_spot(178.6 + 45) = rotate_spot(223.6)\n8. If at_goal remains false after both rotations, call for a new plan: call_llm()\n\nThis revised plan now includes explicit checks for at_goal and incorporates a mechanism to change heading strategy when two consecutive attempts to move towards the target fail without encountering an obstacle. This ensures that Spot does not repeat a failed action pattern and provides a clearer stopping condition for its approach to the target.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 133.6}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 178.6}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 223.6}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 1.4,
+          "y": -1.4,
+          "heading": 305.2
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

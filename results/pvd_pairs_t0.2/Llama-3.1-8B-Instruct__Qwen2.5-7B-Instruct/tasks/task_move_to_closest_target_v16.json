@@ -1,0 +1,109 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 0.9828759101917968,
+  "avg_verifier_inference_time_s": 0.1909484522184357,
+  "avg_decoder_inference_time_s": 1.755787293969964,
+  "avg_inference_time_s": 2.9296116563801964,
+  "final_spot": {
+    "x": 0.5,
+    "y": 0.5,
+    "heading": 0.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. rotate_spot(90)\n2. move_spot(0.5)\n3. rotate_spot(-90)\n4. move_spot(0.5)\n5. rotate_spot(90)\n6. move_spot(0.5)\n7. rotate_spot(-90)\n8. move_spot(0.5)\n9. rotate_spot(90)\n10. move_spot(0.5)\n11. call_llm()\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: rotate_spot(-90)\n\nExplanation:\n- Since target_ahead is false, we need to change heading first.\n- We will rotate 90 degrees to the left to face the closest target.\n- Then, we will move 0.5 meters forward.\n- We will repeat this process until we reach the closest target.\n- If at_goal is true, we will finish the task.\n- If an obstacle is ahead, we will rotate 90 degrees to the left to avoid it.",
+          "verifier_output": "fail: The plan contains an unbounded loop; it repeats the same sequence of actions without a clear termination condition."
+        },
+        {
+          "planner_output": "1. rotate_spot(90)\n2. move_spot(0.5)\n3. call_llm()\n\nExplanation:\n- Since target_ahead is false, we need to change heading first.\n- We will rotate 90 degrees to the left to face the closest target.\n- Then, we will move 0.5 meters forward.\n- If at_goal is true after the move, we will finish the task.\n- If an obstacle is ahead, we will call the LLM for a new plan.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 0.5}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -0.0,
+          "y": 0.5,
+          "heading": 270.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. rotate_spot(90)\n2. move_spot(0.5)\n3. call_llm()\n\nExplanation:\n- Since target_ahead is false, we need to change heading first.\n- We will rotate 90 degrees to the left to face the closest target.\n- Then, we will move 0.5 meters forward.\n- If at_goal is true after the move, we will finish the task.\n- If an obstacle is ahead, we will call the LLM for a new plan.\n- Since the previous plan did not reach the goal, we will ask the LLM for a new plan.",
+          "verifier_output": "fail: move_spot lacks numeric meters; call_llm is proposed without checking at_goal; repeat a failed action pattern described in feedback\n\nExplanation:\n1. The move_spot action lacks a numeric meters value.\n2. The call_llm action is proposed without checking at_goal, which means it assumes success without verifying it.\n3. The plan repeats a failed action pattern by calling LLM again without short progress + check + replan."
+        },
+        {
+          "planner_output": "1. rotate_spot(90)\n2. move_spot(0.5)\n3. at_goal\n4. rotate_spot(-90)\n5. move_spot(0.5)\n6. at_goal\n7. call_llm()\n\nExplanation:\n- We first rotate 90 degrees to the left to face the closest target.\n- Then, we move 0.5 meters forward.\n- We check if we have reached the goal.\n- If not, we rotate 90 degrees to the right to face the target again.\n- We move 0.5 meters forward again.\n- We check if we have reached the goal.\n- If we still haven't reached the goal, we call the LLM for a new plan.",
+          "verifier_output": "fail: The plan contains an unbounded loop; It repeats a failed action pattern described in feedback."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 0.5}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 0.5}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -0.0,
+          "y": 0.5,
+          "heading": 270.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "1. rotate_spot(90)\n2. move_spot(0.5)\n3. at_goal\n4. call_llm()\n\nExplanation:\n- We first rotate 90 degrees to the left to face the closest target.\n- Then, we move 0.5 meters forward.\n- We check if we have reached the goal.\n- If not, we call the LLM for a new plan.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 0.5}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.5,
+          "y": 0.5,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

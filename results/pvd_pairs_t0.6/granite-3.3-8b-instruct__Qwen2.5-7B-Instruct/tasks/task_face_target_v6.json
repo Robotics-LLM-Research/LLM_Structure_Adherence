@@ -1,0 +1,49 @@
+{
+  "bt_count": 1,
+  "perfect_structure": true,
+  "valid_structure_count": 1,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 2.821041724004317,
+  "avg_verifier_inference_time_s": 0.088677802530583,
+  "avg_decoder_inference_time_s": 2.1824215470114723,
+  "avg_inference_time_s": 5.092141073546372,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 180.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot to face the target.\n   - Compute the desired bearing to the target: \n     - cx = (-4.5 - 3.5) / 2 = -4.0, cy = (-0.5 + 0.5) / 2 = 0.0\n     - Desired world bearing = atan2(cy - y, cx - x) = atan2(0.0 - 0.0, -4.0 - 0.0) \u2248 180 degrees (or -180 in normalized form)\n   - Compute Spot's current forward bearing = -heading = 0 degrees\n   - Calculate rotate_spot degrees = normalize(-(180 - 0)) into [-180, 180] = 180 degrees (clockwise rotation)\n   - Execute rotate_spot(180)\n\n2. Check if facing the target:\n   - If target_ahead is true, verify Spot is facing the target. If not, adjust rotation.\n   - If target_ahead is false, rotate until it becomes true.\n\nFallbacks:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before rotating, call_llm for further instructions.\n\nNote: This plan assumes immediate feedback on obstacle_ahead and target_ahead. If not available, continuous small rotations with checks might be necessary, but that would require more complex conditional logic not fully specified in the rules.",
+          "verifier_output": "fail: Vague instructions used; Assumes immediate feedback on target_ahead and obstacle_ahead without checking."
+        },
+        {
+          "planner_output": "Revised plan:\n1. Rotate Spot 180 degrees clockwise: execute rotate_spot(180).\n2. Check if target_ahead is true.\n   - If true, verify Spot is facing the target within a small threshold (e.g., \u00b15 degrees). If not, execute rotate_spot(degrees_to_target) where degrees_to_target = normalize(desired_bearing - current_heading) within [-180, 180].\n   - If false, rotate 180 degrees counter-clockwise and repeat step 2.\n3. If at_goal is true, finish_task.\n4. If obstacle_ahead is true during rotation, call_llm for further instructions.\n\nThis revised plan avoids vague instructions and explicitly checks for target_ahead, adjusting the heading accordingly. It also includes a fallback for at_goal and obstacle_ahead scenarios. Note that the exact computation of degrees_to_target would require the current_heading, which is not directly observable in the provided environment details. In practice, this would typically come from Spot's local perception system.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 180}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"sequence\", \"children\": [\n            {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n            {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 0}}}\n          ]}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -180}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 0}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 180.0
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

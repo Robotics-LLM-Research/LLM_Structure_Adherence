@@ -1,0 +1,113 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 2.894386162321704,
+  "avg_verifier_inference_time_s": 0.3576269551607159,
+  "avg_decoder_inference_time_s": 3.0795447643613443,
+  "avg_inference_time_s": 6.331557881843764,
+  "final_spot": {
+    "x": -1.0,
+    "y": 1.5,
+    "heading": 0.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. rotate_spot(90)\n2. move_spot(1.0)\n3. rotate_spot(-90)\n4. move_spot(1.0)\n5. rotate_spot(90)\n6. move_spot(1.0)\n7. rotate_spot(-90)\n8. move_spot(1.0)\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: rotate_spot(<numeric angle>) or call_llm. \n\n\n\n**Explanation:**\n\nThis plan attempts to navigate around the obstacle by rotating and moving in a square pattern. \n\n* **Steps 1-4:** Rotate 90 degrees right, move forward 1 meter, rotate 90 degrees left, and move forward 1 meter. This creates a small square around the obstacle.\n* **Steps 5-8:** Repeat the same sequence, potentially allowing Spot to find a safe path around the obstacle.\n\n**Reasoning:**\n\n* The initial rotation and movement attempt to position Spot to the side of the obstacle.\n* The subsequent rotations and movements create a pattern that explores a small area around the obstacle.\n* If the obstacle is large, this plan may need to be repeated or adjusted. \n\n**Fallbacks:**\n\n* If Spot reaches the goal (`at_goal` is true), it should finish the task.\n* If an obstacle is detected ahead (`obstacle_ahead` is true) before moving, Spot should either rotate to avoid the obstacle or call the LLM for further assistance.",
+          "verifier_output": "fail: This plan contains an unbounded loop, long search pattern, or repeated non-progressing actions; It assumes success without checking at_goal."
+        },
+        {
+          "planner_output": "1. rotate_spot(90)\n2. move_spot(1.0)\n3. rotate_spot(-90)\n4. move_spot(1.0)\n5. if at_goal: finish_task\n6. else: rotate_spot(90)\n7. move_spot(1.0)\n8. rotate_spot(-90)\n9. move_spot(1.0)",
+          "verifier_output": "fail: Unbounded loop; Long route instead of one bounded safe step plus replanning\n\n\nThe plan contains an unbounded loop due to the repeated pattern of rotating and moving without a clear end condition. Additionally, the route described is long and not bounded, which is not optimal for navigating around an obstacle."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": true,
+          "obstacle_left": true,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 1.0,
+          "y": -1.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. rotate_spot(180) \n2. move_spot(1.0)\n3. if at_goal: finish_task\n4. else: rotate_spot(90)\n5. move_spot(1.0)\n6. if at_goal: finish_task\n7. else: call_llm",
+          "verifier_output": "fail: Unbounded loop; Repeated non-progressing actions\n\nExplanation:\n- The plan contains an unbounded loop because it repeatedly calls `rotate_spot(90)` and `move_spot(1.0)` without a clear termination condition.\n- The plan also contains repeated non-progressing actions, as it keeps rotating and moving without checking if the goal is reached or if the obstacle has been successfully navigated."
+        },
+        {
+          "planner_output": "1. rotate_spot(180) \n2. move_spot(1.0)\n3. if at_goal: finish_task\n4. else: rotate_spot(90)\n5. move_spot(1.0)\n6. if at_goal: finish_task\n7. else: rotate_spot(-90)\n8. move_spot(1.0)\n9. if at_goal: finish_task\n10. else: call_llm",
+          "verifier_output": "fail: Unbounded loop; Long search pattern\n\nExplanation:\n- The plan contains an unbounded loop as it repeatedly rotates and moves without a clear end condition.\n- The search pattern is long and non-bounded, as it continues to rotate and move without checking if the goal has been reached after each step."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 180}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -1.0,
+          "y": -0.0,
+          "heading": 180.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. rotate_spot(90)\n2. move_spot(1.5)\n3. if at_goal: finish_task\n4. else: rotate_spot(-90)\n5. move_spot(1.5)\n6. if at_goal: finish_task\n7. else: call_llm",
+          "verifier_output": "fail: Unbounded loop; Long search pattern\n\nThe plan contains an unbounded loop as it repeatedly rotates and moves without a clear termination condition. Additionally, the repeated non-progressing actions (rotating and moving) without checking the at_goal condition create a long search pattern."
+        },
+        {
+          "planner_output": "1. rotate_spot(90)\n2. move_spot(1.5)\n3. if at_goal: finish_task\n4. else: rotate_spot(-90)\n5. move_spot(1.5)\n6. if at_goal: finish_task\n7. else: rotate_spot(180)\n8. move_spot(1.5)\n9. if at_goal: finish_task\n10. else: call_llm",
+          "verifier_output": "fail: The plan contains an unbounded loop; The route described is long and not bounded by safe steps."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.5}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.5}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 180}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.5}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": true,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -1.0,
+          "y": 1.5,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

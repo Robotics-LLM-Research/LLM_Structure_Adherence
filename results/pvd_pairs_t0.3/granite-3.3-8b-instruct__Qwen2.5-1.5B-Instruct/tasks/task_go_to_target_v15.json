@@ -1,0 +1,55 @@
+{
+  "bt_count": 3,
+  "perfect_structure": false,
+  "valid_structure_count": 0,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 2.460640324318471,
+  "avg_verifier_inference_time_s": 0.025289208667042356,
+  "avg_decoder_inference_time_s": 51.97700616333168,
+  "avg_inference_time_s": 54.462935696317196,
+  "final_spot": null,
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot to face the target.\n   - rotate_spot(compute_desired_bearing_to_target)\n2. Move Spot towards the target.\n   - move_spot(min(distance_to_center, 2.0))\n3. Verify if at_goal is true. If true, finish_task.\n4. If obstacle_ahead is true, call_llm to request a new plan.\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: call_llm.\n\nNote: The specific numeric values for rotate_spot and move_spot are computed based on the target's position relative to Spot's current position and heading, using the provided geometry recipe. The exact degrees for rotate_spot and meters for move_spot will be determined at execution time based on the current Spot state and target details.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -90\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 2.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"sequence\",\n            \"children\": [\n              {\n                \"type\": \"action\",\n                \"call\": {\n                  \"tool_name\": \"finish_task\"",
+      "plan_results": {
+        "error": "Invalid JSON: Expecting ',' delimiter: line 42 column 45 (char 956)"
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot to face the direction of the target.\n   - rotate_spot degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180].\n   - Here, desired_bearing = atan2(goal_1.cy - Spot.y, goal_1.cx - Spot.x) and forward_bearing = 0.\n   - rotate_spot degrees = normalize(-(atan2(3.4-0, 7.9-0) - 0)) into [-180, 180] \u2248 58.16 degrees.\n\n2. Move Spot towards the target.\n   - distance_to_center = sqrt((goal_1.cx - Spot.x)^2 + (goal_1.cy - Spot.y)^2) = sqrt((7.5 - 0)^2 + (3.2 - 0)^2) \u2248 8.06 meters.\n   - move_spot meters = min(distance_to_center, 2.0) = 2.0 meters.\n\nFallbacks:\n- If obstacle_ahead is true before moving, call_llm to request a new plan considering the obstacle.\n- If at_goal is true after moving, finish_task.\n\nNote: The plan assumes there are no obstacles directly in the path between Spot's initial position and the target. If an obstacle is detected, the plan calls for using the LLM to generate a new strategy. The move_spot action is bounded to 2 meters to ensure safe navigation, adjusting this value if necessary based on the environment's characteristics.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\n            \"degrees\": 58.16\n          }\n        }\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"move_spot\",\n          \"arguments\": {\n            \"meters\": 2.0\n          }\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"at_goal\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"finish_task\"",
+      "plan_results": {
+        "error": "Invalid JSON: Expecting ',' delimiter: line 36 column 37 (char 707)"
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Execute a rotate_spot(-45) to adjust the heading towards the left.\n2. Execute a move_spot(1.0) to approach the target.\n3. Verify if at_goal is true. If true, finish_task.\n4. If obstacle_ahead is true before moving, call_llm to request a new behavior tree.\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: call_llm.\n\nThis plan begins by rotating Spot 45 degrees to the left to adjust its heading towards the target located in the left quadrant. Then, it moves Spot 1 meter forward along its new heading. After the move, it checks if the task objective has been achieved. If not, and if there's an obstacle directly ahead, it calls for a new behavior tree from the LLM. This approach ensures a bounded action attempt followed by a check, adhering to the rules provided.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"sequence\",\n    \"children\": [\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\n            \"degrees\": -45\n          }\n        }\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"move_spot\",\n          \"arguments\": {\n            \"meters\": 1.0\n          }\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"at_goal\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -45\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 1.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"call_llm\"",
+      "plan_results": {
+        "error": "Invalid JSON: Expecting ',' delimiter: line 57 column 38 (char 1210)"
+      }
+    }
+  ]
+}

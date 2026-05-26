@@ -1,0 +1,113 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 3.0471174546595043,
+  "avg_verifier_inference_time_s": 0.5159608719986863,
+  "avg_decoder_inference_time_s": 2.95637895372541,
+  "avg_inference_time_s": 6.519457280383601,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 163.4
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Identify the target's center coordinates: cx = (-6.5 + -5.5) / 2 = -6.0, cy = (0.7 + 1.7) / 2 = 1.2.\n2. Compute dx = cx - x = -6.0 - 0.0 = -6.0 and dy = cy - y = 1.2 - 0.0 = 1.2.\n3. Calculate the desired world bearing = atan2(dy, dx) = atan2(1.2, -6.0) = 153.4 degrees (approximately).\n4. Calculate Spot's forward bearing = -heading = -0.0 = 0 degrees.\n5. Determine the rotate_spot degrees = normalize(-(153.4 - 0)) into [-180, 180] = 196.6 degrees.\n6. Execute rotate_spot(196.6) to face the target.\n7. Verify at_goal; if false, proceed to the next step.\n8. Execute move_spot(0) to maintain position without changing distance to the target.\n\nFallbacks:\n- If at_goal is true after rotation: finish_task.\n- If obstacle_ahead is true before rotating: call_llm for further instructions.",
+          "verifier_output": "fail: vague instructions; repeat a failed action pattern described in feedback\n\nExplanation:\n1. The plan uses vague instructions like \"Identify the target's center coordinates\" and \"Compute dx = cx - x = -6.0 - 0.0 = -6.0 and dy = cy - y = 1.2 - 0.0 = 1.2.\" These steps are not actionable in the context of the provided tools.\n2. The plan repeats the move_spot(0) action after rotation, which does not progress toward the goal and is unnecessary."
+        },
+        {
+          "planner_output": "1. Identify target center: cx = -6.0, cy = 1.2.\n2. Calculate dx = cx - x = -6.0, dy = cy - y = 1.2.\n3. Desired bearing = atan2(dy, dx) = atan2(1.2, -6.0) \u2248 153.4 degrees.\n4. Spot's forward bearing = 0 degrees.\n5. Rotate_spot degrees = normalize(-(153.4 - 0)) into [-180, 180] = 196.6 degrees.\n6. Execute rotate_spot(196.6).\n7. Verify at_goal; if false, proceed to the next step.\n8. Since the previous attempt failed and there's no obstacle ahead, rotate toward the target without repeating the initial rotation angle. Choose a new rotate_spot angle: 180 degrees (opposite direction).\n9. Execute rotate_spot(-180).\n10. Verify at_goal; if false, proceed to the next step.\n11. If no obstacle is detected to the right within 10 meters, adjust the heading further by rotating 90 degrees to the right (clockwise). Execute rotate_spot(90).\n12. Verify at_goal; if false, proceed to the next step.\n13. If still not facing the target, repeat the process of rotating 90 degrees to the right until either the target is faced or an obstacle is detected to the right.\n\nFallbacks:\n- If at_goal is true after rotation: finish_task.\n- If obstacle_ahead is true before rotating: call_llm for further instructions.",
+          "verifier_output": "fail: Vague instructions: rotate toward; Unbounded loop: repeat the process of rotating 90 degrees to the right until either the target is faced or an obstacle is detected to the right."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}\n        }\n      ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -196.6}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}\n        }\n      ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -180}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}\n        }\n      ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}\n        }\n      ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}\n    }\n  ]\n} \n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 73.4
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot 180 degrees to face the opposite direction: execute rotate_spot(-180).\n2. Verify at_goal; if true, finish_task.\n3. If not facing the target and no obstacle is detected to the right, rotate 90 degrees to the right (clockwise): execute rotate_spot(90).\n4. Verify at_goal; if true, finish_task.\n5. If still not facing the target and no obstacle is detected to the right, rotate another 90 degrees to the right: execute rotate_spot(90).\n6. Verify at_goal; if true, finish_task.\n7. If still not facing the target and no obstacle is detected to the right, rotate an additional 90 degrees to the right: execute rotate_spot(90).\n8. Verify at_goal; if true, finish_task.\n9. If still not facing the target and no obstacle is detected to the right, rotate one final 90 degrees to the right: execute rotate_spot(90).\n10. Verify at_goal; if true, finish_task.\n11. If still not facing the target and no obstacle is detected to the right, call_llm for further instructions.\n\nFallbacks:\n- If at_goal is true after rotation: finish_task.\n- If obstacle_ahead is true before rotating: call_llm for further instructions.",
+          "verifier_output": "fail: unbounded loop; vague instructions\n\n\nThe plan contains an unbounded loop with repeated rotations without a clear progress check or short progress + check + replan pattern. The plan also uses vague instructions like \"verify at_goal\" without specifying how to handle the outcome."
+        },
+        {
+          "planner_output": "1. Rotate Spot 180 degrees to face the opposite direction: execute rotate_spot(-180).\n2. Verify at_goal; if true, finish_task.\n3. If not facing the target and no obstacle is detected to the right, rotate 90 degrees to the right (clockwise): execute rotate_spot(90).\n4. Verify at_goal; if true, finish_task.\n5. If still not facing the target and no obstacle_ahead is true, call_llm for further instructions.\n\nFallbacks:\n- If at_goal is true after rotation: finish_task.\n- If obstacle_ahead is true before rotating: call_llm for further instructions.",
+          "verifier_output": "fail: vague instructions; unbounded loop\n\n\nThe plan includes vague instructions (\"Verify at_goal\") and an unbounded loop due to the repeated calls to rotate and call_llm without a clear progress indicator or termination condition."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -180}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": false},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": false},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 343.4
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot 180 degrees to face the opposite direction: execute rotate_spot(-180).\n2. Verify at_goal; if true, finish_task.\n3. If not facing the target and no obstacle_right is true, rotate 90 degrees to the right (clockwise): execute rotate_spot(90).\n4. Verify at_goal; if true, finish_task.\n5. If still not facing the target and no obstacle_ahead is true, rotate 45 degrees to the left (counter-clockwise): execute rotate_spot(-45).\n6. Verify at_goal; if true, finish_task.\n7. If still not facing the target and obstacle_ahead is false, move forward 1 meter: execute move_spot(1).\n8. Verify at_goal; if true, finish_task.\n9. If still not facing the target and obstacle_ahead is false, rotate 90 degrees to the right (clockwise): execute rotate_spot(90).\n10. Verify at_goal; if true, finish_task.\n11. If still not facing the target and obstacle_ahead is false, move forward 1 meter: execute move_spot(1).\n12. Verify at_goal; if true, finish_task.\n13. If still not facing the target and obstacle_ahead is false, rotate 90 degrees to the left (counter-clockwise): execute rotate_spot(-90).\n14. Verify at_goal; if true, finish_task.\n15. If still not facing the target and obstacle_ahead is false, call_llm for further instructions.\n\nFallbacks:\n- If at_goal is true after rotation or movement: finish_task.\n- If obstacle_ahead is true before rotating: call_llm for further instructions.",
+          "verifier_output": "fail: unbounded loop; long search pattern\n\nThe plan contains an unbounded loop and a long search pattern. Specifically, the plan repeatedly attempts to rotate and move in a series of steps without a clear termination condition. This could lead to an infinite loop if the target is not found. Additionally, the sequence of rotations and movements without checking at_goal in between can result in unnecessary actions if the target is found earlier."
+        },
+        {
+          "planner_output": "1. Rotate Spot 180 degrees to face the opposite direction: execute rotate_spot(-180).\n2. If target_ahead is true, move forward 1 meter: execute move_spot(1).\n3. If at_goal is true, finish_task.\n4. If not facing the target and no obstacle_right is true, rotate 90 degrees to the right (clockwise): execute rotate_spot(90).\n5. If target_ahead is true, move forward 1 meter: execute move_spot(1).\n6. If at_goal is true, finish_task.\n7. If still not facing the target and no obstacle_ahead is true, rotate 45 degrees to the left (counter-clockwise): execute rotate_spot(-45).\n8. If target_ahead is true, move forward 1 meter: execute move_spot(1).\n9. If at_goal is true, finish_task.\n10. If still not facing the target and obstacle_ahead is false, call_llm for further instructions.\n\nFallbacks:\n- If at_goal is true after rotation or movement: finish_task.\n- If obstacle_ahead is true before rotating: call_llm for further instructions.",
+          "verifier_output": "fail: vague instructions; unbounded loop; long search pattern; repeated non-progressing actions\n\nExplanation:\n1. The plan uses vague instructions like \"rotate 90 degrees to the right\" and \"rotate 45 degrees to the left\" without specifying the exact target.\n2. The plan contains an unbounded loop with repeated checks and rotations without a clear stopping condition.\n3. The search pattern is long, as it involves multiple rotations and movements without a clear goal.\n4. The plan repeats the same non-progressing action (rotating and moving) multiple times without checking at_goal after each action."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -180}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 163.4
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

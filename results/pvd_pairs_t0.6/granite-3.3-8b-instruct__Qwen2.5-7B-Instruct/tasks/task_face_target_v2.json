@@ -1,0 +1,49 @@
+{
+  "bt_count": 1,
+  "perfect_structure": true,
+  "valid_structure_count": 1,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 3.953267096541822,
+  "avg_verifier_inference_time_s": 0.8263041455065832,
+  "avg_decoder_inference_time_s": 2.161236878950149,
+  "avg_inference_time_s": 6.940808120998554,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot to adjust the heading towards the target. Given the initial heading is 0.0, compute the desired bearing towards \"goal_1\" with x-coordinates centered at 5.0 and y-coordinates centered at 0.0.\n   - dx = 5.0 - 0 = 5.0\n   - dy = 0.0 - 0 = 0.0\n   - Desired world bearing = atan2(0, 5) = 0 degrees (since Spot initially faces +x).\n   - Spot forward bearing = 0 degrees.\n   - rotate_spot degrees = normalize(-(0 - 0)) = 0 degrees (no rotation needed initially).\n\n2. Move Spot towards the target with a safe bounded step of 2.0 meters.\n   - move_spot(2.0)\n\n3. Verify progress using runtime observations:\n   - If at_goal is true, finish_task.\n   - If obstacle_ahead is true, call_llm for a new plan.\n   - Otherwise, proceed to recompute the heading and move.\n\n4. Recompute the heading to \"goal_1\":\n   - After the move, new Spot position (x, y) needs to be used to recalculate dx and dy.\n   - New desired bearing = atan2(dy, dx) in degrees.\n   - New forward bearing = -current_heading.\n   - New rotate_spot degrees = normalize(-(new_desired_bearing - new_forward_bearing)) into [-180, 180].\n\n5. Move Spot again with a bounded step, typically 2.0 meters.\n   - move_spot(2.0)\n\n6. Repeat steps 4 and 5 until at_goal is true or an obstacle is detected ahead.\n\nFallbacks:\n- If at_goal is true after any rotation, finish_task.\n- If obstacle_ahead is true before moving, call_llm to request a new behavior tree.\n\nNote: Since the initial heading is aligned with the target, only one rotation and two movement steps are necessary to face the target directly. Adjustments will be made based on the new position after each movement.",
+          "verifier_output": "fail: contains an unbounded loop, long search pattern, or repeated non-progressing actions; repeats a failed action pattern described in feedback; proposes more than one bounded progress chunk for the next attempt instead of short progress + check + replan;\n\nThe plan contains an unbounded loop described in step 6, which repeats the same pattern of recompute-heading + move without a clear end condition or progress check. Additionally, it repeats the failed action pattern of recompute-heading + move multiple times without checking at_goal or obstacle_ahead conditions between steps. Instead, it should focus on making short progress, checking at_goal, and replanning if necessary."
+        },
+        {
+          "planner_output": "1. Rotate Spot to adjust the heading towards the target:\n   - rotate_spot(0 degrees)\n\n2. Move Spot towards the target with a safe bounded step of 2.0 meters:\n   - move_spot(2.0)\n\n3. Verify progress using runtime observations:\n   - If at_goal is true, finish_task.\n   - If obstacle_ahead is true, call_llm for a new plan.\n   - Otherwise, recompute the heading to \"goal_1\".\n\n4. Recompute the heading to \"goal_1\":\n   - New desired bearing = atan2(dy, dx) in degrees.\n   - New forward bearing = -current_heading.\n   - New rotate_spot degrees = normalize(-(new_desired_bearing - new_forward_bearing)) into [-180, 180].\n\n5. Move Spot again with a bounded step, typically 2.0 meters:\n   - move_spot(2.0)\n\n6. Verify progress using runtime observations:\n   - If at_goal is true, finish_task.\n   - If obstacle_ahead is true, call_llm for a new plan.\n   - If neither condition is met, recompute the heading and move again.\n\nRevised fallbacks:\n- If at_goal is true after any rotation, finish_task.\n- If obstacle_ahead is true before moving, call_llm to request a new behavior tree.",
+          "verifier_output": "fail: vage instructions in recomputation steps; unbounded loop in fallbacks\n\n\nExplanation:\n1. The plan uses vague instructions like \"recompute the heading to 'goal_1'\" and \"normalize(-(new_desired_bearing - new_forward_bearing)) into [-180, 180]\". These are not concrete actions and could lead to confusion.\n2. The fallbacks contain an unbounded loop. The plan will keep calling \"recompute the heading\" and \"move_spot(2.0)\" repeatedly without a clear stopping condition, which could lead to infinite loops."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"sequence\",\n            \"children\": [\n              {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n              {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n            ]\n          },\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

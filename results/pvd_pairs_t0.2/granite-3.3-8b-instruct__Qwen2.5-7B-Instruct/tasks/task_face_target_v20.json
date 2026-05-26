@@ -1,0 +1,49 @@
+{
+  "bt_count": 1,
+  "perfect_structure": true,
+  "valid_structure_count": 1,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 2.066641643003095,
+  "avg_verifier_inference_time_s": 0.3115978300338611,
+  "avg_decoder_inference_time_s": 2.1860148130217567,
+  "avg_inference_time_s": 4.564254286058713,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 90.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot to face the target.\n   - Compute the desired bearing to the target: desired_bearing = atan2(-0.5, -7.5 - 0.0) - 0.0 = 90 degrees.\n   - Compute the current forward bearing: Spot is initially facing +x, so Spot_forward_bearing = 0 degrees.\n   - Compute the rotate_spot degrees: rotate_spot = normalize(-(90 - 0)) into [-180, 180] = 90 degrees.\n   - Execute rotate_spot(90).\n\n2. Verify if Spot is facing the target.\n   - If target_ahead is true, proceed to check at_goal.\n   - If target_ahead is false, rotate again to adjust the heading.\n\nFallbacks:\n- If at_goal is true after rotation, finish_task.\n- If obstacle_ahead is true before rotating, call_llm for a new plan.",
+          "verifier_output": "fail: Vague instructions; Unbounded loop\n\nExplanation:\n1. The plan uses a vague instruction \"Compute the desired bearing to the target\" and \"Compute the current forward bearing,\" which are not direct actions but computations.\n2. The fallback logic creates an unbounded loop where if `target_ahead` is false, it will continue rotating without a clear stopping condition."
+        },
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot 90 degrees clockwise to face the target.\n   - Execute rotate_spot(90).\n\n2. Check if Spot is facing the target.\n   - If target_ahead is true, proceed to check at_goal.\n   - If target_ahead is false, rotate 45 degrees counter-clockwise and then check again.\n   - Execute rotate_spot(-45).\n\n3. Repeat step 2 with a 45-degree counter-clockwise rotation if target_ahead remains false.\n   - Execute rotate_spot(-45).\n\nFallbacks:\n- If at_goal is true after rotation, finish_task.\n- If obstacle_ahead is true before moving, call_llm for a new plan.\n\nNote: This plan includes a maximum of two rotation adjustments to avoid an unbounded loop. If target_ahead remains false after these adjustments, the Verifier or Decoder should request further clarification or plan revisions.",
+          "verifier_output": "fail: The plan contains an unbounded loop; It assumes success without checking at_goal."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"sequence\", \"children\": [\n            {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n            {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true}\n          ]}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 90.0
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

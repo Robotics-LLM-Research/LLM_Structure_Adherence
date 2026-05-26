@@ -1,0 +1,109 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 0.6601979685714469,
+  "avg_verifier_inference_time_s": 0.19200107336509972,
+  "avg_decoder_inference_time_s": 0.9149529696442187,
+  "avg_inference_time_s": 1.7671520115807653,
+  "final_spot": {
+    "x": -1.0,
+    "y": 0.1,
+    "heading": 183.8
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Plan:\n\n1. rotate_spot(90.0)\n2. move_spot(2.0)\n3. at_goal\n4. finish_task",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"sequence\",\n    \"children\": [\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90.0}}},\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n      {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": -0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. rotate_spot(180.0)\n2. move_spot(1.0)\n3. call_llm",
+          "verifier_output": "fail: Vague instruction; Unbounded loop or long search pattern\n\n\nThe plan contains a vague instruction (rotate_spot(180.0) without context) and an unbounded loop pattern (rotate and move, then call_llm without a clear progress check)."
+        },
+        {
+          "planner_output": "1. rotate_spot(180.0) \n2. move_spot(1.0) \n3. check_at_goal \n4. call_llm",
+          "verifier_output": "fail: Vague instructions; Unbounded loop or long search pattern\n\n\nThe plan contains vague instructions (rotate toward, move closer) and an unbounded loop or long search pattern through the call_llm action without a clear progress check."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 180.0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -1.0,
+          "y": -0.0,
+          "heading": 180.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Since the previous plan was not successful and the task is still not completed, we need to re-plan from the new final Spot pose (x=-1.0, y=0.0, heading=180.0).\n\nThe goal is to move to the target (x1=4.3, x2=5.7, y1=1.3, y2=2.7). \n\nFirst, let's compute the target center (cx, cy): (cx=(4.3+5.7)/2, cy=(1.3+2.7)/2) = (5.0, 2.0).\n\nFrom the current Spot pose (x=-1.0, y=0.0, heading=180.0), compute dx=5.0-(-1.0)=6.0 and dy=2.0-0.0=2.0.\n\nDesired world bearing = atan2(dy, dx) = 33.69 degrees. \n\nSpot forward bearing = -180.0 degrees. \n\nRotate Spot by rotate_spot(-(desired_bearing - forward_bearing)) = rotate_spot(-(33.69 - (-180.0))) = rotate_spot(146.31) degrees.\n\nThen, move Spot by move_spot(min(distance_to_center, 2.0)) = move_spot(min(sqrt(6^2+2^2), 2.0)) = move_spot(6.403) meters.\n\nHowever, we only want a bounded numeric action, so we reduce the distance to 2.0 meters.\n\nThe revised plan is:\n\n1. rotate_spot(146.31)\n2. move_spot(2.0)\n3. check_at_goal\n4. call_llm",
+          "verifier_output": "fail: The plan uses call_llm instead of finish_task when at_goal; The plan contains an unbounded loop by using call_llm without a progress check."
+        },
+        {
+          "planner_output": "1. rotate_spot(146.31)\n2. move_spot(2.0)\n3. check_at_goal\n4. if at_goal: finish_task",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"sequence\",\n    \"children\": [\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 146.31}}},\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n      {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -1.0,
+          "y": 0.1,
+          "heading": 183.8
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    }
+  ]
+}

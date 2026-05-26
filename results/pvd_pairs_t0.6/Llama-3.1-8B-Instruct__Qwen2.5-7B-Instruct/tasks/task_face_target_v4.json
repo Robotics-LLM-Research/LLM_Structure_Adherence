@@ -1,0 +1,109 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 0.5766711588250473,
+  "avg_verifier_inference_time_s": 0.1982431499985978,
+  "avg_decoder_inference_time_s": 1.5071999039500952,
+  "avg_inference_time_s": 2.2821142127737404,
+  "final_spot": {
+    "x": -0.0,
+    "y": 0.5,
+    "heading": 270.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n\n1. rotate_spot(180.0)\n\nSince the task is to face the target, we only need to rotate Spot to face the target without moving.\n\nThere is no need for a fallback plan as the task is straightforward and does not require multiple attempts or conditional actions. However, if needed, a fallback plan could be:\n\nFallback:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: call_llm.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"sequence\",\n    \"children\": [\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\"degrees\": 180.0}\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"at_goal\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"finish_task\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. rotate_spot(180.0)\n2. rotate_spot(0.0)\n3. rotate_spot(0.0)\n4. move_spot(0.0)\n\nSince the Spot's final position and heading are the same as the initial position, and no target is ahead, we need to rotate to +y to face the target. However, since the task is to face the target, we can only rotate. The final rotate_spot is not actually doing anything, but it was necessary to get Spot to face the correct direction initially.\n\nThe plan is very concrete and uses bounded numeric actions. However, if the next useful action is unclear, the plan will request LLM assistance with call_llm.",
+          "verifier_output": "fail: It assumes success without checking at_goal; It uses vague instructions: move closer, rotate toward, calculate direction, move around, repeat, continue, search, until reached; It repeats a failed action pattern described in feedback.\n\nThe plan lacks checks for at_goal and assumes the goal will be achieved without verification. Additionally, the repeated rotation without progress is vague and should be replaced with a short progress + check + replan pattern."
+        },
+        {
+          "planner_output": "1. call_llm\n2. rotate_spot(180.0)\n3. move_spot(1.0)\n4. if not at_goal: call_llm\n5. rotate_spot(0.0)\n6. move_spot(1.0)\n7. if at_goal: finish_task\n8. if not target_ahead: call_llm\n\nThis revised plan breaks the task into smaller steps, includes checks for at_goal, and uses concrete numeric actions. The plan also includes a call to the LLM to re-plan in case of failure or when the target is not ahead.",
+          "verifier_output": "fail: It uses actions outside move_spot, rotate_spot, finish_task, call_llm; call_llm is used without a clear justification in this task type."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 180.0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 0.0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. rotate_spot(180.0)\n2. move_spot(1.0)\n3. call_llm",
+          "verifier_output": "fail: rotate_spot lacks numeric degrees; call_llm should not be used here; move_spot lacks numeric meters"
+        },
+        {
+          "planner_output": "1. rotate_spot(180.0)\n2. rotate_spot(90.0)\n3. move_spot(0.5)",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 180.0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90.0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 0.5}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -0.0,
+          "y": 0.5,
+          "heading": 270.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

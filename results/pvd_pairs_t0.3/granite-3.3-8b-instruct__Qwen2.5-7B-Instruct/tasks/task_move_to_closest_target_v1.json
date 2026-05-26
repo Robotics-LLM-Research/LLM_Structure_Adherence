@@ -1,0 +1,109 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 5.415274951374158,
+  "avg_verifier_inference_time_s": 0.25281535196118055,
+  "avg_decoder_inference_time_s": 2.8302488547051325,
+  "avg_inference_time_s": 8.498339158040471,
+  "final_spot": {
+    "x": 10.0,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Compute the center of each target:\n   - goal_close center: cx = (2.5 + 3.5) / 2 = 3.0, cy = (-0.5 + 0.5) / 2 = 0.0\n   - goal_far center: cx = (6.5 + 7.5) / 2 = 7.0, cy = (3.5 + 4.5) / 2 = 4.0\n\n2. Calculate the distance to each target center from Spot's current position (0.0, 0.0, 0.0):\n   - Distance to goal_close: sqrt((3.0 - 0.0)^2 + (0.0 - 0.0)^2) = 3.0 meters\n   - Distance to goal_far: sqrt((7.0 - 0.0)^2 + (4.0 - 0.0)^2) = 7.81 meters\n\n3. Choose the closest target: goal_close with 3.0 meters.\n\n4. Compute the desired bearing to the closest target:\n   - Desired bearing = atan2(0 - 0, 3.0 - 0) = 0 degrees (directly ahead)\n\n5. Since Spot's current heading is 0 degrees (facing +x), no rotation is needed.\n\n6. Execute a bounded move towards the closest target:\n   - move_spot(2.0) meters (bounded move within 2 meters)\n\n7. Verify progress:\n   - Check if Spot is at the goal_close target.\n   - If at_goal is true, finish_task.\n   - If obstacle_ahead is true before moving, call_llm for further instructions.\n   - If no obstacle and not at_goal, recompute from final_spot and repeat the process.\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: call_llm.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 2.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Compute the center of the closest target (goal_close): cx = 3.0, cy = 0.0\n2. Calculate the desired bearing to goal_close: desired_bearing = 0 degrees\n3. Since Spot's current heading is 0 degrees (facing +x), no rotation is needed.\n4. Execute a bounded move towards the closest target: move_spot(2.0) meters\n5. Verify progress:\n   - Check if Spot is at the goal_close target.\n   - If at_goal is true, finish_task.\n   - If obstacle_ahead is true before moving, call_llm for further instructions.\n   - If no obstacle and not at_goal, recompute from final_spot and repeat the process.\n\nRevised plan:\n1. Compute the center of goal_close: cx = 3.0, cy = 0.0\n2. Desired bearing to goal_close = 0 degrees (directly ahead)\n3. Execute a bounded move: move_spot(2.0) meters\n4. Verify progress:\n   - If at_goal is true, finish_task.\n   - If obstacle_ahead is true, call_llm.\n   - If no obstacle and not at_goal, recompute from final_spot (x=2.0, y=0.0, heading=0.0) and repeat the process with another bounded move_spot(2.0) meters.",
+          "verifier_output": "fail: It contains an unbounded loop, long search pattern, or repeated non-progressing actions; The plan repeats the bounded move without a check for progress or a new target after the initial move."
+        },
+        {
+          "planner_output": "1. Compute the center of the closest target (goal_close): cx = 3.0, cy = 0.0\n2. Calculate the desired bearing to goal_close: desired_bearing = 0 degrees\n3. Since Spot's current heading is 0 degrees (facing +x), no rotation is needed.\n4. Execute a bounded move towards the closest target: move_spot(2.0) meters\n5. Verify progress:\n   - Check if Spot is at the goal_close target.\n   - If at_goal is true, finish_task.\n   - If obstacle_ahead is true before moving, call_llm for further instructions.\n   - If no obstacle and not at_goal, recompute from final_spot (x=2.0, y=0.0, heading=0.0) and choose the next closest target (goal_far).\n6. Compute the center of the next closest target (goal_far): cx = 7.0, cy = 4.0\n7. Calculate the desired bearing to goal_far: desired_bearing \u2248 135 degrees\n8. Execute a bounded move towards the next closest target: rotate_spot(135 degrees) followed by move_spot(2.0) meters\n9. Verify progress:\n   - If at_goal is true, finish_task.\n   - If obstacle_ahead is true before rotating, call_llm for further instructions.\n   - If obstacle_left or obstacle_right is true before rotating, adjust the rotation angle accordingly (e.g., rotate_spot(45 degrees) if obstacle_left is true).\n   - If no obstacle and not at_goal, recompute from final_spot and repeat the process with another bounded rotate_spot and move_spot.\n\nRevised plan:\n1. Compute goal_close center: cx = 3.0, cy = 0.0\n2. Desired bearing to goal_close = 0 degrees\n3. Execute move_spot(2.0) meters\n4. Verify progress:\n   - If at_goal, finish_task.\n   - If obstacle_ahead, call_llm.\n   - If no obstacle and not at_goal, recompute from final_spot (x=2.0, y=0.0, heading=0.0) and choose goal_far.\n5. Compute goal_far center: cx = 7.0, cy = 4.0\n6. Desired bearing to goal_far \u2248 135 degrees\n7. Execute rotate_spot(135 degrees) followed by move_spot(2.0) meters\n8. Verify progress:\n   - If at_goal, finish_task.\n   - If obstacle_ahead, call_llm.\n   - If obstacle_left or obstacle_right, adjust rotation angle and repeat.\n   - If no obstacle and not at_goal, recompute from final_spot and repeat the process.",
+          "verifier_output": "fail: move_to_closest_target should not involve multiple bounded progress chunks; it should focus on short progress + check + replan. The plan repeats the process without a clear end condition, leading to an unbounded loop."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false},\n          {\"type\": \"condition\", \"observation\": \"obstacle_left\", \"expected\": false},\n          {\"type\": \"condition\", \"observation\": \"obstacle_right\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 4.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Compute the center of the next closest target (goal_far): cx = 7.0, cy = 4.0\n2. Calculate the desired bearing to goal_far: desired_bearing \u2248 135 degrees\n3. Since Spot's current heading is 0 degrees (facing +x), no rotation is needed initially.\n4. Execute a bounded move towards the next closest target: move_spot(2.0) meters\n5. Verify progress:\n   - Check if Spot is at the goal_far target.\n   - If at_goal is true, finish_task.\n   - If obstacle_ahead is true before moving, call_llm for further instructions.\n   - If no obstacle and not at_goal, recompute from final_spot (x=4.0, y=0.0, heading=0.0) and adjust the rotation angle if necessary.\n6. If obstacle_left or obstacle_right is detected, adjust the rotation angle accordingly:\n   - If obstacle_left is true, rotate_spot(45 degrees)\n   - If obstacle_right is true, rotate_spot(-45 degrees)\n7. After adjusting the rotation angle, execute the rotation: rotate_spot(<adjusted_degrees>)\n8. Execute a bounded move towards the adjusted target: move_spot(2.0) meters\n9. Verify progress:\n   - If at_goal is true, finish_task.\n   - If obstacle_ahead is true before moving, call_llm for further instructions.\n   - If no obstacle and not at_goal, recompute from final_spot and repeat the process with another bounded rotate_spot and move_spot.\n\nRevised plan:\n1. Compute goal_far center: cx = 7.0, cy = 4.0\n2. Desired bearing to goal_far \u2248 135 degrees\n3. Execute move_spot(2.0) meters\n4. Verify progress:\n   - If at_goal, finish_task.\n   - If obstacle_ahead, call_llm.\n   - If no obstacle and not at_goal, recompute from final_spot (x=4.0, y=0.0, heading=0.0).\n5. Check for obstacles:\n   - If obstacle_left is true, rotate_spot(45 degrees)\n   - If obstacle_right is true, rotate_spot(-45 degrees)\n6. Execute the adjusted rotation: rotate_spot(<adjusted_degrees>)\n7. Execute move_spot(2.0) meters\n8. Verify progress:\n   - If at_goal, finish_task.\n   - If obstacle_ahead, call_llm.\n   - If no obstacle and not at_goal, recompute from final_spot and repeat the process.",
+          "verifier_output": "fail: The plan contains an unbounded loop and repeated non-progressing actions; It repeats the process without a clear termination condition."
+        },
+        {
+          "planner_output": "1. Compute the center of the next closest target (goal_far): cx = 7.0, cy = 4.0\n2. Calculate the desired bearing to goal_far: desired_bearing \u2248 135 degrees\n3. Since Spot's current heading is 0 degrees (facing +x), no rotation is needed initially.\n4. Execute a bounded move towards the next closest target: move_spot(2.0) meters\n5. Verify progress:\n   - Check if Spot is at the goal_far target.\n   - If at_goal is true, finish_task.\n   - If obstacle_ahead is true before moving, call_llm for further instructions.\n   - If no obstacle and not at_goal, recompute from final_spot (x=4.0, y=0.0, heading=0.0).\n6. Check for obstacles:\n   - If obstacle_left is true, rotate_spot(45 degrees)\n   - If obstacle_right is true, rotate_spot(-45 degrees)\n7. Execute the adjusted rotation: rotate_spot(<adjusted_degrees>)\n8. Execute move_spot(2.0) meters\n9. Verify progress:\n   - If at_goal, finish_task.\n   - If obstacle_ahead is true, call_llm.\n   - If no obstacle and not at_goal, recompute from final_spot and repeat the process.\n10. Implement a maximum retry limit (e.g., 5 attempts) to prevent unbounded loops.\n\nRevised plan:\n1. Compute goal_far center: cx = 7.0, cy = 4.0\n2. Desired bearing to goal_far \u2248 135 degrees\n3. Execute move_spot(2.0) meters\n4. Verify progress:\n   - If at_goal, finish_task.\n   - If obstacle_ahead, call_llm.\n   - If no obstacle and not at_goal, recompute from final_spot (x=4.0, y=0.0, heading=0.0).\n5. Check for obstacles:\n   - If obstacle_left is true, rotate_spot(45 degrees)\n   - If obstacle_right is true, rotate_spot(-45 degrees)\n6. Execute the adjusted rotation: rotate_spot(<adjusted_degrees>)\n7. Execute move_spot(2.0) meters\n8. Verify progress:\n   - If at_goal, finish_task.\n   - If obstacle_ahead, call_llm.\n   - If no obstacle and not at_goal, recompute from final_spot and repeat the process.\n9. Limit retries to a maximum of 5 attempts to avoid unbounded loops.",
+          "verifier_output": "fail: unbounded loop; repeated non-progressing actions\n\n\nThe plan contains an unbounded loop because it does not have a clear termination condition for the repeated recompute and move actions. Additionally, it lacks a check for progress after each move, which could lead to repeated non-progressing actions."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_left\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_right\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 10.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "bt_count": 2,
+  "perfect_structure": true,
+  "valid_structure_count": 2,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 1.7342434547608718,
+  "avg_verifier_inference_time_s": 0.16525107203051448,
+  "avg_decoder_inference_time_s": 1.9547004340565763,
+  "avg_inference_time_s": 3.8541949608479626,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 163.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot to face the target.\n\n1. Compute desired bearing to target:\n   - desired_bearing = atan2(-1.7, -6.5 - 0) - atan2(0, 0 - 0) = -54.0 degrees (normalized to [-180, 180] is 126 degrees)\n2. Compute Spot's forward bearing:\n   - Spot's forward bearing = -0 degrees (facing +x)\n3. Calculate rotate_spot degrees:\n   - rotate_spot = normalize(-(126 - 0)) = 126 degrees (since 126 is already within [-180, 180])\n4. Execute rotate_spot(126)\n5. Verify progress:\n   - If obstacle_ahead is true, call_llm() for a new plan.\n   - If target_ahead is still false after rotation, revise heading strategy and repeat rotation.\n   - If at_goal is true, finish_task.\n\nFallbacks:\n- If obstacle_ahead is true before rotating, call_llm().\n- If target_ahead remains false after rotation, revise heading strategy and repeat rotate_spot with a new angle.",
+          "verifier_output": "fail: Vague instructions and unbounded loop; Repeated non-progressing actions and unbounded loop."
+        },
+        {
+          "planner_output": "1. Rotate Spot by 90 degrees to the left (counter-clockwise).\n2. Execute rotate_spot(-90).\n3. Verify progress:\n   - If obstacle_ahead is true, call_llm() for a new plan.\n   - If target_ahead is still false, revise heading strategy and repeat rotate_spot(-45).\n   - If at_goal is true, finish_task.\n\nFallbacks:\n- If obstacle_ahead is detected before rotating, call_llm().\n- If target_ahead remains false after rotation, revise heading strategy and repeat rotate_spot(-45).",
+          "verifier_output": "fail: The plan contains an unbounded loop; It assumes success without checking at_goal."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 225.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot by 45 degrees to the left (counter-clockwise).\n2. Execute rotate_spot(-45).\n3. Verify progress:\n   - If obstacle_ahead is true, call_llm() for a new plan.\n   - If target_ahead is still false, revise heading strategy and repeat rotate_spot(-22).\n   - If at_goal is true, finish_task.\n\nFallbacks:\n- If obstacle_ahead is detected before rotating, call_llm().\n- If target_ahead remains false after rotation, revise heading strategy and repeat rotate_spot(-22).",
+          "verifier_output": "fail: The plan uses a long rotation strategy without checking at_goal; It assumes success without checking at_goal."
+        },
+        {
+          "planner_output": "1. Rotate Spot by 45 degrees to the left (counter-clockwise).\n2. Execute rotate_spot(-45).\n3. Verify progress:\n   - Check if at_goal is true. If so, finish_task.\n   - If obstacle_ahead is true, call_llm() for a new plan.\n   - If target_ahead is still false and at_goal is false, revise heading strategy and execute rotate_spot(-22).\n\nFallbacks:\n- If obstacle_ahead is detected before rotating, call_llm().\n- If target_ahead remains false after rotation, revise heading strategy and repeat rotate_spot(-22).",
+          "verifier_output": "fail: The plan contains an unbounded loop; revise heading strategy and execute rotate_spot(-22) repeatedly without checking at_goal or obstacle_ahead."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": false},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -22}}}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 163.0
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

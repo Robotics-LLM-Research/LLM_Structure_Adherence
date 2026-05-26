@@ -1,0 +1,109 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 1.0744469132041559,
+  "avg_verifier_inference_time_s": 0.19953555341344326,
+  "avg_decoder_inference_time_s": 2.11200668666667,
+  "avg_inference_time_s": 3.385989153284269,
+  "final_spot": {
+    "x": -1.7,
+    "y": -2.6,
+    "heading": 212.6
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "**Main Plan:**\n\n1. rotate_spot(90.0)\n2. move_spot(1.0)\n3. rotate_spot(-90.0)\n4. move_spot(1.0)\n5. call_llm()\n\n**Explanation:**\n\nSince the task is to move to the closest target, we first need to determine the closest target to the current position (0.0, 0.0). \n\n1. Initially, Spot faces +x (heading=0.0). We need to rotate Spot to face the closest target. The closest target is goal_2, which is at (-6.5, -4.5). The desired bearing to goal_2 is atan2(-4.5, -6.5) = -53.13 degrees. Since Spot faces +x, the forward bearing is 0 degrees. The rotate angle is -(desired_bearing - forward_bearing) = -(-53.13 - 0) = 53.13 degrees. We rotate Spot by 90 degrees to align with the target, but since the target is behind us, we need to rotate in the opposite direction, so we rotate by -90 degrees.\n\n2. After rotating, Spot is now facing the target. We move Spot by 1.0 meter to get closer to the target.\n\n3. Now Spot is at (-1.0, 0.0) and facing the target. We need to rotate Spot to face the target directly. The desired bearing is -53.13 degrees, and the forward bearing is 0 degrees. The rotate angle is -(desired_bearing - forward_bearing) = -(-53.13 - 0) = 53.13 degrees. We rotate Spot by -90 degrees to align with the target.\n\n4. After rotating, Spot is now facing the target directly. We move Spot by 1.0 meter to get closer to the target.\n\n5. If the target is still not reached, we call the LLM to get a new plan.\n\nNote: This plan assumes that the closest target is goal_2. If the closest target is goal_1, the plan would be different.",
+          "verifier_output": "fail: The plan uses rotate_spot with a non-numeric angle; The plan uses move_spot with a non-numeric angle. \n\nThe plan should use specific numeric values for degrees and meters. For example, the rotate_spot action should specify a numeric degree value, and the move_spot action should specify a numeric meter value."
+        },
+        {
+          "planner_output": "**Main Plan:**\n\n1. rotate_spot(53.13)\n2. move_spot(1.0)\n3. rotate_spot(53.13)\n4. move_spot(1.0)\n5. call_llm()\n\n**Explanation:**\n\nThe plan has been revised to use specific numeric values for degrees and meters. The rotate_spot action now specifies a numeric degree value, and the move_spot action specifies a numeric meter value.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 53.13}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 53.13}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.3,
+          "y": -1.8,
+          "heading": 106.3
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. rotate_spot(53.13)\n2. move_spot(1.0)\n3. rotate_spot(53.13)\n4. move_spot(1.0)\n5. call_llm()\n\nThe plan remains the same as the previous one, as the execution result does not provide enough information to determine a better course of action. The Verifier may request a revised plan based on the new observations.",
+          "verifier_output": "fail: It contains an unbounded loop, long search pattern, or repeated non-progressing actions; It repeats a failed action pattern described in feedback."
+        },
+        {
+          "planner_output": "1. rotate_spot(53.13)\n2. move_spot(1.0)\n3. call_llm()\n4. rotate_spot(-53.13)\n5. move_spot(1.0)\n6. call_llm()\n\nThis revised plan changes the direction of rotation after the first attempt to avoid the repeated action pattern.",
+          "verifier_output": "fail: move_spot lacks numeric meters; rotate_spot lacks numeric degrees\n\n\nThe plan contains actions that do not provide numeric values for meters and degrees, which is against the rules for this task type."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 53.13}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -53.13}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -0.9,
+          "y": -3.1,
+          "heading": 106.3
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "1. rotate_spot(106.3)\n2. move_spot(1.0)\n3. call_llm()",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 106.3}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -1.7,
+          "y": -2.6,
+          "heading": 212.6
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

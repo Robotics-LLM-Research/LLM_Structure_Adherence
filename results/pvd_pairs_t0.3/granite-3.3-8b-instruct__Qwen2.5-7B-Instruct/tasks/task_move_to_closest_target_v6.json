@@ -1,0 +1,109 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 3.7027058406500144,
+  "avg_verifier_inference_time_s": 0.24522174000740052,
+  "avg_decoder_inference_time_s": 4.292340696284858,
+  "avg_inference_time_s": 8.240268276942272,
+  "final_spot": {
+    "x": -3.3,
+    "y": -1.7,
+    "heading": 72.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot to face the direction of the closest target.\n   - Compute the distance to the center of each target: \n     - Distance to goal_1: sqrt((1.5-0)^2 + (3.5-0)^2) = 4.74 meters\n     - Distance to goal_2: sqrt((5.5-0)^2 + (5.5-0)^2) = 7.21 meters\n   - goal_1 is closer, so rotate Spot to face it.\n   - Desired bearing to goal_1 center: atan2(3.5-0, 1.5-0) = 68.2 degrees\n   - Spot forward bearing: 0 degrees\n   - rotate_spot degrees: normalize(-(68.2 - 0)) = -68.2 degrees (within [-180, 180])\n2. Move Spot toward the closest target.\n   - move_spot(2.0) meters (bounded move)\n\nFallbacks:\n- If obstacle_ahead is true before moving: Rotate Spot to avoid the obstacle.\n  - Rotate Spot 90 degrees to the left (rotate_spot(90) degrees) and try moving again.\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true after moving: Rotate Spot to avoid the obstacle.\n  - Rotate Spot 90 degrees to the left (rotate_spot(-90) degrees) and try moving again.\n- If two attempts in a row keep target_ahead=false and at_goal=false, change heading strategy before moving again.\n  - Rotate Spot to face the direction of the closest target again and retry.\n\nNote: The plan assumes that Spot can successfully move 2 meters without encountering an obstacle. If an obstacle is detected, Spot will rotate to avoid it and then attempt the move again. This process will repeat until Spot successfully reaches the closest target or calls for a new plan using call_llm().",
+          "verifier_output": "fail: move_spot lacks numeric meters; fallbacks repeat a failed action pattern described in feedback\n\nExplanation:\n1. The move_spot action in step 2 lacks a numeric meters value.\n2. The fallbacks repeat the same pattern of rotating to avoid an obstacle and then attempting to move again, which could lead to an unbounded loop if obstacles are persistent."
+        },
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot to face the direction of the closest target.\n   - Compute the distance to the center of each target: \n     - Distance to goal_1: sqrt((1.5-0)^2 + (3.5-0)^2) = 4.74 meters\n     - Distance to goal_2: sqrt((5.5-0)^2 + (5.5-0)^2) = 7.21 meters\n   - goal_1 is closer, so rotate Spot to face it.\n   - Desired bearing to goal_1 center: atan2(3.5-0, 1.5-0) = 68.2 degrees\n   - Spot forward bearing: 0 degrees\n   - rotate_spot degrees: normalize(-(68.2 - 0)) = -68.2 degrees (within [-180, 180])\n2. Move Spot toward the closest target.\n   - move_spot(2.0) meters\n\nFallbacks:\n- If obstacle_ahead is true before moving: Rotate Spot to avoid the obstacle.\n  - Rotate Spot 90 degrees to the left (rotate_spot(90) degrees) and try moving again.\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true after moving: Rotate Spot to avoid the obstacle.\n  - Rotate Spot 90 degrees to the right (rotate_spot(90) degrees) and try moving again.\n- If two attempts in a row keep target_ahead=false and at_goal=false, change heading strategy before moving again.\n  - Rotate Spot to face the direction of the closest target again and retry.\n\nNote: The plan now includes a numeric meters value for move_spot and addresses the potential for unbounded loops by alternating between left and right rotations when encountering obstacles.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -68.2}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.7,
+          "y": 1.9,
+          "heading": 291.8
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot to face the closest target (goal_1).\n   - Current heading: 291.8 degrees\n   - Desired bearing to goal_1 center: 68.2 degrees\n   - Rotate Spot: rotate_spot(-68.2) degrees\n\n2. Move Spot toward the closest target.\n   - move_spot(2.0) meters\n\n3. Verify progress:\n   - Check if target_ahead is true after moving. If false, rotate to face the target again and retry.\n\n4. If obstacle_ahead is true before moving: Rotate Spot to avoid the obstacle.\n   - Rotate Spot 90 degrees to the left (rotate_spot(90) degrees) and try moving again.\n\n5. If at_goal is true: finish_task.\n\n6. If obstacle_ahead is true after moving: Rotate Spot to avoid the obstacle.\n   - Rotate Spot 90 degrees to the right (rotate_spot(90) degrees) and try moving again.\n\n7. If two attempts in a row keep target_ahead=false and at_goal=false, change heading strategy before moving again.\n   - Rotate Spot to face the direction of the closest target again and retry.\n\n8. If the next useful action is unclear, request call_llm.\n\nThis revised plan provides more concrete numeric actions and addresses potential issues with obstacle avoidance and target alignment.",
+          "verifier_output": "fail: It contains an unbounded loop, long search pattern, or repeated non-progressing actions; It repeats a failed action pattern described in feedback."
+        },
+        {
+          "planner_output": "1. Rotate Spot to face the closest target (goal_1).\n   - Current heading: 291.8 degrees\n   - Desired bearing to goal_1 center: 68.2 degrees\n   - Rotate Spot: rotate_spot(-68.2) degrees\n\n2. Move Spot toward the closest target.\n   - move_spot(2.0) meters\n\n3. Verify progress:\n   - Check if target_ahead is true after moving. If false, rotate to face the target again and retry.\n\n4. If obstacle_ahead is true before moving: Rotate Spot to avoid the obstacle.\n   - Rotate Spot 90 degrees to the left (rotate_spot(90) degrees) and try moving again.\n\n5. If at_goal is true: finish_task.\n\n6. If obstacle_ahead is true after moving: Rotate Spot to avoid the obstacle.\n   - Rotate Spot 90 degrees to the right (rotate_spot(90) degrees) and try moving again.\n\n7. If two attempts in a row keep target_ahead=false and at_goal=false, change heading strategy before moving again.\n   - Rotate Spot to face the direction of the closest target again and retry.\n\n8. If no progress is made after three attempts, call_llm for a new plan.\n\nThis revised plan addresses the previous issues by limiting the number of retries without progress and introducing a call_llm fallback when no progress is made after three attempts. This ensures that the robot does not get stuck in an infinite loop or repeat non-progressing actions.",
+          "verifier_output": "fail: It contains an unbounded loop, long search pattern, or repeated non-progressing actions; The plan has multiple retry mechanisms without a clear bounded limit, which could lead to an unbounded loop.\n   - The plan allows for multiple attempts to move toward the target without a clear limit, which could result in repeated non-progressing actions."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -68.2}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -68.2}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -2.6,
+          "y": 2.4,
+          "heading": 155.4
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot to face the closest target (goal_1).\n   - Current heading: 155.4 degrees\n   - Desired bearing to goal_1 center: 127.6 degrees\n   - Rotate Spot: rotate_spot(-27.8) degrees\n\n2. Move Spot toward the closest target.\n   - move_spot(1.5) meters\n\n3. Verify progress:\n   - Check if target_ahead is true after moving. If false, rotate to face the target again and retry.\n\n4. If obstacle_ahead is true before moving: Rotate Spot to avoid the obstacle.\n   - Rotate Spot 90 degrees to the left (rotate_spot(90) degrees) and try moving again.\n\n5. If at_goal is true: finish_task.\n\n6. If obstacle_ahead is true after moving: Rotate Spot to avoid the obstacle.\n   - Rotate Spot 90 degrees to the right (rotate_spot(90) degrees) and try moving again.\n\n7. If two attempts in a row keep target_ahead=false and at_goal=false, change heading strategy before moving again.\n   - Rotate Spot to face the direction of the closest target again and retry.\n\n8. If no progress is made after three attempts, call_llm for a new plan.\n\nThis revised plan provides more concrete numeric actions for rotation and movement, ensuring that the robot follows a clear and bounded strategy. The plan also includes a fallback to call_llm if no progress is made after three attempts, preventing the robot from getting stuck in an infinite loop or repeating non-progressing actions.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -27.8}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.5}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.5}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -27.8}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.5}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.5}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -27.8}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.5}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -3.3,
+          "y": -1.7,
+          "heading": 72.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

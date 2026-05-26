@@ -1,0 +1,109 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 3.1432943779742346,
+  "avg_verifier_inference_time_s": 0.19024339676834642,
+  "avg_decoder_inference_time_s": 2.810396470633956,
+  "avg_inference_time_s": 6.143934245376537,
+  "final_spot": {
+    "x": 0.0,
+    "y": -0.0,
+    "heading": 0.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot to face the goal direction.\n   - Compute desired world bearing: desired_bearing = atan2(goal_1.cy - Spot.y, goal_1.cx - Spot.x)\n   - Compute Spot's forward bearing: Spot_forward_bearing = -Spot.heading\n   - Compute rotate_spot degrees: rotate_spot_degrees = normalize(-(desired_bearing - Spot_forward_bearing)) into [-180, 180]\n   - Execute rotate_spot(rotate_spot_degrees)\n\n2. Move Spot towards the goal.\n   - Compute distance_to_center: distance_to_center = sqrt((goal_1.cx - Spot.x)^2 + (goal_1.cy - Spot.y)^2)\n   - Compute move_spot meters: move_spot_meters = min(distance_to_center, 2.0)\n   - Execute move_spot(move_spot_meters)\n\n3. Verify if at_goal is true. If true, finish_task.\n\nFallbacks:\n- If obstacle_ahead is true before moving, rotate Spot to avoid the obstacle by calling rotate_spot with a new angle computed similarly to step 1, then retry from step 2.\n- If target_ahead remains false after rotation, call_llm to request a new behavior tree, as the current plan is insufficient.\n\nNote: The actual numeric values for rotate_spot and move_spot will depend on the computed desired_bearing, Spot_forward_bearing, and distance_to_center, which require the specific coordinates of Spot and the target.",
+          "verifier_output": "fail: Rotation step uses move_spot; Rotation step should use rotate_spot; Move step lacks numeric meters"
+        },
+        {
+          "planner_output": "1. Rotate Spot to face the goal direction.\n   - Compute desired world bearing: desired_bearing = atan2(goal_1.cy - Spot.y, goal_1.cx - Spot.x)\n   - Compute Spot's forward bearing: Spot_forward_bearing = -Spot.heading\n   - Compute rotate_spot degrees: rotate_spot_degrees = normalize(-(desired_bearing - Spot_forward_bearing)) into [-180, 180]\n   - Execute rotate_spot(rotate_spot_degrees)\n\n2. Move Spot towards the goal.\n   - Compute distance_to_center: distance_to_center = sqrt((goal_1.cx - Spot.x)^2 + (goal_1.cy - Spot.y)^2)\n   - Compute move_spot meters: move_spot_meters = min(distance_to_center, 2.0)\n   - Execute move_spot(move_spot_meters)\n\n3. Verify if at_goal is true. If true, finish_task.\n\nFallbacks:\n- If obstacle_ahead is true before moving, rotate Spot to avoid the obstacle by calling rotate_spot with a new angle computed similarly to step 1, then retry from step 2.\n- If target_ahead remains false after rotation, call_llm to request a new behavior tree, as the current plan is insufficient.\n\nNote: The actual numeric values for rotate_spot and move_spot will depend on the computed desired_bearing, Spot_forward_bearing, and distance_to_center, which require the specific coordinates of Spot and the target.",
+          "verifier_output": "fail: move towards the goal lacks numeric meters; move towards the goal step lacks numeric move_spot meters; move_spot meters should be a minimum distance to the goal, not a fixed value of 2.0"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": false\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -180\n              }\n            }\n          },\n          {\n            \"type\": \"sequence\",\n            \"children\": [\n              {\n                \"type\": \"action\",\n                \"call\": {\n                  \"tool_name\": \"move_spot\",\n                  \"arguments\": {\n                    \"meters\": 2.0\n                  }\n                }\n              },\n              {\n                \"type\": \"condition\",\n                \"observation\": \"at_goal\",\n                \"expected\": true\n              },\n              {\n                \"type\": \"action\",\n                \"call\": {\n                  \"tool_name\": \"finish_task\",\n                  \"arguments\": {}\n                }\n              }\n            ]\n          },\n          {\n            \"type\": \"sequence\",\n            \"children\": [\n              {\n                \"type\": \"action\",\n                \"call\": {\n                  \"tool_name\": \"rotate_spot\",\n                  \"arguments\": {\n                    \"degrees\": -180\n                  }\n                }\n              },\n              {\n                \"type\": \"sequence\",\n                \"children\": [\n                  {\n                    \"type\": \"action\",\n                    \"call\": {\n                      \"tool_name\": \"move_spot\",\n                      \"arguments\": {\n                        \"meters\": 2.0\n                      }\n                    }\n                  },\n                  {\n                    \"type\": \"condition\",\n                    \"observation\": \"at_goal\",\n                    \"expected\": true\n                  },\n                  {\n                    \"type\": \"action\",\n                    \"call\": {\n                      \"tool_name\": \"finish_task\",\n                      \"arguments\": {}\n                    }\n                  }\n                ]\n              },\n              {\n                \"type\": \"sequence\",\n                \"children\": [\n                  {\n                    \"type\": \"action\",\n                    \"call\": {\n                      \"tool_name\": \"call_llm\",\n                      \"arguments\": {}\n                    }\n                  }\n                ]\n              }\n            ]\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"call_llm\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -2.0,
+          "y": -0.0,
+          "heading": 180.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot to face the goal direction.\n   - Compute desired world bearing: desired_bearing = atan2(2.9 - (-0.0), 6.4 - (-0.0)) = 90 degrees\n   - Compute Spot's forward bearing: Spot_forward_bearing = -180 degrees\n   - Compute rotate_spot degrees: rotate_spot_degrees = normalize(-(90 - (-180))) into [-180, 180] = 180 degrees\n   - Execute rotate_spot(180)\n\n2. Move Spot towards the goal.\n   - Compute distance_to_center: distance_to_center = sqrt((2.9 - (-2.0))^2 + (6.4 - (-0.0))^2) = 7.211 meters\n   - Compute move_spot meters: move_spot_meters = min(7.211, 2.0) = 2.0 meters\n   - Execute move_spot(2.0)\n\n3. Verify if at_goal is true. If true, finish_task.\n\n4. Since target_ahead is still false, request a new behavior tree from the LLM.\n   - Execute call_llm()\n\nNote: The actual numeric values for rotate_spot and move_spot are based on the specific coordinates of Spot and the target at the end of the previous execution.",
+          "verifier_output": "fail: move towards the goal lacks numeric meters; move towards the goal computes distance but does not set move_spot meters"
+        },
+        {
+          "planner_output": "1. Rotate Spot to face the goal direction.\n   - Compute desired world bearing: desired_bearing = atan2(2.9 - (-0.0), 6.4 - (-0.0)) = 90 degrees\n   - Compute Spot's forward bearing: Spot_forward_bearing = -180 degrees\n   - Compute rotate_spot degrees: rotate_spot_degrees = normalize(-(90 - (-180))) into [-180, 180] = 180 degrees\n   - Execute rotate_spot(180)\n\n2. Move Spot towards the goal.\n   - Compute distance_to_center: distance_to_center = sqrt((2.9 - (-2.0))^2 + (6.4 - (-0.0))^2) = 7.211 meters\n   - Compute move_spot meters: move_spot_meters = min(7.211, 2.0) = 2.0 meters\n   - Execute move_spot(2.0)\n\n3. Verify if at_goal is true. If true, finish_task.\n\n4. Since target_ahead is still false, request a new behavior tree from the LLM.\n   - Execute call_llm()\n\nNote: The actual numeric values for rotate_spot and move_spot are based on the specific coordinates of Spot and the target at the end of the previous execution.",
+          "verifier_output": "fail: move towards the goal lacks numeric meters; move towards the goal computes distance but does not set a numeric value for move_spot_meters"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": false\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 180\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": false\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 2.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": false\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": -0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot to face the goal direction.\n   - Compute desired world bearing: desired_bearing = atan2(2.9 - (-0.0), 6.4 - (-0.0)) = 90 degrees\n   - Compute Spot's forward bearing: Spot_forward_bearing = -180 degrees\n   - Compute rotate_spot degrees: rotate_spot_degrees = normalize(-(90 - (-180))) into [-180, 180] = 180 degrees\n   - Execute rotate_spot(180)\n\n2. Move Spot towards the goal.\n   - Compute distance_to_center: distance_to_center = sqrt((2.9 - (-0.0))^2 + (6.4 - (-0.0))^2) = 7.211 meters\n   - Compute move_spot meters: move_spot_meters = min(7.211, 2.0) = 2.0 meters\n   - Execute move_spot(2.0)\n\n3. Verify if at_goal is true. If true, finish_task.\n\n4. Since target_ahead is still false, request a new behavior tree from the LLM.\n   - Execute call_llm()\n\nNote: The actual numeric values for rotate_spot and move_spot are based on the specific coordinates of Spot and the target at the end of the previous execution.\n\nRevised plan:\n\n1. Rotate Spot 180 degrees.\n2. Move Spot 2.0 meters forward.\n3. If at_goal is true, finish_task.\n4. If target_ahead is still false, call_llm.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"sequence\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": false\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 180\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": false\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 2.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"target_ahead\",\n            \"expected\": false\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"call_llm\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": -0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    }
+  ]
+}

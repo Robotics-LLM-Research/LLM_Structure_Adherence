@@ -1,0 +1,49 @@
+{
+  "bt_count": 1,
+  "perfect_structure": true,
+  "valid_structure_count": 1,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 2.7075787350186147,
+  "avg_verifier_inference_time_s": 0.5356514109880663,
+  "avg_decoder_inference_time_s": 1.5305696650175378,
+  "avg_inference_time_s": 4.773799811024219,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 270.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot to face the target.\n   - Compute the desired world bearing to the target: desired_bearing = atan2(cx - y, x - x) where cx, cy are the target center coordinates (-0.5, 4.5).\n   - Spot's forward bearing is -heading (0 in this case).\n   - rotate_spot degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180].\n\n2. Execute the rotation.\n   - rotate_spot(<numeric degrees>)\n\n3. Verify if facing the target.\n   - If target_ahead is true, proceed to check if Spot is facing the target.\n   - If not facing the target, adjust the rotation angle and execute another rotation attempt.\n\nFallbacks:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before rotating, call_llm for further instructions.\n\nNote: Since the initial heading is 0 (facing +x), and there are no obstacles, the plan directly rotates Spot to face the target. The exact degrees to rotate will depend on the computed desired_bearing based on the target's center coordinates.",
+          "verifier_output": "fail: Vague instructions; Assumes success without checking at_goal\n\nExplanation:\n1. The plan uses a vague instruction \"rotate_spot to face the target\" without specifying the exact degrees.\n2. It assumes success without checking if the target is actually ahead using the at_goal condition."
+        },
+        {
+          "planner_output": "1. Compute the desired bearing to the target:\n   - Target center coordinates: cx = (-0.5 + 0.5) / 2 = 0, cy = (4.5 + 5.5) / 2 = 5.\n   - Spot's current position: x = 0, y = 0, heading = 0.\n   - dx = cx - x = 0, dy = cy - y = 5.\n   - Desired world bearing = atan2(dy, dx) = atan2(5, 0). Since Spot cannot face directly downwards, adjust to the nearest valid bearing, e.g., 90 degrees.\n   - Spot's forward bearing = -heading = 0.\n\n2. Calculate the rotation angle:\n   - rotate_spot degrees = normalize(-(90 - 0)) into [-180, 180] = 90.\n\n3. Execute the rotation:\n   - rotate_spot(90)\n\n4. Verify if facing the target:\n   - Check at_goal. If false, adjust the rotation angle and execute another rotation attempt.\n\nFallbacks:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before rotating, call_llm for further instructions.",
+          "verifier_output": "fail: Vague instructions; Assumes success without checking at_goal; Fallbacks are not clear and could lead to infinite loops.\n\nExplanation:\n1. The plan uses vague instructions like \"adjust to the nearest valid bearing, e.g., 90 degrees,\" which is not specific enough.\n2. It assumes success without checking at_goal, which could lead to unnecessary rotations or missed opportunities to finish the task.\n3. The fallbacks are not clearly defined and could lead to infinite loops if the robot keeps rotating without checking at_goal."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 270.0
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

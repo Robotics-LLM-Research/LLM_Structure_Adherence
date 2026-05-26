@@ -1,0 +1,109 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 0.9740949845872819,
+  "avg_verifier_inference_time_s": 0.15842491842340678,
+  "avg_decoder_inference_time_s": 1.6183781020032864,
+  "avg_inference_time_s": 2.7508980050139753,
+  "final_spot": {
+    "x": -1.3,
+    "y": -0.4,
+    "heading": 123.8
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. rotate_spot(180.0)\n2. move_spot(2.0)\n3. finish_task()\n\nExplanation:\n- Since the target is to the left, we first rotate Spot by 180 degrees to face it.\n- Then, we move Spot by 2.0 meters along the new heading.\n- Since the target is now ahead, we check if we have reached it. If not, we will replan from the new Spot position.\n- If the target is reached, the plan ends with finish_task().",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 180.0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -2.0,
+          "y": -0.0,
+          "heading": 180.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Revised plan:\n1. rotate_spot(180.0)\n2. move_spot(2.0)\n3. call_llm()\n\nExplanation:\n- Since the previous plan was successful, we first recompute the target center and the desired direction from the new Spot position (final_spot).\n- The target center is ((-4.1 + (-4.9))/2, (-3.1 + (-3.9))/2) = (-4.5, -3.5).\n- The desired direction is atan2(-3.5-(-0.0), -4.5-(-2.0)) = -63.43 degrees.\n- The current Spot heading is 180.0 degrees, so the needed rotation is -63.43 - (-180) = 116.57 degrees.\n- However, since we don't know if this is the optimal rotation, we decide to call the LLM to get further instructions.\n\nNote that we don't rotate Spot by 116.57 degrees directly, but instead call the LLM to get more information about the optimal rotation and the next steps.",
+          "verifier_output": "fail: It uses actions outside move_spot, rotate_spot, finish_task, call_llm; It assumes success without checking at_goal."
+        },
+        {
+          "planner_output": "1. rotate_spot(116.57)\n2. move_spot(1.0)\n3. at_goal\n4. call_llm()",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 116.57}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -1.6,
+          "y": 0.9,
+          "heading": 296.6
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. From the new final_spot (x=-1.6, y=0.9, heading=296.6), compute the target center (cx, cy) = ((-4.1 + (-4.9))/2, (-3.1 + (-3.9))/2) = (-4.5, -3.5).\n2. dx = -1.6 - (-4.5) = 2.9, dy = 0.9 - (-3.5) = 4.4.\n3. Desired world bearing = atan2(dy, dx) = 69.4 degrees.\n4. Spot forward bearing = -296.6 degrees, so rotate_spot = normalize(-(69.4 - (-296.6))) = normalize(265.4) = 94.6 degrees.\n5. distance_to_center = sqrt(2.9^2 + 4.4^2) = 5.3 meters. move_spot(meters) = min(5.3, 2.0) = 2.0 meters.\n6. rotate_spot(94.6), move_spot(2.0)\n\nHowever, since we've reached a dead-end, let's recompute the nearest target center.\n \nThe nearest target center is the original target since there are no other targets in the world.\n\n1. rotate_spot(93.6), move_spot(1.0)",
+          "verifier_output": "fail: It contains an unbounded loop, long search pattern, or repeated non-progressing actions; It repeats a failed action pattern described in feedback."
+        },
+        {
+          "planner_output": "1. rotate_spot(93.6)\n2. move_spot(1.0)\n3. rotate_spot(93.6)\n4. move_spot(1.0)\n5. call_llm",
+          "verifier_output": "fail: Vague instructions; Unbounded loop\n\n\nThe plan uses vague instructions (rotating 93.6 degrees multiple times without a clear reason) and creates an unbounded loop by repeating the same actions without a progress check or condition to break the loop."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 93.6}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 93.6}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -1.3,
+          "y": -0.4,
+          "heading": 123.8
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

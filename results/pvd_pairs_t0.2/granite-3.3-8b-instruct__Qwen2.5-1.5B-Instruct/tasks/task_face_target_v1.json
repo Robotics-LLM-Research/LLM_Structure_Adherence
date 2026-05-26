@@ -1,0 +1,73 @@
+{
+  "bt_count": 3,
+  "perfect_structure": false,
+  "valid_structure_count": 1,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 3.060155418313419,
+  "avg_verifier_inference_time_s": 0.024453780342203874,
+  "avg_decoder_inference_time_s": 35.8177453976435,
+  "avg_inference_time_s": 38.90235459629912,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot to face the target.\n   - Compute the desired world bearing to the target: desired_bearing = atan2(cx - y, x - x) where cx and cy are the target center coordinates (3.75, 3.75).\n   - Compute the current forward bearing: Spot's current heading (0 degrees).\n   - Calculate the rotate_spot degrees: rotate_spot = normalize(-(desired_bearing - current_bearing)) into [-180, 180].\n   - Execute rotate_spot action.\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before rotating: call_llm for a new plan.\n\nNote: Since the task is to face the target, no movement is required. The plan focuses solely on rotating Spot to align its heading with the direction of the target. If an obstacle is detected directly ahead, the plan falls back on requesting a new behavior tree from the LLM.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\n            \"degrees\": -180\n          }\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"at_goal\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"finish_task\",\n          \"arguments\": {}\n        }\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot to adjust its heading:\n   - Rotate Spot 45 degrees to the right (positive degrees) to begin orienting towards the target.\n   - Execute rotate_spot(45).\n\n2. Check for obstacles and replan if necessary:\n   - If obstacle_left is true, call_llm for a new plan.\n   - If obstacle_right is true, call_llm for a new plan.\n\n3. Rotate Spot further to align with the target:\n   - Compute the desired world bearing to the target (as previously described).\n   - Calculate the required rotate_spot degrees: rotate_spot = normalize(-(desired_bearing - current_bearing)) into [-180, 180].\n   - Execute rotate_spot action with the computed degrees.\n\n4. Check for obstacles and replan if necessary:\n   - If obstacle_ahead is true, call_llm for a new plan.\n   - If target_ahead is still false after rotating, change heading strategy and call_llm for a new plan.\n\n5. Fine-tune Spot's heading to face the target:\n   - Rotate Spot an additional 15 degrees in the required direction (positive or negative).\n   - Execute rotate_spot(15).\n\n6. Verify if Spot is facing the target:\n   - If at_goal is true, finish_task.\n   - If obstacle_ahead is true before facing the target, call_llm for a new plan.\n\nThis revised plan provides more concrete numeric actions and includes additional checks for obstacles and replan requests when necessary. It also includes fine-tuning the heading to ensure Spot faces the target accurately.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_left\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\n            \"degrees\": 45\n          }\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_left\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\n            \"degrees\": -180\n          }\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\n            \"degrees\": 15\n          }\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"at_goal\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"finish_task\"",
+      "plan_results": {
+        "error": "Invalid JSON: Expecting ',' delimiter: line 55 column 37 (char 1104)"
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Revised plan:\n1. Rotate Spot 45 degrees to the right to check for obstacles in the right quadrant.\n   - Execute rotate_spot(-45).\n\n2. Check for obstacles.\n   - If obstacle_right is true, call_llm for a new plan.\n   - If obstacle_right is false, proceed to face the target.\n\n3. Rotate Spot to face the target.\n   - Compute the desired world bearing to the target: desired_bearing = atan2(3.75 - 0, 3.75 - 0) \u2248 45 degrees.\n   - Compute the current forward bearing: Spot's current heading (0 degrees).\n   - Calculate the rotate_spot degrees: rotate_spot = normalize(-(45 - 0)) into [-180, 180] \u2248 135 degrees (clockwise).\n   - Execute rotate_spot(135).\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before rotating: call_llm for a new plan.\n\nThis revised plan includes a more concrete action to check for obstacles in the right quadrant before attempting to face the target. It also specifies the exact rotate_spot degrees to align Spot's heading with the target. If an obstacle is detected during the rotation check, the plan falls back on requesting a new behavior tree from the LLM.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"sequence\",\n    \"children\": [\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_right\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\n            \"degrees\": -45\n          }\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_right\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\n            \"degrees\": 135\n          }\n        }\n      },\n      {\n        \"type\": \"fallback\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\"",
+      "plan_results": {
+        "error": "Invalid JSON: Expecting ',' delimiter: line 44 column 41 (char 914)"
+      }
+    }
+  ]
+}

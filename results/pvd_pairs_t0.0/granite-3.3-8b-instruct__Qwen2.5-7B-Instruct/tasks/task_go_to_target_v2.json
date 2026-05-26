@@ -1,0 +1,113 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 4.129036650701892,
+  "avg_verifier_inference_time_s": 0.31447777167583507,
+  "avg_decoder_inference_time_s": 3.667059159682443,
+  "avg_inference_time_s": 8.11057358206017,
+  "final_spot": {
+    "x": -2.6,
+    "y": 2.8,
+    "heading": 200.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot to face the target:\n   - rotate_spot(compute_desired_bearing_to_target - current_heading)\n\n2. Move Spot towards the target:\n   - move_spot(min(distance_to_target, 2.0))\n\n3. Verify if at_goal is true. If true, finish_task.\n\n4. If obstacle_ahead is true before moving, call_llm to request a new plan.\n\n5. If target_ahead remains false after rotation, rotate Spot further to align with the target's left or right side, then attempt movement again.\n\nFallback:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before moving, call_llm.",
+          "verifier_output": "fail: vague instructions; unbounded loop potential; long search pattern\n\nExplanation:\n1. The plan uses \"compute_desired_bearing_to_target - current_heading\" which is vague and not a concrete value.\n2. The plan does not specify a concrete value for \"distance_to_target\" and \"min(distance_to_target, 2.0)\" could lead to an unbounded loop if the target is not within 2.0 meters.\n3. The fallback logic of rotating further to align with the target's left or right side without a concrete stopping condition could lead to a long search pattern."
+        },
+        {
+          "planner_output": "1. Compute the target center: cx = (2.4 + 3.6) / 2 = 3.0, cy = (0.4 + 1.6) / 2 = 1.0.\n2. Calculate dx = cx - x = 3.0 - 0 = 3.0, dy = cy - y = 1.0 - 0 = 1.0.\n3. Compute desired world bearing = atan2(dy, dx) = atan2(1.0, 3.0) \u2248 20.0 degrees.\n4. Compute rotate_spot degrees = normalize(-(20.0 - 0)) into [-180, 180] = 160 degrees (clockwise).\n5. Compute distance_to_center = sqrt(dx^2 + dy^2) = sqrt(3.0^2 + 1.0^2) \u2248 3.16 meters.\n6. Move Spot towards the target: move_spot(min(3.16, 2.0)) = move_spot(2.0 meters).\n\n7. Verify if at_goal is true. If true, finish_task.\n\n8. If obstacle_ahead is true before moving, call_llm to request a new plan.\n\n9. If target_ahead remains false after rotation, rotate Spot an additional 45 degrees (either left or right) and attempt movement again.\n\nRevised fallback:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before moving, call_llm.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 160}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -1.9,
+          "y": -0.7,
+          "heading": 160.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot to face the target: rotate_spot(160 degrees).\n2. Move Spot towards the target: move_spot(2.0 meters).\n\n3. Verify if at_goal is true. If true, finish_task.\n\n4. If obstacle_ahead is true before moving, call_llm to request a new plan.\n\n5. If target_ahead remains false after rotation, rotate Spot an additional 45 degrees (left) to check the left side: rotate_spot(-45 degrees).\n6. Move Spot towards the target: move_spot(2.0 meters).\n\n7. Verify if at_goal is true. If true, finish_task.\n\n8. If obstacle_ahead is true before moving, call_llm to request a new plan.\n\n9. If target_ahead remains false, rotate Spot an additional 45 degrees (right) to check the right side: rotate_spot(45 degrees).\n10. Move Spot towards the target: move_spot(2.0 meters).\n\n10. Verify if at_goal is true. If true, finish_task.\n\n11. If obstacle_ahead is true before moving, call_llm to request a new plan.\n\n12. If none of the above actions lead to success, call_llm to request a new plan.\n\nRevised fallback:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before moving, call_llm.",
+          "verifier_output": "fail: The plan contains an unbounded loop and long search patterns; it assumes success without checking at_goal after each action."
+        },
+        {
+          "planner_output": "1. Rotate Spot to face the target: rotate_spot(160 degrees).\n2. Move Spot towards the target: move_spot(2.0 meters).\n3. Verify if at_goal is true. If true, finish_task.\n4. If obstacle_ahead is true, call_llm to request a new plan.\n5. If target_ahead remains false, rotate Spot an additional 45 degrees (left) to check the left side: rotate_spot(-45 degrees).\n6. Move Spot towards the target: move_spot(2.0 meters).\n7. Verify if at_goal is true. If true, finish_task.\n8. If obstacle_ahead is true, call_llm to request a new plan.\n9. If target_ahead remains false, rotate Spot an additional 45 degrees (right) to check the right side: rotate_spot(45 degrees).\n10. Move Spot towards the target: move_spot(2.0 meters).\n11. Verify if at_goal is true. If true, finish_task.\n12. If obstacle_ahead is true, call_llm to request a new plan.\n13. If none of the above actions lead to success, call_llm to request a new plan.\n\nRevised fallback:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before moving, call_llm.",
+          "verifier_output": "fail: The plan contains an unbounded loop and long search patterns; it repeats non-progressing actions (rotating and moving) without a clear progress check."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 160}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 1.3,
+          "y": 3.9,
+          "heading": 320.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot to face the target: rotate_spot(120 degrees).\n2. Move Spot towards the target: move_spot(1.5 meters).\n3. Verify if target_ahead is true. If true, proceed to the next step; if false, call_llm.\n4. If target_ahead is true, rotate Spot to align with the target's center:\n   a. Compute the desired bearing to the target center.\n   b. Compute Spot's current forward bearing.\n   c. Calculate the required rotation degrees: rotate_spot(normalize(-(desired_bearing - forward_bearing)) into [-180, 180]).\n5. Move Spot towards the target: move_spot(1.5 meters).\n6. Verify if at_goal is true. If true, finish_task.\n7. If obstacle_ahead is true, call_llm to request a new plan.\n8. If target_ahead remains false, rotate Spot an additional 45 degrees (left) to check the left side: rotate_spot(-45 degrees).\n9. Move Spot towards the target: move_spot(1.5 meters).\n10. Verify if at_goal is true. If true, finish_task.\n11. If obstacle_ahead is true, call_llm to request a new plan.\n12. If target_ahead remains false, rotate Spot an additional 45 degrees (right) to check the right side: rotate_spot(45 degrees).\n13. Move Spot towards the target: move_spot(1.5 meters).\n14. Verify if at_goal is true. If true, finish_task.\n15. If obstacle_ahead is true, call_llm to request a new plan.\n16. If none of the above actions lead to success, call_llm to request a new plan.\n\nRevised fallback:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before moving, call_llm.",
+          "verifier_output": "fail: It contains an unbounded loop, long search pattern, or repeated non-progressing actions; It repeats a failed action pattern described in feedback."
+        },
+        {
+          "planner_output": "1. Rotate Spot to face the target: rotate_spot(120 degrees).\n2. Move Spot towards the target: move_spot(1.5 meters).\n3. Verify if target_ahead is true. If true, proceed to the next step; if false, call_llm.\n4. If target_ahead is true, rotate Spot to align with the target's center:\n   a. Compute the desired bearing to the target center.\n   b. Compute Spot's current forward bearing.\n   c. Calculate the required rotation degrees: rotate_spot(normalize(-(desired_bearing - forward_bearing)) into [-180, 180]).\n5. Move Spot towards the target: move_spot(1.5 meters).\n6. Verify if at_goal is true. If true, finish_task.\n7. If obstacle_ahead is true, call_llm to request a new plan.\n8. If target_ahead remains false, rotate Spot an additional 45 degrees (left) to check the left side: rotate_spot(-45 degrees).\n9. Move Spot towards the target: move_spot(1.5 meters).\n10. Verify if at_goal is true. If true, finish_task.\n11. If obstacle_ahead is true, call_llm to request a new plan.\n12. If target_ahead remains false, rotate Spot an additional 45 degrees (right) to check the right side: rotate_spot(45 degrees).\n13. Move Spot towards the target: move_spot(1.5 meters).\n14. Verify if at_goal is true. If true, finish_task.\n15. If obstacle_ahead is true, call_llm to request a new plan.\n16. If none of the above actions lead to success, call_llm to request a new plan.\n\nRevised fallback:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before moving, call_llm.\n\nRevised plan:\n1. Rotate Spot to face the target: rotate_spot(120 degrees).\n2. Move Spot towards the target: move_spot(1.5 meters).\n3. Verify if target_ahead is true. If false, call_llm.\n4. If target_ahead is true, rotate Spot to align with the target's center:\n   a. Compute the desired bearing to the target center.\n   b. Compute Spot's current forward bearing.\n   c. Calculate the required rotation degrees: rotate_spot(normalize(-(desired_bearing - forward_bearing)) into [-180, 180]).\n5. Move Spot towards the target: move_spot(1.5 meters).\n6. Verify if at_goal is true. If true, finish_task.\n7. If obstacle_ahead is true, call_llm to request a new plan.\n8. If target_ahead remains false, rotate Spot an additional 45 degrees (left) to check the left side: rotate_spot(-45 degrees).\n9. Move Spot towards the target: move_spot(1.5 meters).\n10. Verify if at_goal is true. If true, finish_task.\n11. If obstacle_ahead is true, call_llm to request a new plan.\n12. If target_ahead remains false, rotate Spot an additional 45 degrees (right) to check the right side: rotate_spot(45 degrees).\n13. Move Spot towards the target: move_spot(1.5 meters).\n14. Verify if at_goal is true. If true, finish_task.\n15. If obstacle_ahead is true, call_llm to request a new plan.\n16. If none of the above actions lead to success, call_llm to request a new plan.\n\nRevised fallback:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before moving, call_llm.",
+          "verifier_output": "fail: long search pattern; unbounded loop\n\nThe revised plan contains a long search pattern and an unbounded loop. Specifically, the plan repeatedly attempts to move towards the target and check the sides if the target is not ahead, without a clear termination condition. This could lead to an infinite loop if the target is never found."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 120}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.5}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 120}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.5}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.5}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.5}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -2.6,
+          "y": 2.8,
+          "heading": 200.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

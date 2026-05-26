@@ -1,0 +1,109 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 2.926790427416563,
+  "avg_verifier_inference_time_s": 0.27652197557035835,
+  "avg_decoder_inference_time_s": 2.1265980413494012,
+  "avg_inference_time_s": 5.329910444336322,
+  "final_spot": {
+    "x": 1.8,
+    "y": -1.5,
+    "heading": 13.8
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n\n1. Compute the center of each target:\n   - goal_1: cx = (4.0 + 5.0) / 2 = 4.5, cy = (-2.5 + -1.5) / 2 = -2.0\n   - goal_2: cx = (-3.0 + -2.0) / 2 = -2.5, cy = (-3.5 + -2.5) / 2 = -3.0\n   - goal_3: cx = (6.5 + 7.5) / 2 = 7.0, cy = (2.0 + 3.0) / 2 = 2.5\n\n2. Calculate the Euclidean distance from Spot's initial position (0.0, 0.0) to each target center:\n   - Distance to goal_1: sqrt((4.5 - 0)^2 + (-2.0 - 0)^2) \u2248 5.48 meters\n   - Distance to goal_2: sqrt((-2.5 - 0)^2 + (-3.0 - 0)^2) \u2248 4.47 meters\n   - Distance to goal_3: sqrt((7.0 - 0)^2 + (2.5 - 0)^2) \u2248 8.66 meters\n\n3. Identify the closest target: goal_2 with a distance of approximately 4.47 meters.\n\n4. Execute a short rotate/move attempt towards goal_2:\n   - Compute desired world bearing to goal_2: desired_bearing = atan2(-3.0, -2.5) \u2248 139.6 degrees\n   - Compute Spot's forward bearing: forward_bearing = 0 degrees\n   - Compute rotate_spot degrees: rotate_spot(139.6 - 0) \u2248 139.6 degrees (already within [-180, 180])\n   - Compute move_spot meters: move_spot(min(4.47, 2.0)) = 2.0 meters\n\n5. Verify progress and replan if necessary.\n\nFallbacks:\n- If obstacle_ahead is true before moving, call_llm() to request a new behavior tree.\n- If at_goal is true, finish_task().",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 139.6}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -1.5,
+          "y": -1.3,
+          "heading": 139.6
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot to align with the direction of goal_2:\n   - rotate_spot(139.6 degrees)\n\n2. Move Spot closer to goal_2:\n   - move_spot(2.0 meters)\n\n3. Verify progress and replan if necessary.\n\nIf obstacle_ahead is false and target_ahead is still true after moving, repeat the rotate and move sequence. If obstacle_ahead becomes true, call_llm to request a new behavior tree. If at_goal is true, finish_task().",
+          "verifier_output": "fail: vague instructions; unbounded loop\n\nExplanation:\n1. The plan uses vague instructions like \"move closer,\" which is not specific enough.\n2. The plan contains an unbounded loop as it suggests repeating the rotate and move sequence until the target is ahead, which could lead to an infinite loop if the target is never directly ahead."
+        },
+        {
+          "planner_output": "1. Rotate Spot to align with the direction of goal_2:\n   - rotate_spot(139.6 degrees)\n\n2. Move Spot closer to goal_2:\n   - move_spot(2.0 meters)\n\n3. Check if target_ahead is true. If true, continue to the next step; if false, call_llm for a new plan.\n\n4. If target_ahead is true, repeat steps 1-3 until obstacle_ahead becomes true or target_ahead becomes false.\n\n5. If obstacle_ahead becomes true, call_llm for a new plan.\n\n6. If at_goal is true, finish_task().",
+          "verifier_output": "fail: vague instructions; unbounded loop\n\n\nThe plan contains vague instructions like \"move closer\" and \"repeat steps 1-3 until obstacle_ahead becomes true or target_ahead becomes false,\" which are not specific and could lead to an unbounded loop."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 139.6}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -1.2,
+          "y": 0.7,
+          "heading": 279.2
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot to align with the direction of goal_2:\n   - rotate_spot(139.6 degrees)\n\n2. Move Spot closer to goal_2:\n   - move_spot(2.0 meters)\n\n3. Check if target_ahead is true. If true, continue to the next step; if false, call_llm for a new plan.\n\n4. If target_ahead is true, repeat steps 1-3 until obstacle_ahead becomes true or target_ahead becomes false.\n\n5. If obstacle_ahead becomes true, call_llm for a new plan.\n\n6. If at_goal is true, finish_task().\n\nRevised plan based on the final_spot:\n\n1. Rotate Spot to align with the direction of goal_2:\n   - rotate_spot(279.2 degrees)\n\n2. Move Spot closer to goal_2:\n   - move_spot(2.0 meters)\n\n3. Check if target_ahead is true. If true, continue to the next step; if false, call_llm for a new plan.\n\n4. If target_ahead is true, repeat steps 1-3 until obstacle_ahead becomes true or target_ahead becomes false.\n\n5. If obstacle_ahead becomes true, call_llm for a new plan.\n\n6. If at_goal is true, finish_task().",
+          "verifier_output": "fail: It contains an unbounded loop, long search pattern, or repeated non-progressing actions; It repeats a failed action pattern described in feedback."
+        },
+        {
+          "planner_output": "1. Rotate Spot to align with the direction of goal_2:\n   - rotate_spot(139.6 degrees)\n\n2. Move Spot closer to goal_2:\n   - move_spot(2.0 meters)\n\n3. Check if target_ahead is true. If false, rotate Spot to adjust heading:\n   - rotate_spot(-45 degrees)\n\n4. Move Spot closer to goal_2:\n   - move_spot(2.0 meters)\n\n5. Check if target_ahead is true. If false, call_llm for a new plan.\n\n6. If obstacle_ahead becomes true, call_llm for a new plan.\n\n7. If at_goal is true, finish_task().\n\nRevised plan:\n\n1. Rotate Spot to align with the direction of goal_2:\n   - rotate_spot(139.6 degrees)\n\n2. Move Spot closer to goal_2:\n   - move_spot(2.0 meters)\n\n3. Check if target_ahead is true. If false, adjust heading by rotating -45 degrees:\n   - rotate_spot(-45 degrees)\n\n4. Move Spot closer to goal_2:\n   - move_spot(2.0 meters)\n\n5. Check if target_ahead is true. If false, call_llm for a new plan.\n\n6. If obstacle_ahead becomes true, call_llm for a new plan.\n\n7. If at_goal is true, finish_task().",
+          "verifier_output": "fail: It uses vague instructions: move closer; It assumes success without checking at_goal.\n\nThe plan should use specific move_spot distances and include checks for at_goal after each move."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 139.6}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 1.8,
+          "y": -1.5,
+          "heading": 13.8
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

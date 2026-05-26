@@ -1,0 +1,49 @@
+{
+  "bt_count": 1,
+  "perfect_structure": true,
+  "valid_structure_count": 1,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 1.2082183359889314,
+  "avg_verifier_inference_time_s": 0.28607577650109306,
+  "avg_decoder_inference_time_s": 1.5523556539556012,
+  "avg_inference_time_s": 3.0466497664456256,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot to face the target.\n   - Compute the desired world bearing: desired_bearing = atan2(-0.5, 7.5 - 0) - atan2(0.3, 6.5 - 0)\n   - Compute the forward bearing: forward_bearing = 0\n   - Compute rotate_spot degrees: rotate_spot = normalize(-(desired_bearing - forward_bearing)) into [-180, 180]\n   - Execute rotate_spot action with the computed degrees\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before rotating: call_llm to request a new behavior tree.",
+          "verifier_output": "fail: It uses actions outside move_spot, rotate_spot, finish_task, call_llm; It assumes success without checking at_goal."
+        },
+        {
+          "planner_output": "1. Rotate Spot 45 degrees to the left.\n   - Execute rotate_spot(-45)\n   - Check if obstacle_left is still true, if so, call_llm\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true after rotating: call_llm to request a new behavior tree.",
+          "verifier_output": "fail: Vague instruction; Assumes success without checking at_goal\n\nExplanation:\n1. The plan uses a vague instruction \"Rotate Spot 45 degrees to the left\" without specifying the action.\n2. It assumes success without checking if the target is reached using the at_goal condition."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_left\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

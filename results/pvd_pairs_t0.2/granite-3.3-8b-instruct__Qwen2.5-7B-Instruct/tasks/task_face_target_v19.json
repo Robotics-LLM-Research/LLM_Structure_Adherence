@@ -1,0 +1,49 @@
+{
+  "bt_count": 1,
+  "perfect_structure": true,
+  "valid_structure_count": 1,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 4.626822818478104,
+  "avg_verifier_inference_time_s": 0.5070039520505816,
+  "avg_decoder_inference_time_s": 1.8640626471024007,
+  "avg_inference_time_s": 6.997889417631086,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 284.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot to adjust its heading towards the target. Calculate the desired bearing to the target's center:\n   - cx = (0.5 + 1.5) / 2 = 1.0, cy = (6.5 + 7.5) / 2 = 7.0\n   - dx = 1.0 - 0.0 = 1.0, dy = 7.0 - 0.0 = 7.0\n   - Desired world bearing = atan2(7.0, 1.0) \u2248 75.96 degrees\n   - Spot forward bearing = 0 degrees\n   - rotate_spot degrees = normalize(-(75.96 - 0)) \u2248 -75.96\n   Since -180 \u2264 -75.96 \u2264 180, no further adjustment is needed.\n\n2. Execute the rotation:\n   - rotate_spot(-75.96)\n\n3. Verify if Spot is facing the target:\n   - If target_ahead is true, proceed to the next step.\n   - If target_ahead is false, call_llm() to request a new plan as the current one is insufficient.\n\n4. If target_ahead is true, check for obstacles:\n   - If obstacle_ahead is true, call_llm() to request a new plan as the current one is insufficient.\n   - If obstacle_ahead is false, proceed to face the target.\n\n5. Execute the final fine-tuning rotation:\n   - rotate_spot(0) to ensure Spot is directly facing the target.\n\n6. Finish the task:\n   - finish_task()\n\nFallbacks:\n- If at_goal is true during any step, execute finish_task().\n- If obstacle_ahead is detected before or during rotation and no viable path is found, call_llm().",
+          "verifier_output": "fail: The plan uses vague instructions (calculate direction, target_ahead, obstacle_ahead) without concrete numeric actions; It assumes success without checking at_goal."
+        },
+        {
+          "planner_output": "1. Calculate the target center:\n   - cx = (0.5 + 1.5) / 2 = 1.0, cy = (6.5 + 7.5) / 2 = 7.0\n\n2. Compute the desired bearing to the target:\n   - dx = 1.0 - 0.0 = 1.0, dy = 7.0 - 0.0 = 7.0\n   - Desired world bearing = atan2(7.0, 1.0) \u2248 75.96 degrees\n\n3. Normalize the desired bearing:\n   - Spot forward bearing = 0 degrees\n   - rotate_spot degrees = normalize(-(75.96 - 0)) \u2248 -75.96\n\n4. Execute the initial rotation:\n   - rotate_spot(-75.96)\n\n5. Check if Spot is facing the target:\n   - If at_goal is true, finish_task().\n   - If at_goal is false, proceed to the next step.\n\n6. Verify for obstacles:\n   - If obstacle_ahead is true, call_llm().\n   - If obstacle_ahead is false, proceed to fine-tune the heading.\n\n7. Fine-tune the heading:\n   - Rotate Spot by -1 degree: rotate_spot(-1)\n\n8. Check if Spot is facing the target:\n   - If at_goal is true, finish_task().\n   - If at_goal is false, call_llm() as the current plan is insufficient.\n\nMain plan:\n1. Rotate Spot to adjust its heading towards the target: rotate_spot(-75.96)\n2. Verify if Spot is facing the target:\n   - If at_goal is true, finish_task().\n   - If at_goal is false, proceed to the next step.\n3. Check for obstacles:\n   - If obstacle_ahead is true, call_llm().\n   - If obstacle_ahead is false, fine-tune the heading: rotate_spot(-1)\n4. Verify if Spot is facing the target:\n   - If at_goal is true, finish_task().\n   - If at_goal is false, call_llm() as the current plan is insufficient.\n\nFallbacks:\n- If at_goal is true during any step, execute finish_task().\n- If obstacle_ahead is detected before or during rotation and no viable path is found, call_llm().",
+          "verifier_output": "fail: vague instructions; unbounded loop; repeats a failed action pattern described in feedback\n\nExplanation:\n1. The plan uses vague instructions like \"verify if Spot is facing the target\" and \"fine-tune the heading,\" which are not specific actions.\n2. The plan contains an unbounded loop where it repeatedly checks if Spot is facing the target and calls `call_llm()` if not, which could lead to infinite retries.\n3. The fallbacks repeat the same pattern of checking and calling `call_llm()` if the goal is not achieved, which is a form of unbounded loop."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -75.96}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -1}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 284.0
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

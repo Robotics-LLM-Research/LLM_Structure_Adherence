@@ -1,0 +1,49 @@
+{
+  "bt_count": 1,
+  "perfect_structure": true,
+  "valid_structure_count": 1,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 3.421539612521883,
+  "avg_verifier_inference_time_s": 0.09591115196235478,
+  "avg_decoder_inference_time_s": 1.5351527329767123,
+  "avg_inference_time_s": 5.05260349746095,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot to face the target.\n   - Compute the desired world bearing to the target:\n     - cx = (6.5 + 7.5) / 2 = 7.0, cy = (0.3 + 1.3) / 2 = 0.8\n     - dx = 7.0 - 0.0 = 7.0, dy = 0.8 - 0.0 = 0.8\n     - Desired world bearing = atan2(0.8, 7.0) \u2248 7.0 degrees\n   - Compute Spot's forward bearing: -0.0 degrees (since current heading is 0.0)\n   - rotate_spot degrees = normalize(-(7.0 - (-0.0))) into [-180, 180] \u2248 7.0 degrees (no normalization needed)\n\n2. Execute the rotation.\n   - rotate_spot(7.0)\n\n3. Verify if Spot is facing the target.\n   - If target_ahead is true, proceed to the next step.\n   - If target_ahead is false, call_llm for further instructions.\n\n4. If target_ahead is true, finish_task.\n\nFallbacks:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before rotating, call_llm for new instructions.",
+          "verifier_output": "fail: Vague instructions used; Unbounded loop potential due to repeated call_llm without progress checks."
+        },
+        {
+          "planner_output": "1. Rotate Spot to face the target.\n   - Compute the desired world bearing to the target:\n     - cx = (6.5 + 7.5) / 2 = 7.0, cy = (0.3 + 1.3) / 2 = 0.8\n     - dx = 7.0 - 0.0 = 7.0, dy = 0.8 - 0.0 = 0.8\n     - Desired world bearing = atan2(0.8, 7.0) \u2248 7.0 degrees\n   - Compute Spot's forward bearing: -0.0 degrees (since current heading is 0.0)\n   - rotate_spot degrees = normalize(-(7.0 - (-0.0))) into [-180, 180] \u2248 7.0 degrees (no normalization needed)\n\n2. Execute the rotation.\n   - rotate_spot(7.0)\n\n3. Verify if Spot is facing the target.\n   - If target_ahead is true, proceed to the next step.\n   - If target_ahead is false, call_llm for further instructions.\n\n4. If target_ahead is true, check if Spot is facing the target within a tolerance.\n   - If at_goal is true, finish_task.\n   - If not, call_llm for new instructions without repeating the same rotation.\n\nFallbacks:\n- If obstacle_ahead is true before rotating, call_llm for new instructions.\n- Ensure no repeated rotation attempts without progress checks.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 7.0}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

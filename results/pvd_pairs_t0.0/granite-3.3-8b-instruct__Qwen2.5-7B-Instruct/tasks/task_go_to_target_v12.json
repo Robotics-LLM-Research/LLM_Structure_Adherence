@@ -1,0 +1,113 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 2.583074636175297,
+  "avg_verifier_inference_time_s": 0.4015270268234114,
+  "avg_decoder_inference_time_s": 2.8174674649878093,
+  "avg_inference_time_s": 5.802069127986518,
+  "final_spot": {
+    "x": 1.0,
+    "y": -0.0,
+    "heading": 0.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot to face the target:\n   - rotate_spot(compute_desired_bearing - current_heading)\n\n2. Move Spot towards the target:\n   - move_spot(min(distance_to_center, 2.0))\n\n3. Verify progress:\n   - Check if at_goal is true. If true, finish_task.\n   - If obstacle_ahead is true before moving, call_llm for a new plan.\n   - If target_ahead remains false after rotation, adjust heading strategy and repeat from step 1.\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: call_llm.\n\nNote: The compute_desired_bearing and distance_to_center need to be calculated using the provided world JSON and initial Spot state according to the geometry recipe.",
+          "verifier_output": "fail: vague instructions; unbounded loop\n\nExplanation:\n1. The plan uses vague instructions like \"compute_desired_bearing\" and \"distance_to_center\" without providing concrete values or steps to calculate them.\n2. The plan contains an unbounded loop because it suggests repeating from step 1 if target_ahead remains false after rotation, which could lead to infinite retries without progress."
+        },
+        {
+          "planner_output": "1. Calculate the target center:\n   - cx = (6.55 + 7.45) / 2 = 7.00\n   - cy = (1.05 + 1.95) / 2 = 1.50\n\n2. Compute the desired bearing:\n   - dx = cx - 0.0 = 7.00\n   - dy = cy - 0.0 = 1.50\n   - desired_bearing = atan2(1.50, 7.00) * 180 / pi\n\n3. Normalize the desired bearing to [-180, 180] range:\n   - desired_bearing = normalize_angle(desired_bearing)\n\n4. Compute the current forward bearing:\n   - current_bearing = 0.0\n\n5. Calculate the rotation angle:\n   - rotation_angle = - (desired_bearing - current_bearing)\n   - rotation_angle = normalize_angle(rotation_angle) into [-180, 180]\n\n6. Rotate Spot towards the target:\n   - rotate_spot(rotation_angle)\n\n7. Move Spot forward:\n   - move_spot(min(sqrt(7.00^2 + 1.50^2), 2.0))\n\n8. Verify progress:\n   - Check if at_goal is true. If true, finish_task.\n   - If obstacle_ahead is true before moving, call_llm for a new plan.\n   - If target_ahead remains false after rotation, adjust heading strategy and repeat from step 5 with a new rotation_angle = -rotation_angle.\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: call_llm.\n\nNote: The normalize_angle function should return an angle within the specified range. If not provided, you can implement it as follows:\n\n```\nfunction normalize_angle(angle):\n    while angle < -180:\n        angle += 360\n    while angle > 180:\n        angle -= 360\n    return angle\n```",
+          "verifier_output": "fail: vague instructions; unbounded loop; repeated non-progressing actions\n\nExplanation:\n1. The plan uses vague instructions like \"Calculate the target center\" and \"Compute the desired bearing,\" which are not specific actions.\n2. The plan contains an unbounded loop in the fallback strategy, where it repeatedly adjusts the heading without a clear progress check.\n3. The plan includes repeated non-progressing actions, such as rotating and then moving forward without checking if the goal is reached or if an obstacle is ahead."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 2.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot to face the target:\n   - rotate_spot(desired_bearing)\n\n2. Move Spot towards the target:\n   - move_spot(min(sqrt(7.00^2 + 1.50^2), 2.0))\n\n3. Verify progress:\n   - Check if at_goal is true. If true, finish_task.\n   - If obstacle_ahead is true before moving, call_llm for a new plan.\n   - If target_ahead remains false after rotation, adjust heading strategy and repeat from step 1 with a new rotation_angle = -rotation_angle.\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: call_llm.\n\nNote: The desired_bearing should be calculated using the same method as in the previous plan. The rotation_angle should be normalized into the [-180, 180] range. The move_spot action should use the minimum of the calculated distance and 2.0 meters.",
+          "verifier_output": "fail: move_spot lacks numeric meters; rotate_spot lacks numeric degrees; it contains an unbounded loop, long search pattern, or repeated non-progressing actions; it assumes success without checking at_goal; go_to_target lacks concrete numeric rotate/move actions unless already at_goal; move_to_closest_target uses move_spot greater than 2.0 meters unless target_ahead is true; it repeats a failed action pattern described in feedback; it proposes more than one bounded progress chunk for the next attempt instead of short progress + check + replan."
+        },
+        {
+          "planner_output": "1. Rotate Spot to face the target:\n   - rotate_spot(desired_bearing)\n\n2. Move Spot towards the target:\n   - move_spot(min(sqrt(7.00^2 + 1.50^2), 2.0))\n\n3. Verify progress:\n   - If at_goal is true, finish_task.\n   - If obstacle_ahead is true before moving, call_llm for a new plan.\n   - If target_ahead remains false after rotation, adjust heading strategy:\n     - New rotation_angle = -rotation_angle\n     - Repeat from step 1 with the new rotation_angle.\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: call_llm.\n\nNote: The desired_bearing should be calculated using the same method as in the previous plan. The rotation_angle should be normalized into the [-180, 180] range. The move_spot action should use the minimum of the calculated distance and 2.0 meters. This plan now includes a single bounded progress chunk (rotate + move) followed by a check and replan if necessary.",
+          "verifier_output": "fail: The plan contains an unbounded loop; it repeats the rotation and movement without a clear progress check or termination condition. The adjustment strategy for the heading should include a check to ensure progress is being made and not just repeating the same actions."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 0\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 0\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 0\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 2.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot to face the target:\n   - rotate_spot(180)\n\n2. Move Spot towards the target:\n   - move_spot(1.0)\n\n3. Verify progress:\n   - If at_goal is true, finish_task.\n   - If obstacle_ahead is true before moving, call_llm for a new plan.\n   - If target_ahead remains false after rotation, adjust heading strategy:\n     - New rotation_angle = -rotation_angle\n     - Repeat from step 1 with the new rotation_angle.\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: call_llm.\n\nThis revised plan now includes a concrete rotation of 180 degrees to face the target and a move of 1.0 meter towards it. If the target is not reached, the heading strategy will be adjusted accordingly. If the situation remains unclear, the plan will request a new behavior tree from the LLM.",
+          "verifier_output": "fail: The plan contains an unbounded loop; The plan assumes a repeated non-progressing action without a check."
+        },
+        {
+          "planner_output": "1. Rotate Spot to face the target:\n   - rotate_spot(180)\n\n2. Move Spot towards the target:\n   - move_spot(1.0)\n\n3. Verify progress:\n   - If at_goal is true, finish_task.\n   - If obstacle_ahead is true before moving, call_llm for a new plan.\n   - If target_ahead remains false after rotation, adjust heading strategy:\n     - New rotation_angle = -rotation_angle\n     - Repeat from step 1 with the new rotation_angle, but limit to 3 attempts.\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: call_llm.\n\nThis revised plan now includes a limit of 3 attempts when adjusting the heading strategy, preventing an unbounded loop. The plan remains concise and avoids vague directives.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 180}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -180}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 180}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -180}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 1.0,
+          "y": -0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

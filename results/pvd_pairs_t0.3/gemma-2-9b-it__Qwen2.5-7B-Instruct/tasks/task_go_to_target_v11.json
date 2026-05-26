@@ -1,0 +1,109 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 3.2106130997883158,
+  "avg_verifier_inference_time_s": 0.38908152719959616,
+  "avg_decoder_inference_time_s": 2.1525600716704503,
+  "avg_inference_time_s": 5.752254698658362,
+  "final_spot": {
+    "x": 2.0,
+    "y": -1.0,
+    "heading": 0.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. rotate_spot(90)\n2. move_spot(1.0)\n3. if at_goal: finish_task\n\nFallbacks:\n- If obstacle_ahead is true before moving: rotate_spot(45) \n\n\n\nLet me break down the reasoning:\n\n* **Initial State:** Spot starts facing +x (heading=0) and needs to reach a target at (3.5, -4.5) to (4.5, -3.5).\n\n* **Direct Approach Blocked:**  A direct approach would require Spot to move forward, but the obstacle_ahead flag indicates an obstacle in the way.\n\n* **Rotating to Clear the Path:** Rotating 90 degrees clockwise (rotate_spot(90)) will allow Spot to move past the obstacle.\n\n* **Bounded Movement:**  Moving 1 meter (move_spot(1.0)) provides a short, safe step towards the target without overshooting.\n\n* **Goal Check:** After the move, we check if `at_goal` is true. If so, the task is complete and we call `finish_task`.\n\n* **Fallback:** If `obstacle_ahead` is true before the move, we attempt a smaller rotation (rotate_spot(45)) to potentially find a safer path around the obstacle.\n\n\n\nLet me know if you'd like to explore different scenarios or have any more questions!",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45}}}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": -1.0,
+          "heading": 90.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. rotate_spot(180) \n2. move_spot(1.0) \n3. if at_goal: finish_task\n\nFallbacks:\n- If obstacle_ahead is true before moving: call_llm \n\n\n\n\nReasoning:\n\n* **New Starting Point:**  Since the previous plan failed, we're now starting from `final_spot={'x': 0.0, 'y': -1.0, 'heading': 90.0}`.\n\n* **Target is Behind:** The `target_ahead` flag being false indicates the target is not directly in front.\n\n* **180 Degree Turn:** A 180-degree rotation (rotate_spot(180)) will put Spot facing the general direction of the target.\n\n* **Bounded Move:** A short move of 1 meter (move_spot(1.0)) will take Spot a little closer to the target.\n\n* **Goal Check:** We check `at_goal` after the move. If true, the task is complete.\n\n* **Unclear Path:** If `obstacle_ahead` is true, the path is unclear.  Instead of guessing, we call `call_llm` to request a new behavior tree.",
+          "verifier_output": "fail: vague instructions; unbounded loop or repeated non-progressing actions\n\n\nExplanation:\n1. **Vague Instructions:** The plan uses vague instructions like \"rotate_spot(180)\" without specifying the target direction. A 180-degree rotation is not specific and could be ambiguous.\n2. **Unbounded Loop or Repeated Non-Progressing Actions:** The plan does not progress towards the target and instead relies on an `at_goal` check, which could lead to an unbounded loop if the robot never reaches the target. Additionally, the fallback action of calling `call_llm` repeatedly without progress is not ideal."
+        },
+        {
+          "planner_output": "1. rotate_spot(180) \n2. move_spot(1.0)\n3. if at_goal: finish_task\n4. else: rotate_spot(90) \n5. move_spot(1.0) \n6. if at_goal: finish_task",
+          "verifier_output": "fail: Vague instructions; Unbounded loop or long search pattern\n\nExplanation:\n1. The plan uses vague instructions like `if at_goal: finish_task`, which is acceptable but the plan lacks explicit checks.\n2. The plan creates an unbounded loop with repeated non-progressing actions (rotating and moving) without a clear termination condition."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 180}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 1.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. rotate_spot(90)\n2. move_spot(1.0)\n3. if at_goal: finish_task\n4. else: rotate_spot(90)\n5. move_spot(1.0)\n6. if at_goal: finish_task\n7. else: call_llm",
+          "verifier_output": "fail: Unbounded loop; Repeated non-progressing actions\n\n\nThe plan contains an unbounded loop due to the repeated sequence of rotating and moving without a clear progress check or termination condition. This will likely result in Spot continuously rotating and moving in place without ever reaching the target."
+        },
+        {
+          "planner_output": "1. rotate_spot(90)\n2. move_spot(1.0)\n3. if at_goal: finish_task\n4. else: rotate_spot(-90)\n5. move_spot(1.0)\n6. if at_goal: finish_task\n7. else: call_llm",
+          "verifier_output": "fail: The plan contains an unbounded loop; rotate_spot(-90) followed by move_spot(1.0) can potentially repeat indefinitely without checking at_goal."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 2.0,
+          "y": -1.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

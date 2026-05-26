@@ -1,0 +1,109 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 1.0744784723967313,
+  "avg_verifier_inference_time_s": 0.19510667438153179,
+  "avg_decoder_inference_time_s": 2.133211291356323,
+  "avg_inference_time_s": 3.402796438134586,
+  "final_spot": {
+    "x": -0.4,
+    "y": -0.4,
+    "heading": 225.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. rotate_spot(180.0)\n2. finish_task()\n\nExplanation:\nSince the task is to face the target, we need to rotate Spot to face the target. Given the initial Spot state (x=0.0, y=0.0, heading=0.0) and the target (x1=1.5, x2=2.5, y1=4.5, y2=5.5), we can compute the desired heading by calculating the bearing of the target center (cx=(x1+x2)/2=2.0, cy=(y1+y2)/4.5)=4.0) from Spot's initial position. The desired bearing is atan2(cy-cx, cx-x) = atan2(4.0-0.0, 2.0-0.0) = 90.0 degrees. Since Spot's initial heading is 0.0, we need to rotate it by 180.0 degrees to face the target. \n\nThe first action is to rotate Spot by 180.0 degrees. After rotation, Spot will face the target. Since the task is now satisfied, the second action is to finish the task.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"sequence\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 180.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Since the previous plan failed and the task is still not satisfied, we need to re-evaluate the situation. The final Spot state is (x=0.0, y=0.0, heading=0.0), and the observations indicate that there are no obstacles ahead, to the left, or to the right, and the target is not ahead.\n\nSince the target is not ahead, we cannot simply move forward. We need to rotate Spot to face the target. However, the previous rotation attempt (rotate_spot(180.0)) did not work, so we should try a different rotation angle.\n\nTo determine the correct rotation angle, we need to calculate the bearing of the target center from Spot's current position. The target center is (cx=(x1+x2)/2=2.0, cy=(y1+y2)/2=5.0). The bearing is atan2(cy-cx, cx-x) = atan2(5.0-0.0, 2.0-0.0) = 86.60 degrees. Since Spot's heading is 0.0, we need to rotate it by the difference between the desired bearing and the current heading, which is 86.60 - 0.0 = 86.60 degrees.\n\nHowever, since the previous rotation attempt did not work, we should try a smaller rotation angle to avoid overshooting. Let's try rotating by 45 degrees instead.\n\n1. rotate_spot(45.0)\n2. move_spot(0.5)\n3. finish_task()\n\nIf this plan still fails, we will need to request a new behavior tree using call_llm.",
+          "verifier_output": "fail: It uses vague instructions: calculate direction; it assumes success without checking at_goal.\n\nThe plan should include a check to ensure the robot is facing the target before moving forward and should use a bounded progress chunk followed by a check."
+        },
+        {
+          "planner_output": "1. rotate_spot(45.0)\n2. check_at_goal\n3. rotate_spot(45.0)\n4. check_at_goal\n5. rotate_spot(45.0)\n6. check_at_goal\n7. move_spot(0.5)\n8. check_at_goal\n9. finish_task()",
+          "verifier_output": "fail: Unbounded loop; Repeats the same action pattern without checking at_goal."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 0.5}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -0.4,
+          "y": -0.4,
+          "heading": 135.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. rotate_spot(45.0)\n2. check_at_goal\n3. rotate_spot(45.0)\n4. check_at_goal\n5. rotate_spot(45.0)\n6. check_at_goal\n7. move_spot(0.5)\n8. check_at_goal\n9. call_llm",
+          "verifier_output": "fail: Unbounded loop; Repeated non-progressing actions."
+        },
+        {
+          "planner_output": "1. rotate_spot(45.0)\n2. check_at_goal\n3. rotate_spot(-45.0)\n4. check_at_goal\n5. rotate_spot(90.0)\n6. check_at_goal\n7. finish_task",
+          "verifier_output": "fail: Vague instructions; Unbounded loop\n\nExplanation:\n- The plan uses vague instructions like \"check_at_goal\" without specifying the exact condition or action to take if the goal is not reached.\n- The plan contains an unbounded loop with repeated rotate_spot actions without a clear stopping condition or progress check."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -0.4,
+          "y": -0.4,
+          "heading": 225.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}
