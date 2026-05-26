@@ -10,6 +10,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 import src.utils as utils
+import src.constants as constants
 from src.simulator import simulate_bt_plan
 from src.model import init_model, ask_model, cleanup_model
 from src.prompts.factory import get_initial_message, append_message
@@ -28,6 +29,7 @@ from src.prompts.pvd_bt_tasks import (
 from src.schemas.bt import BT_TASKS_SCHEMA_SAMPLE, BT_SCHEMA_CONFIG
 
 TASKS_PATH = PROJECT_ROOT / "src" / "tasks" / "tasks_100.json"
+DUAL_MODEL_GPU_UTILIZATION_CAP = 0.35
 
 
 
@@ -56,6 +58,13 @@ def _verifier_passed(verifier_output: str | None) -> bool:
 def _copy_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Shallow-copy message entries to avoid mutating shared history."""
     return [dict(message) for message in messages]
+
+
+def _resolve_gpu_memory_utilization(bot_model_id: str | None) -> float:
+    base = float(constants.GPU_MEMORY_UTILIZATION)
+    if bot_model_id is None:
+        return base
+    return min(base, DUAL_MODEL_GPU_UTILIZATION_CAP)
 
 
 # ----- Main -----
@@ -403,10 +412,20 @@ def main(
     if not pending_tasks_idx:
         return
 
+    effective_gpu_memory_utilization = _resolve_gpu_memory_utilization(bot_model_id)
+
     # Initialize models
-    top_model, top_processor = init_model(top_model_id, backend=backend)
+    top_model, top_processor = init_model(
+        top_model_id,
+        backend=backend,
+        gpu_memory_utilization=effective_gpu_memory_utilization,
+    )
     bot_model, bot_processor = (
-        init_model(bot_model_id, backend=backend)
+        init_model(
+            bot_model_id,
+            backend=backend,
+            gpu_memory_utilization=effective_gpu_memory_utilization,
+        )
         if bot_model_id is not None
         else (None, None)
     )
@@ -418,6 +437,8 @@ def main(
             {"MAX_BT_COUNT": max_bt_count,
              "MAX_VERIFY_COUNT": max_verify_count,
              "TEMPERATURE": temperature,
+             "EFFECTIVE_GPU_MEMORY_UTILIZATION": effective_gpu_memory_utilization,
+             "DUAL_MODEL_GPU_UTILIZATION_CAP": DUAL_MODEL_GPU_UTILIZATION_CAP,
              "PVD_PLANNER_SYSTEM_PROMPT": PVD_PLANNER_SYSTEM_PROMPT,
              "PVD_VERIFIER_SYSTEM_PROMPT": PVD_VERIFIER_SYSTEM_PROMPT,
              "PVD_DECODER_SYSTEM_PROMPT": PVD_DECODER_SYSTEM_PROMPT,

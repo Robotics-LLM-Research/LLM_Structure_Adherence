@@ -111,6 +111,7 @@ def init_model(
     model_id: str, 
     backend: str = "transformers",
     uses_image: bool = False,
+    gpu_memory_utilization: float | None = None,
 ) -> tuple[Any, Any]:
     """ Load model and return {model, processor} """
     load_dotenv()
@@ -139,7 +140,11 @@ def init_model(
         llm_kwargs = {
             "model": model_id,
             "trust_remote_code": True,
-            "gpu_memory_utilization": constants.GPU_MEMORY_UTILIZATION,
+            "gpu_memory_utilization": (
+                gpu_memory_utilization
+                if gpu_memory_utilization is not None
+                else constants.GPU_MEMORY_UTILIZATION
+            ),
             "max_model_len": max_model_len,
             "enforce_eager": constants.ENFORCE_EAGER,
         }
