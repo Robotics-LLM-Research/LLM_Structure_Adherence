@@ -73,9 +73,14 @@ while IFS= read -r model_spec; do
         BOT_ARGS+=(--bot-model-id "$active_bot_model_id")
     fi
 
+    TASK_ARGS=()
+    if [[ "$TASK_IDX" != "none" && "$TASK_IDX" != "None" && -n "$TASK_IDX" ]]; then
+        TASK_ARGS+=(--task-idx "$TASK_IDX")
+    fi
+
     python3 jobs/PDV_vs/run_one_pvd_model.py "$top_model_id" \
         "${BOT_ARGS[@]}" \
-        --task-idx "$TASK_IDX" \
+        "${TASK_ARGS[@]}" \
         --max-bt-count "$MAX_BT_COUNT" \
         --max-verify-count "$MAX_VERIFY_COUNT" \
         --temperature "$TEMPERATURE" \
