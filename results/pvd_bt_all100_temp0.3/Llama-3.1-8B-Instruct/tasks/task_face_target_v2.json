@@ -1,0 +1,49 @@
+{
+  "bt_count": 1,
+  "perfect_structure": true,
+  "valid_structure_count": 1,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 1.2356381640420295,
+  "avg_verifier_inference_time_s": 0.12900389853166416,
+  "avg_decoder_inference_time_s": 2.642045194050297,
+  "avg_inference_time_s": 4.006687256623991,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. rotate_spot(90.0)\n2. finish_task()\n\nExplanation:\nThe task is to face the target, which means Spot must rotate to face the target. Since Spot initially faces +x (heading = 0), it needs to rotate 90 degrees to face the target. The target is located at (4.5, -0.5) and (5.5, 0.5), so the desired world bearing is atan2(dy, dx) = atan2(-0.5, 4.5) = -10.8 degrees. Spot's forward bearing is -0 degrees, so the rotate angle is -(desired_bearing - forward_bearing) = -(-10.8 - (-0)) = 10.8 degrees. However, since the rotate_spot action requires a numeric degree value, we round the result to the nearest integer, which is 11 degrees. But since the target is above the initial position, we actually need to rotate 90 degrees.\n\nThe plan consists of a single rotate action to face the target, followed by finishing the task since the target is now in view.",
+          "verifier_output": "fail: It uses vague instructions: rotate to face the target; It assumes success without checking at_goal; It uses face_target action which is not allowed."
+        },
+        {
+          "planner_output": "1. rotate_spot(90.0)\n2. check_at_goal\n3. if at_goal then finish_task() else rotate_spot(90.0)\n4. check_at_goal\n5. if at_goal then finish_task() else call_llm()\n\nExplanation:\nThe revised plan includes explicit checks for the goal and uses the allowed actions. The first rotate action is followed by a check to see if the goal is reached. If not, the task is retried with the same rotate action. If the goal is reached, the task is finished. If not, the plan calls the LLM to request a new behavior tree.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n        {\n            \"type\": \"sequence\",\n            \"children\": [\n                {\n                    \"type\": \"condition\",\n                    \"observation\": \"at_goal\",\n                    \"expected\": true\n                },\n                {\n                    \"type\": \"action\",\n                    \"call\": {\n                        \"tool_name\": \"finish_task\",\n                        \"arguments\": {}\n                    }\n                }\n            ]\n        },\n        {\n            \"type\": \"sequence\",\n            \"children\": [\n                {\n                    \"type\": \"action\",\n                    \"call\": {\n                        \"tool_name\": \"rotate_spot\",\n                        \"arguments\": {\n                            \"degrees\": 90.0\n                        }\n                    }\n                },\n                {\n                    \"type\": \"condition\",\n                    \"observation\": \"at_goal\",\n                    \"expected\": true\n                },\n                {\n                    \"type\": \"action\",\n                    \"call\": {\n                        \"tool_name\": \"finish_task\",\n                        \"arguments\": {}\n                    }\n                }\n            ]\n        },\n        {\n            \"type\": \"sequence\",\n            \"children\": [\n                {\n                    \"type\": \"action\",\n                    \"call\": {\n                        \"tool_name\": \"rotate_spot\",\n                        \"arguments\": {\n                            \"degrees\": 90.0\n                        }\n                    }\n                },\n                {\n                    \"type\": \"condition\",\n                    \"observation\": \"at_goal\",\n                    \"expected\": true\n                },\n                {\n                    \"type\": \"action\",\n                    \"call\": {\n                        \"tool_name\": \"finish_task\",\n                        \"arguments\": {}\n                    }\n                }\n            ]\n        },\n        {\n            \"type\": \"sequence\",\n            \"children\": [\n                {\n                    \"type\": \"action\",\n                    \"call\": {\n                        \"tool_name\": \"call_llm\",\n                        \"arguments\": {}\n                    }\n                }\n            ]\n        }\n    ]\n}}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

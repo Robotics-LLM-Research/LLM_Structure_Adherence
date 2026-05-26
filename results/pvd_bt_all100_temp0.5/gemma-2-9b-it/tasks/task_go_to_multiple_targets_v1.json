@@ -1,0 +1,85 @@
+{
+  "bt_count": 3,
+  "perfect_structure": false,
+  "valid_structure_count": 1,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 2.553383031200307,
+  "avg_verifier_inference_time_s": 0.5849807119617859,
+  "avg_decoder_inference_time_s": 99.66028509063956,
+  "avg_inference_time_s": 102.79864883380165,
+  "final_spot": {
+    "x": 0.0,
+    "y": -1.0,
+    "heading": 90.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. rotate_spot(90)\n2. move_spot(1.0)\n3. call_llm \n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: rotate_spot(<numeric angle>) or call_llm. \n\n\n\n## Explanation:\n\n1. **rotate_spot(90):**  Since the first target is to the right, rotate Spot 90 degrees to face it.\n\n2. **move_spot(1.0):** Move Spot forward a short distance towards the target.\n\n3. **call_llm:** If the move is successful and target_ahead is still false, or if the move is unsuccessful, call the LLM to replan. This is because we need to adapt to the environment and potentially adjust the heading strategy for the next target. \n\n\n\n**Reasoning:**\n\n* **Initial Heading:** Spot starts facing +x (heading=0).\n* **Target Location:** The first target is to the right.\n* **Bounded Movement:** We start with a short move (1.0 meters) to allow for replanning based on observations. \n* **Replanning:** The call_llm action allows the planner to re-evaluate the situation, taking into account any obstacles or changes in target visibility.",
+          "verifier_output": "fail: move_spot lacks a target; go_to_multiple_targets requires target_ahead check"
+        },
+        {
+          "planner_output": "1. rotate_spot(90)\n2. move_spot(1.0)\n3. if target_ahead: rotate_spot(normalize(-(atan2(cy-y, cx-x) - heading)))\n4. move_spot(min(distance_to_center, 2.0)) \n5. call_llm",
+          "verifier_output": "fail:  rotate_spot lacks numeric degrees; move_spot lacks numeric meters"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\":",
+      "plan_results": {
+        "error": "Invalid JSON: Expecting value: line 18 column 91 (char 718)"
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. rotate_spot(90)\n2. move_spot(1.0)\n3. if target_ahead: rotate_spot(normalize(-(atan2(cy-y, cx-x) - heading)))\n4. move_spot(min(distance_to_center, 2.0))",
+          "verifier_output": "fail: move_spot(1.0) lacks a target;  rotate_spot(normalize(-(atan2(cy-y, cx-x) - heading))) is vague;"
+        },
+        {
+          "planner_output": "1. rotate_spot(90)\n2. move_spot(1.0)\n3. if target_ahead: rotate_spot(normalize(-(atan2(goal_2.cy-y, goal_2.cx-x) - heading)))\n4. move_spot(min(sqrt((goal_2.cx-x)^2 + (goal_2.cy-y)^2), 2.0))",
+          "verifier_output": "fail:  It uses vague instructions: rotate toward;  move_spot lacks numeric meters"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\":  -1.0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": -1.0,
+          "heading": 90.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. rotate_spot(180) \n2. move_spot(1.0) \n3. if target_ahead: rotate_spot(normalize(-(atan2(goal_1.cy-y, goal_1.cx-x) - heading)))\n4. move_spot(min(sqrt((goal_1.cx-x)^2 + (goal_1.cy-y)^2), 2.0)) \n5. if at_goal: finish_task \n6. else: call_llm",
+          "verifier_output": "fail: move_spot(1.0) lacks context; if target_ahead: rotate_spot() lacks context"
+        },
+        {
+          "planner_output": "1. rotate_spot(180) \n2. move_spot(1.0) \n3. if at_goal: finish_task\n4. else if target_ahead: rotate_spot(normalize(-(atan2(goal_1.cy-y, goal_1.cx-x) - heading)))\n5. move_spot(min(sqrt((goal_1.cx-x)^2 + (goal_1.cy-y)^2), 2.0)) \n6. else: call_llm",
+          "verifier_output": "fail:  move_spot(1.0) lacks context; go_to_multiple_targets requires moving towards a specific target, not a general direction."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 180}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\":",
+      "plan_results": {
+        "error": "Invalid JSON: Expecting value: line 25 column 91 (char 957)"
+      }
+    }
+  ]
+}

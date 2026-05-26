@@ -1,0 +1,49 @@
+{
+  "bt_count": 1,
+  "perfect_structure": true,
+  "valid_structure_count": 1,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 1.9148062554304488,
+  "avg_verifier_inference_time_s": 0.4216544119990431,
+  "avg_decoder_inference_time_s": 2.357962636044249,
+  "avg_inference_time_s": 4.694423303473741,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot to face the target.\n   - Compute the desired world bearing to the target: desired_bearing = atan2(cx - y, x - x) where cx, cy are the target center coordinates (6.75, 0.65).\n   - Compute the Spot's forward bearing: Spot_forward_bearing = -0.0 (since initial heading is 0.0).\n   - Calculate the required rotation: rotate_spot degrees = normalize(-(desired_bearing - Spot_forward_bearing)) into [-180, 180].\n   - Execute the rotation: rotate_spot(<calculated degrees>).\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before rotating: call_llm for a new plan.\n\nNote: The initial heading is 0.0, which means Spot is facing the positive x-direction. The target's center is at (6.75, 0.65). The desired bearing to face the target can be calculated using the arctangent function. The rotation angle should be normalized to the range [-180, 180] degrees. If an obstacle is detected ahead of Spot before rotating, the robot should call for a new plan using the LLM.",
+          "verifier_output": "fail: The plan uses actions outside move_spot, rotate_spot, finish_task, call_llm; compute the desired_bearing, normalize the rotation angle, and atan2 function are not part of the available tools."
+        },
+        {
+          "planner_output": "1. Rotate Spot 90 degrees to the left.\n   - Execute: rotate_spot(-90).\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before rotating: call_llm for a new plan.\n\nNote: Since the exact desired bearing calculation is not possible, a simple 90-degree left rotation is proposed as a first attempt. If an obstacle is detected ahead, Spot should call for a new plan using the LLM.",
+          "verifier_output": "fail: The plan uses rotate_spot without a numeric degree value; -90 is not a concrete degree value; The plan assumes success without checking at_goal before rotating."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

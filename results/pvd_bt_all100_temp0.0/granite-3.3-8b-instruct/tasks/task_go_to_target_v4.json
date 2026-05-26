@@ -1,0 +1,105 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 1.802698576793773,
+  "avg_verifier_inference_time_s": 0.3118677175079938,
+  "avg_decoder_inference_time_s": 2.9214889923653877,
+  "avg_inference_time_s": 5.036055286667155,
+  "final_spot": {
+    "x": 1.7,
+    "y": -2.7,
+    "heading": 90.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot to face the goal direction.\n   - Compute desired world bearing: desired_bearing = atan2(goal_1.cy - Spot.y, goal_1.cx - Spot.x)\n   - Compute Spot's forward bearing: Spot_forward_bearing = -Spot.heading\n   - Compute rotate_spot degrees: rotate_spot_degrees = normalize(-(desired_bearing - Spot_forward_bearing)) into [-180, 180]\n   - Execute rotate_spot(rotate_spot_degrees)\n\n2. Move Spot towards the goal.\n   - Compute distance_to_center: distance_to_center = sqrt((goal_1.cx - Spot.x)^2 + (goal_1.cy - Spot.y)^2)\n   - Compute move_spot meters: move_spot_meters = min(distance_to_center, 2.0)\n   - Execute move_spot(move_spot_meters)\n\n3. Verify if at_goal is true. If true, finish_task.\n\nFallbacks:\n- If obstacle_ahead is true before moving, rotate Spot to avoid the obstacle by calling rotate_spot with a new angle computed similarly to step 1, then retry from step 2.\n- If target_ahead remains false after rotation, call_llm to request a new behavior tree for obstacle navigation or alternative path planning.",
+          "verifier_output": "fail: The plan uses actions outside move_spot, rotate_spot, finish_task, call_llm; compute desired world bearing, compute Spot's forward bearing, compute rotate_spot degrees, compute distance_to_center, and compute move_spot meters are not allowed actions."
+        },
+        {
+          "planner_output": "1. Rotate Spot 90 degrees to the right.\n   - Execute rotate_spot(90)\n\n2. Move Spot forward by 1 meter.\n   - Execute move_spot(1)\n\n3. Verify if at_goal is true. If true, finish_task.\n\nFallbacks:\n- If obstacle_ahead is true before moving, rotate Spot 90 degrees to the left.\n   - Execute rotate_spot(-90)\n\n- If target_ahead remains false after rotation, call_llm to request a new behavior tree for obstacle navigation or alternative path planning.",
+          "verifier_output": "pass\n\nThe provided plan adheres to the specified task type and uses only allowed actions. Each action has a numeric value, and there are no vague instructions or unbounded loops. The plan also checks for the at_goal condition before assuming success and includes a fallback for obstacle navigation."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": -0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot 90 degrees to the right.\n   - Execute rotate_spot(90)\n\n2. Move Spot forward by 1 meter.\n   - Execute move_spot(1)\n\n3. Verify if at_goal is true. If true, finish_task.\n\n4. If target_ahead remains false, rotate Spot 45 degrees to the left.\n   - Execute rotate_spot(-45)\n\n5. Move Spot forward by 1 meter.\n   - Execute move_spot(1)\n\n6. Verify if at_goal is true. If true, finish_task.\n\n7. If target_ahead remains false, call_llm to request a new behavior tree for alternative path planning.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.7,
+          "y": -1.7,
+          "heading": 45.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot 45 degrees to the left.\n   - Execute rotate_spot(-45)\n\n2. Move Spot forward by 1 meter.\n   - Execute move_spot(1)\n\n3. Verify if at_goal is true. If true, finish_task.\n\n4. If target_ahead remains false, rotate Spot 90 degrees to the right.\n   - Execute rotate_spot(90)\n\n5. Move Spot forward by 1 meter.\n   - Execute move_spot(1)\n\n6. Verify if at_goal is true. If true, finish_task.\n\n7. If target_ahead remains false, call_llm to request a new behavior tree for alternative path planning.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": false},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 1.7,
+          "y": -2.7,
+          "heading": 90.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

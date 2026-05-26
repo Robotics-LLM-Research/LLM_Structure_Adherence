@@ -1,0 +1,49 @@
+{
+  "bt_count": 1,
+  "perfect_structure": true,
+  "valid_structure_count": 1,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 2.2585763604729436,
+  "avg_verifier_inference_time_s": 0.4427697189967148,
+  "avg_decoder_inference_time_s": 2.3583370049018413,
+  "avg_inference_time_s": 5.0596830843715,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 278.8
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot to face the target.\n   - Compute the desired world bearing to the target: desired_bearing = atan2(cx - y, x - x) where cx, cy are the target center coordinates (-0.5, 4.5).\n   - Spot's forward bearing is -heading (0 in this case).\n   - rotate_spot degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180].\n\n2. Execute the rotation.\n   - rotate_spot(<numeric degrees>)\n\n3. Verify if facing the target.\n   - If target_ahead is true, proceed to check if Spot is facing the target.\n   - If not facing the target, adjust the rotation angle and execute another rotation attempt.\n\nFallbacks:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before rotating, call_llm for further instructions.\n\nNote: Since the initial heading is 0 (facing +x), and there are no obstacles, the plan directly rotates Spot to face the target. The exact degrees to rotate will depend on the computed desired_bearing based on the target's center coordinates.",
+          "verifier_output": "fail: The plan uses actions outside move_spot, rotate_spot, finish_task, call_llm; compute the desired_bearing and normalize(-(desired_bearing - forward_bearing)) into [-180, 180] are not valid functions from the available tools."
+        },
+        {
+          "planner_output": "Revised plan:\n1. Rotate Spot to face the target.\n   - Compute the desired bearing to the target.\n   - Spot's forward bearing is 0 (facing +x).\n   - Rotate Spot by -atan2(4.5 - 0.0, -0.5 - 0.0) degrees.\n\n2. Execute the rotation.\n   - rotate_spot(<numeric degrees>)\n\n3. Verify if facing the target.\n   - If target_ahead is true, proceed to check if Spot is facing the target.\n   - If not facing the target, adjust the rotation angle and execute another rotation attempt.\n\nFallbacks:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before rotating, call_llm for further instructions.\n\nNote: The exact degrees to rotate will be -atan2(4.5, -0.5). This plan avoids computing desired_bearing and normalization explicitly, relying on the Decoder to translate this into the appropriate action using the available tools.",
+          "verifier_output": "fail: The plan uses the action 'rotate_spot' without specifying the numeric degrees to rotate; <numeric degrees> is a placeholder."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -4.06\n          }\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"target_ahead\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n]\n}\n\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 278.8
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

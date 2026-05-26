@@ -1,0 +1,73 @@
+{
+  "bt_count": 2,
+  "perfect_structure": true,
+  "valid_structure_count": 2,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 6.3716392334899865,
+  "avg_verifier_inference_time_s": 0.053432151005836204,
+  "avg_decoder_inference_time_s": 4.579840954509564,
+  "avg_inference_time_s": 11.004912339005386,
+  "final_spot": {
+    "x": 2.0,
+    "y": 4.0,
+    "heading": 326.3
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Calculate the center coordinates (cx, cy) for each target.\n2. Compute the distance from Spot's current position (0.0, 0.0) to each target center.\n3. Identify the closest target based on the computed distances.\n4. Compute the desired heading to face the closest target.\n5. If obstacle_ahead is true, rotate to a new heading that avoids the obstacle and recompute the desired heading to face the closest target.\n6. Execute rotate_spot(degrees) to face the closest target.\n7. Execute move_spot(meters) towards the closest target, using a bounded step of 2.0 meters or less.\n8. Check if at_goal is true, if so, finish_task.\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: rotate_spot(90) or call_llm.\n\nLet's compute the center coordinates and distances for each target:\n\nFor goal_1:\n- cx = (1.5 + 2.5) / 2 = 2.0\n- cy = (3.5 + 4.5) / 2 = 4.0\n- Distance to Spot = sqrt((2.0 - 0.0)^2 + (4.0 - 0.0)^2) = sqrt(4 + 16) = sqrt(20) \u2248 4.47 meters\n\nFor goal_2:\n- cx = (5.5 + 6.5) / 2 = 6.0\n- cy = (5.5 + 6.5) / 2 = 6.0\n- Distance to Spot = sqrt((6.0 - 0.0)^2 + (6.0 - 0.0)^2) = sqrt(36 + 36) = sqrt(72) \u2248 8.49 meters\n\nThe closest target is goal_1 with a distance of approximately 4.47 meters.\n\nNext, compute the desired heading to face goal_1:\n- dx = 2.0 - 0.0 = 2.0\n- dy = 4.0 - 0.0 = 4.0\n- Desired world bearing = atan2(4.0, 2.0) = atan2(4, 2) \u2248 63.43 degrees\n- Spot forward bearing = -0.0 degrees\n- rotate_spot degrees = normalize(-(63.43 - 0.0)) = normalize(-63.43) = -63.43 degrees\n\nSince the heading is normalized to [-180, 180], -63.43 degrees is already within the range.\n\nNow, compute the move distance:\n- distance_to_center = 4.47 meters\n- move_spot meters = min(4.47, 2.0) = 2.0 meters\n\nMain plan:\n1. rotate_spot(-63.43)\n2. move_spot(2.0)\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: rotate_spot(90) or call_llm.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -63.43\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 2.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 90\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"call_llm\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.4,
+          "y": 2.9,
+          "heading": 260.5
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Compute the desired heading to face the closest target (goal_1) from the final spot position (0.4, 2.9).\n2. Calculate the new dx and dy from the final spot position to the target center (2.0, 4.0).\n3. Compute the desired world bearing and the rotate_spot angle.\n4. Compute the move distance and execute a bounded move_spot action.\n5. Check if at_goal is true, if so, finish_task.\n\nLet's compute the new dx and dy:\n- dx = 2.0 - 0.4 = 1.6\n- dy = 4.0 - 2.9 = 1.1\n\nNext, compute the desired heading:\n- Desired world bearing = atan2(1.1, 1.6) \u2248 33.69 degrees\n- Spot forward bearing = -260.5 degrees\n- rotate_spot degrees = normalize(-(33.69 - (-260.5))) = normalize(-294.19) = 65.81 degrees\n\nNow, compute the move distance:\n- distance_to_center = sqrt(1.6^2 + 1.1^2) = sqrt(2.56 + 1.21) = sqrt(3.77) \u2248 1.94 meters\n- move_spot meters = min(1.94, 2.0) = 1.94 meters\n\nMain plan:\n1. rotate_spot(65.81)\n2. move_spot(1.94)\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: rotate_spot(90) or call_llm.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 65.81}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.94}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.94}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 2.0,
+          "y": 4.0,
+          "heading": 326.3
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 1.9464664167026058,
+  "avg_verifier_inference_time_s": 0.3280011063325219,
+  "avg_decoder_inference_time_s": 2.17595166961352,
+  "avg_inference_time_s": 4.450419192648647,
+  "final_spot": {
+    "x": -0.7,
+    "y": -1.7,
+    "heading": 135.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Since the task is to face the target, we need to compute the angle to rotate Spot's heading towards the target.\n2. The target's center coordinates are cx = (3.5 + 4.5) / 2 = 4.0 and cy = (3.5 + 4.5) / 2 = 4.0.\n3. Spot's current position is (0.0, 0.0) with heading 0.0.\n4. The desired world bearing to the target is calculated as desired_bearing = atan2(cy - y, cx - x) = atan2(4.0 - 0.0, 4.0 - 0.0) = 0 degrees.\n5. Spot's forward bearing is -heading = 0 degrees.\n6. Since the desired bearing is equal to the forward bearing, Spot is already aligned with the target.\n7. Therefore, the action is to call_llm to request a new behavior tree since no movement or rotation is required.\n\nFallbacks:\n- If at_goal were true, the action would be finish_task.\n- If obstacle_ahead were true before moving, we would rotate or call_llm based on the situation. However, in this case, no movement is needed.",
+          "verifier_output": "fail: The plan uses the call_llm action without a clear need for a new behavior tree, as no movement or rotation is required. The robot is already aligned with the target."
+        },
+        {
+          "planner_output": "1. Given that the task is to face the target and Spot is already aligned with the target (desired bearing equals forward bearing), no rotation or movement is needed.\n2. Therefore, the action is to call_llm to request a new behavior tree, acknowledging that this action is used here to signal the completion of the task without generating further movements or rotations.\n\nFallbacks:\n- If at_goal were true, the action would be finish_task.\n- If obstacle_ahead were true before moving, we would rotate or call_llm based on the situation. However, in this case, no movement is needed.",
+          "verifier_output": "fail: The plan uses an action outside the allowed set (call_llm); it does not include any move_spot or rotate_spot actions."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Since the task is to face the target and Spot is not already aligned with it (target_ahead is false), we need to rotate towards the target.\n2. First, compute the desired bearing to the target using the given geometry recipe.\n3. Calculate the rotation needed to bring Spot's forward bearing closer to the desired bearing.\n4. Execute a rotate_spot action with the computed degrees.\n5. After rotating, check if obstacle_ahead is false. If it is, move Spot forward by 1 meter using move_spot(1).\n6. If obstacle_ahead remains true after rotation, call_llm to request a new behavior tree, as the current plan is insufficient.\n\nRevised plan:\n1. Compute desired bearing to target_1 using current Spot pose (0.0, 0.0, 0.0).\n2. Calculate rotate_spot degrees = normalize(-(desired_bearing - 0)) into [-180, 180].\n3. Execute rotate_spot(<computed_degrees>).\n4. Check if obstacle_ahead is false.\n5. If obstacle_ahead is false, execute move_spot(1).\n6. If obstacle_ahead remains true, call_llm.",
+          "verifier_output": "fail: The plan uses actions outside move_spot, rotate_spot, finish_task, call_llm by computing the desired bearing to the target; <computed_degrees> is not a numeric value for rotate_spot."
+        },
+        {
+          "planner_output": "1. Rotate Spot 90 degrees to the right to face east (+x direction).\n2. Execute rotate_spot(90).\n3. Check if obstacle_ahead is false.\n4. If obstacle_ahead is false, move Spot forward by 1 meter using move_spot(1).\n5. If obstacle_ahead remains true, call_llm to request a new behavior tree.\n\nRevised plan:\n1. Execute rotate_spot(90).\n2. Check if obstacle_ahead is false.\n3. If obstacle_ahead is false, execute move_spot(1).\n4. If obstacle_ahead remains true, call_llm.",
+          "verifier_output": "fail: The plan uses rotate_spot without a numeric degree value; <degree> is missing."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}]\n    }\n  }",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": -1.0,
+          "heading": 90.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot 45 degrees to the right to adjust its heading.\n2. Execute rotate_spot(45).\n3. Check if obstacle_ahead is false.\n4. If obstacle_ahead is false, move Spot forward by 1 meter using move_spot(1).\n5. If obstacle_ahead remains true, rotate Spot another 45 degrees to the right and repeat from step 3.\n6. If obstacle_ahead remains true after two attempts, call_llm to request a new behavior tree.\n\nRevised plan:\n1. Execute rotate_spot(45).\n2. Check if obstacle_ahead is false.\n3. If obstacle_ahead is false, execute move_spot(1).\n4. If obstacle_ahead remains true, execute rotate_spot(45) and repeat from step 2.\n5. If obstacle_ahead remains true after a second attempt, call_llm.",
+          "verifier_output": "fail: rotate_spot action in step 1 lacks numeric degrees; step 3 and 4 lack move_spot action description."
+        },
+        {
+          "planner_output": "1. Execute rotate_spot(45).\n2. Check if obstacle_ahead is false.\n3. If obstacle_ahead is false, execute move_spot(1).\n4. If obstacle_ahead remains true, execute rotate_spot(-45) and repeat from step 2.\n5. If obstacle_ahead remains true after a second attempt, call_llm.\n\nRevised plan:\n1. Execute rotate_spot(45).\n2. Check if obstacle_ahead is false.\n3. If obstacle_ahead is false, execute move_spot(1).\n4. If obstacle_ahead remains true, execute rotate_spot(-45) and repeat from step 2.\n5. If obstacle_ahead remains true after a second attempt, call_llm.",
+          "verifier_output": "fail: The plan uses the action rotate_spot(45) which lacks a numeric degree specification, violating rule 3."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"sequence\", \"children\": [\n            {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n            {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false},\n            {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n            {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true}\n          ]}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -0.7,
+          "y": -1.7,
+          "heading": 135.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

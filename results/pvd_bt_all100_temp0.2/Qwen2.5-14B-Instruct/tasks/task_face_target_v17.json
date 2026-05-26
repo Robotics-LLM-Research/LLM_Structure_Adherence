@@ -1,0 +1,105 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 3.4848673934757244,
+  "avg_verifier_inference_time_s": 0.202094297244912,
+  "avg_decoder_inference_time_s": 3.4499715223209932,
+  "avg_inference_time_s": 7.13693321304163,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 343.3
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Compute the center of the target rectangle: cx = (-6.5 + -5.5) / 2 = -6.0, cy = (0.7 + 1.7) / 2 = 1.2.\n2. Compute dx = cx - x = -6.0 - 0.0 = -6.0, dy = cy - y = 1.2 - 0.0 = 1.2.\n3. Compute desired_bearing = atan2(dy, dx) = atan2(1.2, -6.0) = 16.699.\n4. Compute forward_bearing = -heading = 0.\n5. Compute degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180] = normalize(-(16.699 - 0)) = normalize(-16.699) = -16.7.\n6. rotate_spot(-16.7)\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: call_llm.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -16.7}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 343.3
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Given the previous rotation did not succeed and target_ahead is false, compute the new desired bearing from the final spot position (x=0.0, y=0.0, heading=343.3).\n2. Compute dx = cx - x = -6.0 - 0.0 = -6.0, dy = cy - y = 1.2 - 0.0 = 1.2.\n3. Compute desired_bearing = atan2(dy, dx) = atan2(1.2, -6.0) = 16.699 degrees.\n4. Compute forward_bearing = -heading = -343.3 degrees.\n5. Convert forward_bearing to a positive angle within [0, 360): 360 - 343.3 = 16.7 degrees.\n6. Compute degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180] = normalize(-(16.699 - 16.7)) = normalize(-0.001) = -0.001 degrees.\n7. Since the angle is very small, it's likely the previous rotation was close enough. Instead of rotating again, call_llm to reassess the situation.\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: call_llm.",
+          "verifier_output": "fail: Uses vague instructions: calculate direction; call_llm used for minor adjustment instead of bounded rotation; no bounded rotation action provided."
+        },
+        {
+          "planner_output": "Main plan:\n1. Given the previous rotation did not succeed and target_ahead is false, compute the new desired bearing from the final spot position (x=0.0, y=0.0, heading=343.3).\n2. Compute dx = cx - x = -6.0 - 0.0 = -6.0, dy = cy - y = 1.2 - 0.0 = 1.2.\n3. Compute desired_bearing = atan2(dy, dx) = atan2(1.2, -6.0) = 16.7 degrees.\n4. Compute forward_bearing = -heading = -343.3 degrees.\n5. Convert forward_bearing to a positive angle within [0, 360): 360 - 343.3 = 16.7 degrees.\n6. Compute degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180] = normalize(-(16.7 - 16.7)) = normalize(0) = 0 degrees.\n7. Since the angle is very small, rotate to a more distinct angle to ensure alignment. Rotate 16.7 degrees clockwise to face the target.\n8. rotate_spot(167) to face the target.\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: rotate_spot(90)",
+          "verifier_output": "fail: rotate_spot(167) should be rotate_spot(16.7); rotate to a more distinct angle is vague."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 167}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 150.3
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Given the previous rotation did not succeed and target_ahead is false, compute the new desired bearing from the final spot position (x=0.0, y=0.0, heading=150.3).\n2. Compute dx = cx - x = -6.0 - 0.0 = -6.0, dy = cy - y = 1.2 - 0.0 = 1.2.\n3. Compute desired_bearing = atan2(dy, dx) = atan2(1.2, -6.0) = 16.7 degrees.\n4. Compute forward_bearing = -heading = -150.3 degrees.\n5. Convert forward_bearing to a positive angle within [0, 360): 360 - 150.3 = 209.7 degrees.\n6. Compute degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180] = normalize(-(16.7 - 209.7)) = normalize(193) = -167 degrees.\n7. rotate_spot(-167) to adjust heading.\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: call_llm.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -167}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 343.3
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

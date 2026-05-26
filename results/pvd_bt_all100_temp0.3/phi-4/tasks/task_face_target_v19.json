@@ -1,0 +1,49 @@
+{
+  "bt_count": 1,
+  "perfect_structure": true,
+  "valid_structure_count": 1,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 3.7359897019923665,
+  "avg_verifier_inference_time_s": 1.2340019820258021,
+  "avg_decoder_inference_time_s": 2.9175632710102946,
+  "avg_inference_time_s": 7.887554955028463,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 278.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "### Main Plan:\n\n1. **Calculate Target Center:**\n   - Target center coordinates: \\( cx = \\frac{0.5 + 1.5}{2} = 1.0 \\), \\( cy = \\frac{6.5 + 7.5}{2} = 7.0 \\).\n\n2. **Compute Desired Bearing:**\n   - \\( dx = cx - x = 1.0 - 0.0 = 1.0 \\)\n   - \\( dy = cy - y = 7.0 - 0.0 = 7.0 \\)\n   - Desired world bearing = \\( \\text{atan2}(7.0, 1.0) \\approx 81.87^\\circ \\).\n\n3. **Compute Forward Bearing:**\n   - Spot forward bearing = \\(-\\text{heading} = -0.0 = 0.0^\\circ\\).\n\n4. **Calculate Rotation:**\n   - \\( \\text{rotate\\_spot} = \\text{normalize}(-(81.87 - 0.0)) = \\text{normalize}(-81.87) \\approx -81.87^\\circ \\).\n\n5. **Rotate Spot:**\n   - Execute: `rotate_spot(-81.87)`\n\n### Fallbacks:\n\n- If `at_goal` is true after rotation:\n  - Execute: `finish_task()`\n\n- If `obstacle_ahead` is true before rotating:\n  - Execute: `rotate_spot(90)` (rotate to clear potential obstacle)\n\n- If `rotate_spot(-81.87)` fails:\n  - Execute: `call_llm()` for further instructions.",
+          "verifier_output": "fail: rotate_spot lacks numeric degrees; face_target uses move_spot\n\nThe plan uses `rotate_spot(-81.87)` which does not use a whole number for degrees, violating the requirement for numeric degrees in `rotate_spot`. Additionally, the plan includes a fallback to `rotate_spot(90)` to clear an obstacle, which is not appropriate for `face_target` as it should not involve moving Spot to avoid obstacles."
+        },
+        {
+          "planner_output": "### Revised Main Plan:\n\n1. **Calculate Target Center:**\n   - Target center coordinates: \\( cx = \\frac{0.5 + 1.5}{2} = 1.0 \\), \\( cy = \\frac{6.5 + 7.5}{2} = 7.0 \\).\n\n2. **Compute Desired Bearing:**\n   - \\( dx = cx - x = 1.0 - 0.0 = 1.0 \\)\n   - \\( dy = cy - y = 7.0 - 0.0 = 7.0 \\)\n   - Desired world bearing = \\( \\text{atan2}(7.0, 1.0) \\approx 81.87^\\circ \\).\n\n3. **Compute Forward Bearing:**\n   - Spot forward bearing = \\(-\\text{heading} = -0.0 = 0.0^\\circ\\).\n\n4. **Calculate Rotation:**\n   - \\( \\text{rotate\\_spot} = \\text{normalize}(-(81.87 - 0.0)) = \\text{normalize}(-81.87) \\approx -82^\\circ \\).\n\n5. **Rotate Spot:**\n   - Execute: `rotate_spot(-82)`\n\n### Fallbacks:\n\n- If `at_goal` is true after rotation:\n  - Execute: `finish_task()`",
+          "verifier_output": "fail: `face_target` uses `move_spot`; `go_to_target` lacks concrete numeric rotate/move actions unless already at_goal\n\nThe plan fails for two reasons:\n\n1. The task type is `face_target`, which should only involve rotating Spot to face the target. However, the plan includes a `move_spot` action, which is not allowed for this task type.\n\n2. The plan does not include a check for `at_goal` before executing `finish_task()`. This assumes success without verifying if the target is indeed faced, which is necessary to ensure the task's completion."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -82\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 278.0
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

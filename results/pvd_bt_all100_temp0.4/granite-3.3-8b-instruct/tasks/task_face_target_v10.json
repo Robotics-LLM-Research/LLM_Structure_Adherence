@@ -1,0 +1,109 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 1.917151246406138,
+  "avg_verifier_inference_time_s": 0.5259255551965907,
+  "avg_decoder_inference_time_s": 2.258487436299523,
+  "avg_inference_time_s": 4.701564237902252,
+  "final_spot": {
+    "x": 109.3,
+    "y": 45.3,
+    "heading": 0.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot to face the target.\n   - Compute the target center: cx = (1.5 + 2.5) / 2 = 2.0, cy = (4.5 + 5.5) / 2 = 5.0.\n   - Calculate the desired world bearing: desired_bearing = atan2(cy - y, cx - x) = atan2(5.0 - 0.0, 2.0 - 0.0).\n   - Calculate the current forward bearing: forward_bearing = -heading = 0.0.\n   - Determine the rotation degrees: rotate_spot_degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180].\n   - Execute the rotation: rotate_spot(rotate_spot_degrees).\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before rotating: call_llm to request a new plan.\n\nNote: Given the initial state and the target location, the plan directly rotates Spot to face the target. No movement is required as Spot is initially facing in the +x direction, which is perpendicular to the target's x-axis. The rotation adjusts Spot's heading to align with the target's position.",
+          "verifier_output": "fail: The plan uses actions outside move_spot, rotate_spot, finish_task, call_llm; The plan uses vague instructions: calculate the desired world bearing, calculate the current forward bearing, determine the rotation degrees."
+        },
+        {
+          "planner_output": "1. Rotate Spot 45 degrees to the left: rotate_spot(-45).\n2. If obstacle_ahead is true, call_llm.\n3. Rotate Spot 45 degrees to the right: rotate_spot(45).\n4. If obstacle_ahead is true, call_llm.\n5. If at_goal is true: finish_task.\n\nThis revised plan uses only the allowed actions and avoids vague instructions. It first attempts to rotate Spot 45 degrees to the left, then checks for obstacles. If no obstacle is detected, it rotates 45 degrees to the right. If an obstacle is encountered during either rotation, it calls for a new plan using call_llm. If the target is reached, it finishes the task.",
+          "verifier_output": "fail: The plan uses the action \"rotate_spot\" which is allowed, but it also uses the condition \"obstacle_ahead\" which is not an allowed action. Additionally, the plan does not explicitly check if Spot is facing the target after the rotations, which is necessary for the \"face_target\" task type."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot 45 degrees to the left: rotate_spot(-45).\n2. Move Spot forward 1.0 meters: move_spot(1.0).\n3. If obstacle_ahead is true, call_llm.\n4. Rotate Spot 45 degrees to the right: rotate_spot(45).\n5. Move Spot forward 1.0 meter: move_spot(1.0).\n6. If obstacle_ahead is true, call_llm.\n7. If at_goal is true: finish_task.\n\nThis revised plan includes bounded numeric actions and explicitly checks for obstacles after each move. If an obstacle is detected, it calls for a new plan using call_llm. If the target is reached, it finishes the task.",
+          "verifier_output": "pass\n\nThe plan adheres to all the required constraints for the task type and uses only the allowed actions. It includes numeric values for both rotation and movement, checks for obstacles after each movement, and has a mechanism to request a new plan if an obstacle is detected. The plan also includes a check for reaching the target and finishes the task if the goal is achieved."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 109.3,
+          "y": 45.3,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot 45 degrees to the left: rotate_spot(-45).\n2. Move Spot forward 1.0 meters: move_spot(1.0).\n3. Rotate Spot 45 degrees to the right: rotate_spot(45).\n4. Move Spot forward 1.0 meter: move_spot(1.0).\n5. If obstacle_ahead is still false, repeat steps 1-4.\n6. If obstacle_ahead becomes true, call_llm.\n7. If at_goal is true: finish_task.\n\nThis revised plan continues with the same strategy, repeating bounded rotate and move actions until an obstacle is detected or the target is reached. If an obstacle is detected, it calls for a new plan using call_llm. If the target is reached, it finishes the task.",
+          "verifier_output": "fail: The plan uses rotate_spot with positive degrees when Spot should rotate counter-clockwise; it should use negative degrees for counter-clockwise rotation.; The plan contains an unbounded loop, repeating steps 1-4 until an obstacle is detected. The plan should propose short progress + check + replan instead."
+        },
+        {
+          "planner_output": "1. Rotate Spot -45 degrees: rotate_spot(-45).\n2. Move Spot forward 1.0 meters: move_spot(1.0).\n3. Rotate Spot 45 degrees: rotate_spot(45).\n4. Move Spot forward 1.0 meter: move_spot(1.0).\n5. Check if obstacle_ahead is true.\n   - If true, call_llm.\n   - If false, repeat steps 1-4.\n6. If at_goal is true: finish_task.\n\nThis revised plan corrects the rotation direction to use negative degrees for counter-clockwise rotation and introduces a replan condition after each short progress attempt. It also ensures bounded moves and checks for obstacles after each move.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}]\n        }\n      ]\n    }\n  }",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 109.3,
+          "y": 45.3,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    }
+  ]
+}

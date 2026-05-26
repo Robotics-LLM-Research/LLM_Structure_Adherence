@@ -1,0 +1,113 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 1.1878822754952125,
+  "avg_verifier_inference_time_s": 0.31209802119216573,
+  "avg_decoder_inference_time_s": 1.8402272576543812,
+  "avg_inference_time_s": 3.3402075543417595,
+  "final_spot": {
+    "x": 0.7,
+    "y": 0.7,
+    "heading": 315.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot to face the target.\n   - Compute the desired world bearing: desired_bearing = atan2(-1.7, -6.5 - 0.0) - 0.0\n   - Compute Spot's forward bearing: Spot_forward_bearing = 0.0\n   - Compute rotate_spot degrees: rotate_spot_degrees = normalize(-(desired_bearing - Spot_forward_bearing)) into [-180, 180]\n   - Execute rotate_spot(rotate_spot_degrees)\n\nFallbacks:\n- If at_goal is true after rotation, finish_task.\n- If obstacle_ahead is true before rotating, call_llm to request a new behavior tree.",
+          "verifier_output": "fail: The plan uses actions outside move_spot, rotate_spot, finish_task, call_llm; compute functions are not allowed."
+        },
+        {
+          "planner_output": "1. Rotate Spot 90 degrees to the left.\n   - Execute rotate_spot(-90)\n\nFallbacks:\n- If obstacle_ahead is true before rotating, call_llm to request a new behavior tree.\n- If at_goal is true after rotation, finish_task.",
+          "verifier_output": "fail: The plan uses the action rotate_spot(-90) without specifying the current orientation of Spot; this violates rule 2."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}]\n        }\n      ]\n    }\n  }",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot 45 degrees to the left.\n   - Execute rotate_spot(-45)\n\n2. Move Spot forward by 1 meter.\n   - Execute move_spot(1)\n\nFallbacks:\n- If obstacle_ahead is true before moving, call_llm to request a new behavior tree.\n- If at_goal is true after movement, finish_task.",
+          "verifier_output": "fail: The plan uses rotate_spot without numeric degrees; vague instruction 'to the left'; face_target uses move_spot."
+        },
+        {
+          "planner_output": "1. Rotate Spot 45 degrees counter-clockwise.\n   - Execute rotate_spot(-45)\n\n2. Move Spot forward by 1 meter.\n   - Execute move_spot(1)\n\nFallbacks:\n- If obstacle_ahead is true before moving, call_llm to request a new behavior tree.\n- If at_goal is true after movement, finish_task.",
+          "verifier_output": "fail: The plan uses rotate_spot without numeric degrees; rotate_spot should specify degrees."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}]\n    }\n  }",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.7,
+          "y": 0.7,
+          "heading": 315.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot 45 degrees counter-clockwise.\n   - Execute rotate_spot(-45)\n\n2. Move Spot forward by 1 meter.\n   - Execute move_spot(1)\n\n3. Rotate Spot 45 degrees counter-clockwise.\n   - Execute rotate_spot(-45)\n\n4. Move Spot forward by 1 meter.\n   - Execute move_spot(1)\n\nFallbacks:\n- If obstacle_ahead is true before moving, call_llm to request a new behavior tree.\n- If at_goal is true after movement, finish_task.",
+          "verifier_output": "fail: The plan uses rotate_spot actions without checking for obstacle_ahead, which violates rule 7; face_target should not use move_spot."
+        },
+        {
+          "planner_output": "1. Rotate Spot 45 degrees counter-clockwise.\n   - Execute rotate_spot(-45)\n\n2. Check for obstacles ahead.\n   - If obstacle_ahead is false, proceed to move.\n   - If obstacle_ahead is true, call_llm to request a new behavior tree.\n\n3. If obstacle_ahead is false, move Spot forward by 1 meter.\n   - Execute move_spot(1)\n\n4. Rotate Spot 45 degrees counter-clockwise.\n   - Execute rotate_spot(-45)\n\n5. Check for obstacles ahead.\n   - If obstacle_ahead is false, proceed to move.\n   - If obstacle_ahead is true, call_llm to request a new behavior tree.\n\n6. If obstacle_ahead is false, move Spot forward by 1 meter.\n   - Execute move_spot(1)\n\nFallbacks:\n- If at_goal is true after movement, finish_task.",
+          "verifier_output": "fail: The plan uses rotate_spot action without corresponding move_spot action in a sequence that doesn't ensure progress towards the target; it repeats a pattern of rotating and moving without checking obstacle_ahead before each move."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}}\n        ]\n      },\n      {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}},\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.7,
+          "y": 0.7,
+          "heading": 315.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    }
+  ]
+}

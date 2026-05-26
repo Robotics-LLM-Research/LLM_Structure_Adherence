@@ -1,0 +1,49 @@
+{
+  "bt_count": 1,
+  "perfect_structure": true,
+  "valid_structure_count": 1,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 3.906966730952263,
+  "avg_verifier_inference_time_s": 0.3668196080252528,
+  "avg_decoder_inference_time_s": 6.288921223953366,
+  "avg_inference_time_s": 10.562707562930882,
+  "final_spot": {
+    "x": 5.9,
+    "y": 0.3,
+    "heading": 350.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Compute the center of the nearest target (goal_1) using the formula cx=(x1+x2)/2 and cy=(y1+y2)/2.\n2. Calculate the desired world bearing using atan2(dy, dx) in degrees, where dx=cx-x and dy=cy-y.\n3. Calculate the forward bearing as -heading in degrees.\n4. Compute the rotate_spot angle as normalize(-(desired_bearing - forward_bearing)) into [-180, 180].\n5. Calculate the distance_to_center as sqrt(dx^2 + dy^2).\n6. Set move_spot meters to min(distance_to_center, 2.0), unless a shorter safe step is needed.\n7. Execute rotate_spot(degrees) followed by move_spot(meters).\n8. Check if at_goal is true, if so, finish_task.\n9. If not at_goal and target_ahead is false, rotate_spot(degrees) and move_spot(meters) again.\n10. If target_ahead is true, move_spot(meters).\n11. If obstacle_ahead is true, call_llm().\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: call_llm.\n\nAfter reaching goal_1:\n1. Recompute the nearest target (goal_2) from the current Spot position.\n2. Repeat steps 1-11 for the new nearest target.\n\nNote: The exact numeric values for rotate_spot and move_spot will be calculated based on the current Spot pose and the target's center position at each step.",
+          "verifier_output": "fail: Uses vague instructions: calculate direction, repeat; contains an unbounded loop; assumes success without checking at_goal after each move."
+        },
+        {
+          "planner_output": "Main plan:\n1. Compute the center of the nearest target (goal_1) using the formula cx=(x1+x2)/2 and cy=(y1+y2)/2.\n2. Calculate dx = cx - x and dy = cy - y.\n3. Calculate the desired world bearing as atan2(dy, dx) in degrees.\n4. Calculate the forward bearing as -heading in degrees.\n5. Compute the rotate_spot angle as normalize(-(desired_bearing - forward_bearing)) into [-180, 180].\n6. Calculate the distance_to_center as sqrt(dx^2 + dy^2).\n7. Set move_spot meters to min(distance_to_center, 2.0), unless a shorter safe step is needed.\n8. Execute rotate_spot(degrees) followed by move_spot(meters).\n9. Check if at_goal is true, if so, finish_task.\n10. If not at_goal and target_ahead is false, rotate_spot(degrees) and move_spot(meters) again.\n11. If target_ahead is true, move_spot(meters).\n12. If obstacle_ahead is true, call_llm().\n13. After reaching goal_1, compute the center of the next target (goal_2).\n14. Repeat steps 2-12 for the new nearest target (goal_2).\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: call_llm().",
+          "verifier_output": "fail: Uses vague instructions: calculate direction, move around; contains an unbounded loop; assumes success without checking at_goal after each move."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -10}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.5}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -10}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.5}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.5}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 5.9,
+          "y": 0.3,
+          "heading": 350.0
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

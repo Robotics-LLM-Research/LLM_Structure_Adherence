@@ -1,0 +1,49 @@
+{
+  "bt_count": 1,
+  "perfect_structure": true,
+  "valid_structure_count": 1,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 4.931791721552145,
+  "avg_verifier_inference_time_s": 0.5538171379594132,
+  "avg_decoder_inference_time_s": 2.594830864924006,
+  "avg_inference_time_s": 8.080439724435564,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Since the task is to face the target, we need to compute the angle required to face the target from the current heading.\n2. Calculate the desired bearing to the target using the given target coordinates.\n3. Compute the current forward bearing, which is the negative of the current heading (0 degrees in this case, so -0 degrees).\n4. Determine the angle required to turn Spot to face the target by calculating the difference between the desired bearing and the current forward bearing, then normalizing this angle into the range [-180, 180] degrees.\n5. Execute a rotate_spot action using the computed angle.\n\nFallbacks:\n- If at_goal becomes true after the rotation, call finish_task().\n- If an obstacle is detected ahead before rotating (obstacle_ahead is true), call call_llm() to request a new plan as the current one is insufficient.\n\nDetailed execution:\n1. Compute the target center coordinates: cx = (4.5 + 5.5) / 2 = 5.0, cy = (-0.5 + 0.5) / 2 = 0.0.\n2. Calculate dx = cx - x = 5.0 - 0.0 = 5.0 and dy = cy - y = 0.0 - 0.0 = 0.0.\n3. Desired world bearing = atan2(dy, dx) = atan2(0, 5) = 0 degrees.\n4. Current forward bearing = -heading = 0 degrees.\n5. Since the desired bearing (0 degrees) matches the current forward bearing (0 degrees), Spot is already facing the target.\n6. No rotation is needed, so proceed directly to checking at_goal.\n7. Since at_goal is false and no obstacles are ahead, Spot is ready to complete the task.\n\nFinal action:\n- No rotation or movement is required as Spot is already facing the target.\n- Since at_goal is false, the task is not completed yet, and no obstacles are blocking the path, Spot remains in its current state, awaiting further instructions or changes in the environment.\n\nIf Spot were not initially facing the target, the plan would have included a rotate_spot action with a numeric angle computed as described.",
+          "verifier_output": "fail: The plan incorrectly assumes that Spot is initially facing the target without checking the current heading; this violates rule 4 (vague instructions). The plan should include a check for the current heading before computing the angle to rotate."
+        },
+        {
+          "planner_output": "Main plan:\n1. Check the current heading of Spot. If Spot is already facing the target (heading = 0 degrees), call finish_task().\n2. If Spot is not facing the target, compute the angle required to face the target.\n3. Calculate the target center coordinates: cx = (4.5 + 5.5) / 2 = 5.0, cy = (-0.5 + 0.5) / 2 = 0.0.\n4. Calculate dx = cx - x = 5.0 - 0.0 = 5.0 and dy = cy - y = 0.0 - 0.0 = 0.0.\n5. Determine the desired world bearing = atan2(dy, dx) = atan2(0, 5) = 0 degrees.\n6. Compute the current forward bearing = -heading.\n7. Calculate the angle needed to turn Spot to face the target: rotate_spot_degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180].\n8. Execute rotate_spot with the computed angle.\n\nFallbacks:\n- If at_goal becomes true after the rotation, call finish_task().\n- If an obstacle is detected ahead before rotating (obstacle_ahead is true), call call_llm() to request a new plan as the current one is insufficient.\n\nDetailed execution:\n1. Check current heading. If heading = 0 degrees, call finish_task().\n2. If heading \u2260 0 degrees, compute the required rotation angle.\n3. Compute target center coordinates: cx = 5.0, cy = 0.0.\n4. Calculate dx = 5.0, dy = 0.0.\n5. Desired world bearing = 0 degrees.\n6. Current forward bearing = -0 degrees (given heading = 0).\n7. Compute rotate_spot_degrees = normalize(-(0 - (-0))) into [-180, 180] = 0 degrees.\n8. Execute rotate_spot(0) degrees.\n\nSince Spot's initial heading is 0 degrees, which matches the desired bearing to face the target, no rotation is needed. If Spot's heading were different, the plan would execute the rotation as computed.",
+          "verifier_output": "fail: The plan uses vague instructions \"compute the angle required to face the target\" and \"compute the required rotation angle\"; it also uses vague instructions \"normalize(-(desired_bearing - forward_bearing)) into [-180, 180]\" without specifying the exact computation method."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

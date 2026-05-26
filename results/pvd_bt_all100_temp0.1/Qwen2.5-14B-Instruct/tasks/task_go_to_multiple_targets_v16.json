@@ -1,0 +1,105 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 6.571721474727383,
+  "avg_verifier_inference_time_s": 0.18724868548451923,
+  "avg_decoder_inference_time_s": 3.511366333657255,
+  "avg_inference_time_s": 10.270336493869157,
+  "final_spot": {
+    "x": 0.6,
+    "y": -5.9,
+    "heading": 128.6
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Compute the center of the nearest target from the current Spot pose (0.0, 0.0).\n2. Calculate the desired rotation angle to face the nearest target center.\n3. Rotate Spot to face the nearest target center.\n4. Move Spot forward by a bounded distance towards the nearest target center.\n5. Check if at_goal is true, if so, finish_task.\n6. If at_goal is false and obstacle_ahead is true, call_llm.\n7. If at_goal is false and obstacle_ahead is false, repeat from step 1 with the current Spot pose as the new starting point.\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: call_llm.\n\nLet's start with the first target:\n\n1. Compute the center of the nearest target from the current Spot pose (0.0, 0.0).\n   - Nearest target is goal_1 with center (cx, cy) = (2.5, -2.0).\n2. Calculate the desired rotation angle to face the nearest target center.\n   - dx = 2.5 - 0.0 = 2.5\n   - dy = -2.0 - 0.0 = -2.0\n   - desired_bearing = atan2(-2.0, 2.5) = -45 degrees\n   - forward_bearing = -0.0 degrees (since heading=0)\n   - rotate_spot degrees = normalize(-(-45 - 0)) = normalize(45) = 45 degrees\n3. Rotate Spot to face the nearest target center.\n   - rotate_spot(45)\n4. Move Spot forward by a bounded distance towards the nearest target center.\n   - distance_to_center = sqrt(2.5^2 + (-2.0)^2) = sqrt(6.25 + 4.0) = sqrt(10.25) \u2248 3.2 meters\n   - move_spot(2.0) since it's the maximum safe step\n\nRepeat the above steps for each target after reaching the previous one.",
+          "verifier_output": "fail: Uses vague instructions: calculate direction, repeat; contains an unbounded loop; assumes success without checking at_goal after move_spot."
+        },
+        {
+          "planner_output": "Main plan:\n1. Compute the center of the nearest target from the current Spot pose (0.0, 0.0).\n2. Calculate the desired rotation angle to face the nearest target center.\n3. Rotate Spot to face the nearest target center.\n4. Move Spot forward by a bounded distance towards the nearest target center.\n5. Check if at_goal is true, if so, finish_task.\n6. If at_goal is false and obstacle_ahead is true, call_llm.\n7. If at_goal is false and obstacle_ahead is false, compute the center of the nearest unvisited target from the current Spot pose.\n8. Calculate the desired rotation angle to face the new nearest target center.\n9. Rotate Spot to face the new nearest target center.\n10. Move Spot forward by a bounded distance towards the new nearest target center.\n11. Check if at_goal is true, if so, finish_task.\n12. If at_goal is false and obstacle_ahead is true, call_llm.\n13. If at_goal is false and obstacle_ahead is false, repeat from step 7.\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: call_llm.\n\nInitial steps:\n1. Compute the center of the nearest target from the current Spot pose (0.0, 0.0).\n   - Nearest target is goal_1 with center (cx, cy) = (2.5, -2.0).\n2. Calculate the desired rotation angle to face the nearest target center.\n   - dx = 2.5 - 0.0 = 2.5\n   - dy = -2.0 - 0.0 = -2.0\n   - desired_bearing = atan2(-2.0, 2.5) = -45 degrees\n   - forward_bearing = -0.0 degrees (since heading=0)\n   - rotate_spot degrees = normalize(-(-45 - 0)) = normalize(45) = 45 degrees\n3. Rotate Spot to face the nearest target center.\n   - rotate_spot(45)\n4. Move Spot forward by a bounded distance towards the nearest target center.\n   - distance_to_center = sqrt(2.5^2 + (-2.0)^2) = sqrt(6.25 + 4.0) = sqrt(10.25) \u2248 3.2 meters\n   - move_spot(2.0) since it's the maximum safe step\n5. Check if at_goal is true, if so, finish_task.\n6. If at_goal is false and obstacle_ahead is true, call_llm.\n7. If at_goal is false and obstacle_ahead is false, compute the center of the nearest unvisited target from the current Spot pose.\n8. Calculate the desired rotation angle to face the new nearest target center.\n9. Rotate Spot to face the new nearest target center.\n10. Move Spot forward by a bounded distance towards the new nearest target center.\n11. Check if at_goal is true, if so, finish_task.\n12. If at_goal is false and obstacle_ahead is true, call_llm.\n13. If at_goal is false and obstacle_ahead is false, repeat from step 7.",
+          "verifier_output": "fail: Uses vague instructions: calculate direction, move around, repeat; contains an unbounded loop."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 1.4,
+          "y": -1.4,
+          "heading": 45.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Compute the center of the nearest target from the current Spot pose (1.4, -1.4).\n2. Calculate the desired rotation angle to face the nearest target center.\n3. Rotate Spot to face the nearest target center.\n4. Move Spot forward by a bounded distance towards the nearest target center.\n5. Check if at_goal is true, if so, finish_task.\n6. If at_goal is false and obstacle_ahead is true, call_llm.\n7. If at_goal is false and obstacle_ahead is false, compute the center of the nearest unvisited target from the current Spot pose.\n8. Calculate the desired rotation angle to face the new nearest target center.\n9. Rotate Spot to face the new nearest target center.\n10. Move Spot forward by a bounded distance towards the new nearest target center.\n11. Check if at_goal is true, if so, finish_task.\n12. If at_goal is false and obstacle_ahead is true, call_llm.\n13. If at_goal is false and obstacle_ahead is false, repeat from step 7.\n\nRevised plan based on final_spot:\n1. Compute the center of the nearest target from the current Spot pose (1.4, -1.4).\n   - Nearest target is goal_1 with center (cx, cy) = (2.5, -2.0).\n2. Calculate the desired rotation angle to face the nearest target center.\n   - dx = 2.5 - 1.4 = 1.1\n   - dy = -2.0 - (-1.4) = -0.6\n   - desired_bearing = atan2(-0.6, 1.1) \u2248 -28.6 degrees\n   - forward_bearing = -45.0 degrees (since heading=45.0)\n   - rotate_spot degrees = normalize(-(-28.6 - (-45.0))) = normalize(16.4) = 16.4 degrees\n3. Rotate Spot to face the nearest target center.\n   - rotate_spot(16.4)\n4. Move Spot forward by a bounded distance towards the nearest target center.\n   - distance_to_center = sqrt(1.1^2 + (-0.6)^2) = sqrt(1.21 + 0.36) = sqrt(1.57) \u2248 1.25 meters\n   - move_spot(1.25)\n5. Check if at_goal is true, if so, finish_task.\n6. If at_goal is false and obstacle_ahead is true, call_llm.\n7. If at_goal is false and obstacle_ahead is false, compute the center of the nearest unvisited target from the current Spot pose.\n8. Calculate the desired rotation angle to face the new nearest target center.\n9. Rotate Spot to face the new nearest target center.\n10. Move Spot forward by a bounded distance towards the new nearest target center.\n11. Check if at_goal is true, if so, finish_task.\n12. If at_goal is false and obstacle_ahead is true, call_llm.\n13. If at_goal is false and obstacle_ahead is false, repeat from step 7.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 16.4}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.25}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 2.0,
+          "y": -2.5,
+          "heading": 61.4
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Compute the center of the nearest target from the current Spot pose (2.0, -2.5).\n   - Nearest target is goal_2 with center (cx, cy) = (5.0, -4.0).\n2. Calculate the desired rotation angle to face the nearest target center.\n   - dx = 5.0 - 2.0 = 3.0\n   - dy = -4.0 - (-2.5) = -1.5\n   - desired_bearing = atan2(-1.5, 3.0) \u2248 -26.6 degrees\n   - forward_bearing = -61.4 degrees (since heading=61.4)\n   - rotate_spot degrees = normalize(-(-26.6 - (-61.4))) = normalize(34.8) = 34.8 degrees\n3. Rotate Spot to face the nearest target center.\n   - rotate_spot(34.8)\n4. Move Spot forward by a bounded distance towards the nearest target center.\n   - distance_to_center = sqrt(3.0^2 + (-1.5)^2) = sqrt(9.0 + 2.25) = sqrt(11.25) \u2248 3.35 meters\n   - move_spot(2.0)  # Move the maximum safe distance of 2.0 meters\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: call_llm.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 34.8}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.6,
+          "y": -5.9,
+          "heading": 128.6
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    }
+  ]
+}

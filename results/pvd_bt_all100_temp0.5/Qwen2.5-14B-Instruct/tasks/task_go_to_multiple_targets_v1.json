@@ -1,0 +1,113 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 4.991308658209164,
+  "avg_verifier_inference_time_s": 0.31443346916542697,
+  "avg_decoder_inference_time_s": 5.621326749989142,
+  "avg_inference_time_s": 10.927068877363732,
+  "final_spot": {
+    "x": 1.7,
+    "y": 1.6,
+    "heading": 0.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Compute the center of the nearest target (goal_1) using the formula: cx = (x1 + x2) / 2 and cy = (y1 + y2) / 2.\n2. Calculate the dx and dy from the current Spot pose (x, y) to the nearest target center (cx, cy): dx = cx - x and dy = cy - y.\n3. Compute the desired world bearing in degrees: desired_bearing = atan2(dy, dx) * 180 / pi.\n4. Compute the forward bearing of Spot: forward_bearing = -heading.\n5. Compute the required rotation angle: rotate_angle = normalize(-(desired_bearing - forward_bearing)) into [-180, 180].\n6. Compute the distance to the target center: distance_to_center = sqrt(dx^2 + dy^2).\n7. If obstacle_ahead is true, call_llm().\n8. If obstacle_ahead is false, rotate_spot(rotate_angle).\n9. move_spot(min(distance_to_center, 2.0)).\n10. After reaching the first target (goal_1), repeat steps 1-9 for the next nearest target (goal_2).\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: call_llm.",
+          "verifier_output": "fail: Uses vague instructions (calculate direction); contains unbounded loop (repeat steps for next target); assumes success without checking at_goal."
+        },
+        {
+          "planner_output": "Main plan:\n1. Compute the center of the nearest target (goal_1) using the formula: cx = (x1 + x2) / 2 and cy = (y1 + y2) / 2.\n2. Calculate dx and dy from the current Spot pose (x, y) to the nearest target center (cx, cy): dx = cx - x and dy = cy - y.\n3. Compute the desired world bearing in degrees: desired_bearing = atan2(dy, dx) * 180 / pi.\n4. Compute the forward bearing of Spot: forward_bearing = -heading.\n5. Compute the required rotation angle: rotate_angle = normalize(-(desired_bearing - forward_bearing)) into [-180, 180].\n6. Compute the distance to the target center: distance_to_center = sqrt(dx^2 + dy^2).\n7. If obstacle_ahead is true, call_llm().\n8. If obstacle_ahead is false, rotate_spot(rotate_angle).\n9. move_spot(min(distance_to_center, 2.0)).\n10. Check if at_goal is true for goal_1. If true, move to the next target (goal_2).\n11. Repeat steps 1-9 for goal_2.\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: call_llm.",
+          "verifier_output": "fail: Uses vague instructions: calculate direction;_REPEATS: proposes more than one bounded progress chunk for the next attempt instead of short progress + check + replan."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -1}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 1.0,
+          "y": 0.0,
+          "heading": 359.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Compute the center of the nearest target (goal_1) using the formula: cx = (x1 + x2) / 2 and cy = (y1 + y2) / 2.\n2. Calculate dx and dy from the final Spot pose (x=1.0, y=0.0) to the nearest target center (cx, cy): dx = cx - 1.0 and dy = cy - 0.0.\n3. Compute the desired world bearing in degrees: desired_bearing = atan2(dy, dx) * 180 / pi.\n4. Compute the forward bearing of Spot: forward_bearing = -359.0.\n5. Compute the required rotation angle: rotate_angle = normalize(-(desired_bearing - forward_bearing)) into [-180, 180].\n6. Compute the distance to the target center: distance_to_center = sqrt(dx^2 + dy^2).\n7. Since target_ahead is true, rotate_spot(rotate_angle).\n8. move_spot(min(distance_to_center, 2.0)).\n9. Check if at_goal is true for goal_1. If true, move to the next target (goal_2).\n10. Repeat steps 1-8 for goal_2.\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: call_llm.",
+          "verifier_output": "fail: Uses vague instructions: calculate direction, repeat; contains an unbounded loop, long search pattern, or repeated non-progressing actions; proposes more than one bounded progress chunk for the next attempt instead of short progress + check + replan."
+        },
+        {
+          "planner_output": "Main plan:\n1. Compute the center of the nearest target (goal_1) using the formula: cx = (x1 + x2) / 2 and cy = (y1 + y2) / 2.\n2. Calculate dx and dy from the final Spot pose (x=1.0, y=0.0) to the nearest target center (cx, cy): dx = 3.0 and dy = 0.0.\n3. Compute the desired world bearing in degrees: desired_bearing = atan2(0.0, 3.0) * 180 / pi = 0.0.\n4. Compute the forward bearing of Spot: forward_bearing = -359.0.\n5. Compute the required rotation angle: rotate_angle = normalize(-(0.0 - (-359.0))) into [-180, 180] = 179.0.\n6. Compute the distance to the target center: distance_to_center = sqrt(3.0^2 + 0.0^2) = 3.0.\n7. rotate_spot(179.0).\n8. move_spot(2.0).\n9. Check if at_goal is true for goal_1. If true, proceed to target (goal_2).\n10. Compute the center of the new nearest target (goal_2) using the formula: cx = (x1 + x2) / 2 and cy = (y1 + y2) / 2.\n11. Calculate dx and dy from the final Spot pose to the nearest target center (cx, cy): dx = 5.5 - x and dy = 0.0 - y.\n12. Compute the desired world bearing in degrees: desired_bearing = atan2(dy, dx) * 180 / pi.\n13. Compute the forward bearing of Spot: forward_bearing = -heading.\n14. Compute the required rotation angle: rotate_angle = normalize(-(desired_bearing - forward_bearing)) into [-180, 180].\n15. Compute the distance to the target center: distance_to_center = sqrt(dx^2 + dy^2).\n16. rotate_spot(rotate_angle).\n17. move_spot(2.0).\n18. Check if at_goal is true for goal_2. If true, finish_task.\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: call_llm.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 179.0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -180.0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 179.0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -180.0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 1.0,
+          "y": 0.0,
+          "heading": 231.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Compute the center of the nearest target (goal_1) using the formula: cx = (x1 + x2) / 2 and cy = (y1 + y2) / 2.\n2. Calculate dx and dy from the final Spot pose (x=1.0, y=0.0) to the nearest target center (cx, cy): dx = 3.0 - 1.0 and dy = 0.0 - 0.0.\n3. Compute the desired world bearing in degrees: desired_bearing = atan2(0.0, 2.0) * 180 / pi = 0.0.\n4. Compute the forward bearing of Spot: forward_bearing = -231.0.\n5. Compute the required rotation angle: rotate_angle = normalize(-(0.0 - (-231.0))) into [-180, 180] = 129.0.\n6. rotate_spot(129.0).\n7. move_spot(2.0).\n8. Check if at_goal is true for goal_1. If true, proceed to target (goal_2).\n9. Compute the center of the new nearest target (goal_2) using the formula: cx = (x1 + x2) / 2 and cy = (y1 + y2) / 2.\n10. Calculate dx and dy from the final Spot pose to the nearest target center (cx, cy): dx = 6.0 - 1.0 and dy = 0.0 - 0.0.\n11. Compute the desired world bearing in degrees: desired_bearing = atan2(0.0, 5.0) * 180 / pi = 0.0.\n12. Compute the forward bearing of Spot: forward_bearing = -231.0.\n13. Compute the required rotation angle: rotate_angle = normalize(-(0.0 - (-231.0))) into [-180, 180] = 129.0.\n14. rotate_spot(129.0).\n15. move_spot(2.0).\n16. Check if at_goal is true for goal_2. If true, finish_task.\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: call_llm.",
+          "verifier_output": "fail: Uses vague instructions to compute bearings and angles without clear steps; redundant rotation calculation before each move; assumes success without checking at_goal after rotations."
+        },
+        {
+          "planner_output": "Main plan:\n1. Compute the center of the nearest target (goal_1) using the formula: cx = (2.5 + 3.5) / 2 = 3.0, cy = (-0.5 + 0.5) / 2 = 0.0.\n2. Calculate dx and dy from the initial Spot pose (x=0.0, y=0.0) to the nearest target center (cx, cy): dx = 3.0 - 0.0 = 3.0, dy = 0.0 - 0.0 = 0.0.\n3. Compute the desired world bearing in degrees: desired_bearing = atan2(0.0, 3.0) * 180 / pi = 0.0.\n4. Compute the forward bearing of Spot: forward_bearing = -0.0.\n5. Compute the required rotation angle: rotate_angle = normalize(-(0.0 - (-0.0))) into [-180, 180] = 0.0.\n6. If rotate_angle is not 0, rotate_spot(rotate_angle).\n7. move_spot(2.0).\n8. Check if at_goal is true. If true, proceed to target (goal_2).\n9. Compute the center of the new nearest target (goal_2) using the formula: cx = (5.5 + 6.5) / 2 = 6.0, cy = (-0.5 + 0.5) / 2 = 0.0.\n10. Calculate dx and dy from the final Spot pose to the nearest target center (cx, cy): dx = 6.0 - 1.0 = 5.0, dy = 0.0 - 0.0 = 0.0.\n11. Compute the desired world bearing in degrees: desired_bearing = atan2(0.0, 5.0) * 180 / pi = 0.0.\n12. Compute the forward bearing of Spot: forward_bearing = -231.0.\n13. Compute the required rotation angle: rotate_angle = normalize(-(0.0 - (-231.0))) into [-180, 180] = 129.0.\n14. If rotate_angle is not 0, rotate_spot(rotate_angle).\n15. move_spot(2.0).\n16. Check if at_goal is true. If true, finish_task.\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: call_llm.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 0.0\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 2.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 129.0\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 2.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 1.7,
+          "y": 1.6,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

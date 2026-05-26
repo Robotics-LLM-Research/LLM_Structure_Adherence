@@ -1,0 +1,49 @@
+{
+  "bt_count": 1,
+  "perfect_structure": true,
+  "valid_structure_count": 1,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 5.329569796973374,
+  "avg_verifier_inference_time_s": 1.2333427855046466,
+  "avg_decoder_inference_time_s": 4.436218316084705,
+  "avg_inference_time_s": 10.999130898562726,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main Plan:\n\n1. **Calculate Target Center:**\n   - Compute the center of the target rectangle:\n     - \\( cx = \\frac{x1 + x2}{2} = \\frac{6.5 + 7.5}{2} = 7.0 \\)\n     - \\( cy = \\frac{y1 + y2}{2} = \\frac{0.3 + 1.3}{2} = 0.8 \\)\n\n2. **Compute Desired Bearing:**\n   - Calculate the differences:\n     - \\( dx = cx - x = 7.0 - 0.0 = 7.0 \\)\n     - \\( dy = cy - y = 0.8 - 0.0 = 0.8 \\)\n   - Compute desired world bearing:\n     - \\( \\text{desired\\_bearing} = \\text{atan2}(dy, dx) \\)\n     - \\( \\text{desired\\_bearing} = \\text{atan2}(0.8, 7.0) \\approx 6.48 \\) degrees\n\n3. **Compute Forward Bearing:**\n   - Spot's forward bearing is the negative of its heading:\n     - \\( \\text{forward\\_bearing} = -\\text{heading} = -0.0 = 0.0 \\) degrees\n\n4. **Calculate Rotation:**\n   - Compute the rotation needed:\n     - \\( \\text{rotate\\_degrees} = \\text{normalize}(-(6.48 - 0.0)) \\)\n     - \\( \\text{rotate\\_degrees} = \\text{normalize}(-6.48) \\approx -6.48 \\) degrees\n\n5. **Rotate Spot:**\n   - Execute the rotation:\n     - `rotate_spot(-6.48)`\n\nFallbacks:\n\n- If `at_goal` is true after rotation:\n  - `finish_task()`\n\n- If `obstacle_ahead` is true:\n  - `rotate_spot(90)` to move away from the obstacle, then:\n  - `call_llm()` to request a new plan.",
+          "verifier_output": "fail: rotate_spot lacks numeric degrees; use of `call_llm()` without checking progress; `rotate_spot(-6.48)` should use normalized degrees.\n\n- The `rotate_spot(-6.48)` action needs degrees to be normalized to a valid range, typically between -180 and 180 degrees.\n- The fallback plan includes `call_llm()` without ensuring progress or checking if the obstacle is cleared.\n- Ensure `rotate_spot` uses a normalized degree value for execution."
+        },
+        {
+          "planner_output": "Main Plan:\n\n1. **Calculate Target Center:**\n   - Compute the center of the target rectangle:\n     - \\( cx = \\frac{x1 + x2}{2} = \\frac{6.5 + 7.5}{2} = 7.0 \\)\n     - \\( cy = \\frac{y1 + y2}{2} = \\frac{0.3 + 1.3}{2} = 0.8 \\)\n\n2. **Compute Desired Bearing:**\n   - Calculate the differences:\n     - \\( dx = cx - x = 7.0 - 0.0 = 7.0 \\)\n     - \\( dy = cy - y = 0.8 - 0.0 = 0.8 \\)\n   - Compute desired world bearing:\n     - \\( \\text{desired\\_bearing} = \\text{atan2}(dy, dx) \\)\n     - \\( \\text{desired\\_bearing} = \\text{atan2}(0.8, 7.0) \\approx 6.48 \\) degrees\n\n3. **Compute Forward Bearing:**\n   - Spot's forward bearing is the negative of its heading:\n     - \\( \\text{forward\\_bearing} = -\\text{heading} = -0.0 = 0.0 \\) degrees\n\n4. **Calculate Rotation:**\n   - Compute the rotation needed:\n     - \\( \\text{rotate\\_degrees} = \\text{normalize}(-(6.48 - 0.0)) \\)\n     - \\( \\text{rotate\\_degrees} = \\text{normalize}(-6.48) = -6.48 \\) degrees (already within [-180, 180])\n\n5. **Rotate Spot:**\n   - Execute the rotation:\n     - `rotate_spot(-6.48)`\n\nFallbacks:\n\n- If `at_goal` is true after rotation:\n  - `finish_task()`\n\n- If `obstacle_ahead` is true:\n  - `rotate_spot(90)` to change direction, then:\n  - Check if `obstacle_ahead` is false before proceeding.\n  - If still `obstacle_ahead` is true, `call_llm()` to request a new plan.",
+          "verifier_output": "fail: rotate_spot lacks numeric degrees; face_target uses move_spot\n\nExplanation:\n1. The `rotate_spot(-6.48)` action uses a non-integer degree value, which is not allowed. The plan should specify a numeric degree value that is an integer.\n2. The plan includes a fallback action `rotate_spot(90)` which is correct, but the main plan incorrectly uses `move_spot` in the context of `face_target`, which is not allowed. The plan should only use `rotate_spot` for facing a target."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -6.48}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

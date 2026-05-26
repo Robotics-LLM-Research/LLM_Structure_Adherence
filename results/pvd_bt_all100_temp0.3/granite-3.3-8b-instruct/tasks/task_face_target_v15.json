@@ -1,0 +1,49 @@
+{
+  "bt_count": 1,
+  "perfect_structure": true,
+  "valid_structure_count": 1,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 2.0320239400025457,
+  "avg_verifier_inference_time_s": 0.3055176505004056,
+  "avg_decoder_inference_time_s": 2.9525441540172324,
+  "avg_inference_time_s": 5.290085744520184,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot to face the target.\n   - Compute the desired world bearing to the target:\n     - cx = (6.5 + 7.5) / 2 = 7.0, cy = (0.3 + 1.3) / 2 = 0.8\n     - dx = cx - x = 7.0 - 0, dy = cy - y = 0.8 - 0 = 0.8\n     - Desired world bearing = atan2(dy, dx) = atan2(0.8, 7.0) \u2248 6.87 degrees\n   - Compute Spot's current forward bearing:\n     - Spot's current forward bearing = -heading = 0 degrees\n   - Compute rotate_spot degrees to face the target:\n     - rotate_spot degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180]\n     - rotate_spot degrees = normalize(-(6.87 - 0)) \u2248 6.87 degrees (already positive, within range)\n   - Execute rotate_spot(6.87)\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before rotating: call_llm to request a new plan.",
+          "verifier_output": "fail: The plan uses the rotate_spot action, which is not allowed according to the rules for the face_target task type."
+        },
+        {
+          "planner_output": "Main plan:\n1. Since the face_target task type does not allow rotation, Spot should directly move to face the target.\n   - Compute the distance to the target:\n     - distance_to_center = sqrt((7.0 - 0)^2 + (0.8 - 0)^2) \u2248 7.21 meters\n   - Execute move_spot(7.21) directly towards the target.\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: call_llm to request a new plan.",
+          "verifier_output": "fail: The plan uses move_spot without specifying numeric meters; face_target task type does not allow rotation, but the plan suggests computing degrees for rotation."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"call_llm\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 7.21\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

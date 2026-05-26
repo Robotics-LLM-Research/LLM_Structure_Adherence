@@ -1,0 +1,49 @@
+{
+  "bt_count": 1,
+  "perfect_structure": true,
+  "valid_structure_count": 1,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 1.7699053855030797,
+  "avg_verifier_inference_time_s": 0.3051775115309283,
+  "avg_decoder_inference_time_s": 3.5467382279457524,
+  "avg_inference_time_s": 5.6218211249797605,
+  "final_spot": {
+    "x": -1.0,
+    "y": -0.0,
+    "heading": 0.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Since the task is to face_target, rotate Spot directly towards the target.\n2. Compute the desired bearing to the target: desired_bearing = atan2(goal_1.cy - y, goal_1.cx - x) - heading, where (x, y) is Spot's current pose and (cx, cy) is the center of goal_1.\n3. Compute the rotation degrees: rotate_spot_angle = normalize(-(desired_bearing - heading)) into [-180, 180].\n4. Execute rotate_spot(rotate_spot_angle) to face the target.\n5. Verify if at_goal is true. If true, finish_task.\n\nFallbacks:\n- If obstacle_ahead is true before rotating, call_llm to request a new behavior tree for obstacle avoidance.\n- If after rotating, obstacle_ahead is still true, call_llm for a new plan considering the obstacle.",
+          "verifier_output": "fail: The plan uses actions outside move_spot, rotate_spot, finish_task, call_llm; compute the desired bearing and normalize rotation angle are not available actions."
+        },
+        {
+          "planner_output": "1. Rotate Spot 90 degrees to the left: rotate_spot(-90).\n2. Move Spot forward by 1 meter: move_spot(1).\n3. Rotate Spot 90 degrees to the left again: rotate_spot(-90).\n4. Move Spot forward by 1 meter: move_spot(1).\n5. Verify if at_goal is true. If true, finish_task.\n\nFallbacks:\n- If obstacle_ahead is true before moving, call_llm to request a new behavior tree for obstacle avoidance.\n- If after moving, obstacle_ahead is still true, call_llm for a new plan considering the obstacle.",
+          "verifier_output": "fail: The plan uses rotate_spot actions which are not allowed for the face_target task type."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": -1.0,
+          "y": -0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

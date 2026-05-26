@@ -1,0 +1,77 @@
+{
+  "bt_count": 2,
+  "perfect_structure": true,
+  "valid_structure_count": 2,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 4.454716075677425,
+  "avg_verifier_inference_time_s": 3.134086183970794,
+  "avg_decoder_inference_time_s": 3.832658255007118,
+  "avg_inference_time_s": 11.421460514655337,
+  "final_spot": {
+    "x": 3.4,
+    "y": -2.0,
+    "heading": 30.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "### Main Plan:\n\n1. **Compute Target Center:**\n   - Target center coordinates: \\( cx = \\frac{2.9 + 4.1}{2} = 3.5 \\), \\( cy = \\frac{-2.6 + -1.4}{2} = -2.0 \\).\n\n2. **Calculate Desired Bearing:**\n   - \\( dx = 3.5 - 0.0 = 3.5 \\)\n   - \\( dy = -2.0 - 0.0 = -2.0 \\)\n   - Desired world bearing = \\( \\text{atan2}(-2.0, 3.5) \\approx -29.74^\\circ \\).\n\n3. **Calculate Forward Bearing:**\n   - Spot forward bearing = \\(-0.0 = 0.0^\\circ\\).\n\n4. **Calculate Rotation:**\n   - Rotate degrees = \\( \\text{normalize}(-( -29.74 - 0.0)) = 29.74^\\circ \\).\n\n5. **Rotate Spot:**\n   - Execute: `rotate_spot(29.74)`\n\n6. **Check for Obstacles:**\n   - If `obstacle_ahead` is true, execute `call_llm()`.\n\n7. **Calculate Distance to Center:**\n   - Distance to center = \\( \\sqrt{3.5^2 + (-2.0)^2} \\approx 4.03 \\).\n\n8. **Move Spot:**\n   - Execute: `move_spot(2.0)` (bounded move).\n\n9. **Check Progress:**\n   - If `at_goal` is true, execute `finish_task()`.\n   - If `target_ahead` is false, recompute from `final_spot`.\n\n### Fallbacks:\n\n- **If `at_goal` is true:**\n  - Execute: `finish_task()`\n\n- **If `obstacle_ahead` is true before moving:**\n  - Execute: `call_llm()`",
+          "verifier_output": "fail: Rotate action lacks integer degrees; Move action lacks check for `target_ahead` before moving more than 2.0 meters.\n\n- The `rotate_spot(29.74)` action uses a non-integer degree value. It should be rounded to the nearest integer, e.g., `rotate_spot(30)`.\n- The plan moves Spot by 2.0 meters without checking if the target is ahead. If `target_ahead` is false, the move should be adjusted or re-evaluated."
+        },
+        {
+          "planner_output": "### Revised Main Plan:\n\n1. **Compute Target Center:**\n   - Target center coordinates: \\( cx = \\frac{2.9 + 4.1}{2} = 3.5 \\), \\( cy = \\frac{-2.6 + -1.4}{2} = -2.0 \\).\n\n2. **Calculate Desired Bearing:**\n   - \\( dx = 3.5 - 0.0 = 3.5 \\)\n   - \\( dy = -2.0 - 0.0 = -2.0 \\)\n   - Desired world bearing = \\( \\text{atan2}(-2.0, 3.5) \\approx -29.74^\\circ \\).\n\n3. **Calculate Forward Bearing:**\n   - Spot forward bearing = \\(-0.0 = 0.0^\\circ\\).\n\n4. **Calculate Rotation:**\n   - Rotate degrees = \\( \\text{normalize}(-( -29.74 - 0.0)) = 29.74^\\circ \\).\n   - Round to nearest integer: 30 degrees.\n\n5. **Rotate Spot:**\n   - Execute: `rotate_spot(30)`\n\n6. **Check for Obstacles:**\n   - If `obstacle_ahead` is true, execute `call_llm()`.\n\n7. **Check if Target is Ahead:**\n   - If `target_ahead` is false, execute `call_llm()`.\n\n8. **Calculate Distance to Center:**\n   - Distance to center = \\( \\sqrt{3.5^2 + (-2.0)^2} \\approx 4.03 \\).\n\n9. **Move Spot:**\n   - Execute: `move_spot(2.0)` (bounded move).\n\n10. **Check Progress:**\n    - If `at_goal` is true, execute `finish_task()`.\n    - If `target_ahead` is false after moving, recompute from `final_spot`.",
+          "verifier_output": "The plan needs to be evaluated against the specified criteria for the task type \"go_to_target.\" Here's the analysis:\n\n1. **Use of Actions:**\n   - The plan uses `rotate_spot`, `move_spot`, `call_llm`, and `finish_task`, which are all allowed actions.\n\n2. **Numeric Values:**\n   - `rotate_spot(30)` and `move_spot(2.0)` both have numeric values, satisfying the requirement for numeric degrees and meters.\n\n3. **Vague Instructions:**\n   - The plan does not contain vague instructions like \"move closer\" or \"rotate toward.\"\n\n4. **Unbounded Loops:**\n   - The plan does not contain unbounded loops or long search patterns.\n\n5. **Assumptions Without Checking:**\n   - The plan checks `at_goal` after moving, which is appropriate.\n\n6. **face_target and go_to_target:**\n   - The plan does not use `face_target` with `move_spot`.\n   - The plan includes concrete numeric actions for `rotate_spot` and `move_spot`.\n\n7. **move_to_closest_target:**\n   - The plan uses `move_spot(2.0)`, which is within the allowed limit unless `target_ahead` is true.\n\n8. **go_around_obstacle:**\n   - The plan calls `call_llm()` if an obstacle is ahead, which is appropriate for replanning.\n\n9. **Repeated Failed Patterns:**\n   - There is no indication of repeating a previously failed action pattern.\n\n10. **Bounded Progress Chunks:**\n    - The plan proposes a short progress (`move_spot(2.0)`) followed by a check (`at_goal` and `target_ahead`), which is appropriate.\n\nGiven this analysis, the plan meets all the criteria for execution.\n\n**Output:**\n\npass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 30}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 1.7,
+          "y": -1.0,
+          "heading": 30.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "### Revised Main Plan:\n\n1. **Check if at Goal:**\n   - Since `at_goal` is false, proceed with the next steps.\n\n2. **Check for Obstacles:**\n   - `obstacle_ahead` is false, so no immediate obstacle is blocking the path.\n\n3. **Check if Target is Ahead:**\n   - `target_ahead` is true, indicating the target is directly ahead.\n\n4. **Calculate Distance to Center:**\n   - Current position: \\( x = 1.7 \\), \\( y = -1.0 \\).\n   - Target center: \\( cx = 3.5 \\), \\( cy = -2.0 \\).\n   - \\( dx = 3.5 - 1.7 = 1.8 \\)\n   - \\( dy = -2.0 - (-1.0) = -1.0 \\)\n   - Distance to center = \\( \\sqrt{1.8^2 + (-1.0)^2} \\approx 2.06 \\).\n\n5. **Move Spot:**\n   - Execute: `move_spot(2.0)` (bounded move).\n\n6. **Check Progress:**\n   - If `at_goal` is true after moving, execute `finish_task()`.\n   - If `at_goal` is false, recompute from `final_spot`.\n\n7. **Recompute if Necessary:**\n   - If `target_ahead` becomes false after moving, execute `call_llm()` to request a new plan.",
+          "verifier_output": "The plan appears to be well-structured and adheres to the rules for the task type \"go_to_target.\" Here's a breakdown of the evaluation:\n\n1. **Actions Used:**\n   - The plan uses `move_spot`, `finish_task`, and `call_llm`, all of which are allowed actions.\n\n2. **Numeric Values:**\n   - The `move_spot` action specifies a numeric value of 2.0 meters, which is within the allowed range.\n\n3. **Vague Instructions:**\n   - The plan does not contain vague instructions like \"move closer\" or \"rotate toward.\"\n\n4. **Unbounded Loops:**\n   - The plan includes a check for `at_goal` and a mechanism to recompute the plan if necessary, avoiding unbounded loops.\n\n5. **Assumptions:**\n   - The plan checks `at_goal` after moving, ensuring it does not assume success without verification.\n\n6. **Target Handling:**\n   - The plan correctly uses `move_spot` with a bounded move since `target_ahead` is true.\n\n7. **Obstacle Handling:**\n   - The plan checks for obstacles and re-plans if necessary, avoiding long routes.\n\n8. **Repetition of Failed Patterns:**\n   - There is no indication of repeating a failed action pattern.\n\n9. **Progress Chunks:**\n   - The plan proposes a short progress chunk (2.0 meters) followed by a check and potential replanning.\n\nGiven these points, the plan is executable as written.\n\n**Output:**\n\npass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 3.4,
+          "y": -2.0,
+          "heading": 30.0
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

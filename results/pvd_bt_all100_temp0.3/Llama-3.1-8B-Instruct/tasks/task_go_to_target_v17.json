@@ -1,0 +1,113 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 0.604843154666014,
+  "avg_verifier_inference_time_s": 0.48939265615384403,
+  "avg_decoder_inference_time_s": 2.413122293034879,
+  "avg_inference_time_s": 3.5073581038547372,
+  "final_spot": {
+    "x": -2.0,
+    "y": -3.0,
+    "heading": 90.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "To move Spot to the target, we need to compute the target center and derive a rotate and move action. \n\nFirst, we compute the target center (cx, cy):\ncx = (x1+x2)/2 = (2.1+2.9)/2 = 2.5\ncy = (y1+y2)/2 = (5.6+6.4)/2 = 6.0\n\nNext, we compute the desired world bearing from Spot to the target:\ndx = cx - x = 2.5 - 0.0 = 2.5\ndy = cy - y = 6.0 - 0.0 = 6.0\ndesired_bearing = atan2(dy, dx) = 53.13 degrees\n\nSince Spot's forward bearing is -heading = 0 degrees, we rotate Spot to face the target:\nrotate_spot = normalize(-(desired_bearing - forward_bearing)) = normalize(-(53.13 - 0)) = 53.13 degrees\n\nNow, we compute the distance to the target center:\ndistance_to_center = sqrt(dx^2 + dy^2) = sqrt(2.5^2 + 6.0^2) = 6.403\n\nWe'll move Spot a bounded distance of 2.0 meters to avoid overshooting:\nmove_spot = min(distance_to_center, 2.0) = 2.0\n\nMain plan:\n1. rotate_spot(53.13)\n2. move_spot(2.0)",
+          "verifier_output": "fail: It assumes success without checking at_goal; It repeats a failed action pattern described in feedback. \n\nExplanation: \n1. The plan does not check if Spot has reached the target after moving 2.0 meters. It should use the at_goal function to verify if the target has been reached before moving further.\n2. The plan does not handle the case where Spot overshoots the target. If Spot moves 2.0 meters and still hasn't reached the target, it should replan and try a shorter distance. \n\nThe plan also assumes that the target is reachable within 2.0 meters, which might not be the case. A more robust plan would check the distance to the target and adjust the move action accordingly. \n\nHowever, the main issue here is that the plan does not handle the case where Spot overshoots the target or does not reach the target within the given distance. This is a repeated failed action pattern described in feedback. \n\nTo fix this, the plan should be revised to include checks for at_goal and replan if necessary."
+        },
+        {
+          "planner_output": "1. check_at_goal\n2. rotate_spot(53.13)\n3. move_spot(2.0)\n4. check_at_goal\n5. if at_goal:\n   6. finish_task\nelse:\n   6. compute_target_center\n   7. compute_desired_bearing\n   8. compute_rotate_spot\n   9. compute_distance_to_center\n   10. move_spot(min(distance_to_center, 1.0))",
+          "verifier_output": "fail: 8. compute_rotate_spot; 9. compute_distance_to_center; 10. move_spot(min(distance_to_center, 1.0) \n\nThe plan contains unbounded loops (lines 7-10) and repeated non-progressing actions (lines 7-10). The plan also assumes success without checking at_goal (line 6). \n\nThe Planner should instead provide a bounded progress chunk for the next attempt, followed by a check and replan."
+        }
+      ],
+      "decoder_output": "{\"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n        {\n            \"type\": \"sequence\",\n            \"children\": [\n                {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n                {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n            ]\n        },\n        {\n            \"type\": \"sequence\",\n            \"children\": [\n                {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n                {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}},\n                {\n                    \"type\": \"sequence\",\n                    \"children\": [\n                        {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 53.13}}},\n                        {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n                        {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n                        {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n                    ]\n                },\n                {\n                    \"type\": \"sequence\",\n                    \"children\": [\n                        {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n                    ]\n                }\n            ]\n        }\n    ]\n}}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. call_llm\n\nThe Decoder will translate this plan into a behavior tree that will re-evaluate the situation and provide a new plan.",
+          "verifier_output": "fail: It uses an action outside move_spot, rotate_spot, finish_task, call_llm; call_llm is used without any attempt to reach the target."
+        },
+        {
+          "planner_output": "1. rotate_spot(90)\n2. move_spot(1.0)\n3. call_llm",
+          "verifier_output": "fail: It uses actions outside move_spot, rotate_spot, finish_task, call_llm; It assumes success without checking at_goal."
+        }
+      ],
+      "decoder_output": "{\"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n        {\n            \"type\": \"sequence\",\n            \"children\": [\n                {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n                {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n            ]\n        },\n        {\n            \"type\": \"sequence\",\n            \"children\": [\n                {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n                {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n                {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n            ]\n        },\n        {\n            \"type\": \"sequence\",\n            \"children\": [\n                {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n                {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n                {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n            ]\n        },\n        {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n}}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": -1.0,
+          "heading": 90.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. rotate_spot(90)\n2. move_spot(1.0)\n3. call_llm",
+          "verifier_output": "fail: 1. It uses actions outside move_spot, rotate_spot, finish_task, call_llm; 2. It uses vague instructions: call_llm"
+        },
+        {
+          "planner_output": "1. rotate_spot(90)\n2. move_spot(1.0)\n3. rotate_spot(-90)\n4. move_spot(1.0)\n5. call_llm",
+          "verifier_output": "fail: move_spot lacks numeric meters; call_llm"
+        }
+      ],
+      "decoder_output": "{\"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n        {\n            \"type\": \"sequence\",\n            \"children\": [\n                {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n                {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n            ]\n        },\n        {\n            \"type\": \"sequence\",\n            \"children\": [\n                {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n                {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n                {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90}}},\n                {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n                {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n                {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n            ]\n        },\n        {\n            \"type\": \"sequence\",\n            \"children\": [\n                {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n                {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n                {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90}}},\n                {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n                {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n                {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n            ]\n        },\n        {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n}}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -2.0,
+          "y": -3.0,
+          "heading": 90.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

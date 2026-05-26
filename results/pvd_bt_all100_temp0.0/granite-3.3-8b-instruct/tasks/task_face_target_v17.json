@@ -1,0 +1,105 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 2.4037016874935944,
+  "avg_verifier_inference_time_s": 0.7153173304686788,
+  "avg_decoder_inference_time_s": 4.740925072304283,
+  "avg_inference_time_s": 7.8599440902665565,
+  "final_spot": {
+    "x": 0.0,
+    "y": -2.0,
+    "heading": 90.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot to face the target.\n   - Compute the desired bearing to the target: desired_bearing = atan2(goal_1.cy - y, goal_1.cx - x) - heading, where (x, y) is Spot's current position.\n   - Normalize the desired bearing into the range [-180, 180].\n   - Execute rotate_spot with degrees = normalize(-(desired_bearing - heading)) into [-180, 180].\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before rotating: call_llm to request a new plan.\n\nNote: Since the task is to face the target, no movement is required. The plan focuses on rotating Spot to align its heading with the direction of the target. If an obstacle is detected ahead of Spot before rotating, the plan falls back to requesting a new behavior tree from the LLM.",
+          "verifier_output": "fail: The plan uses actions outside move_spot, rotate_spot, finish_task, call_llm; compute the desired bearing and normalization are not valid actions."
+        },
+        {
+          "planner_output": "1. Rotate Spot to face the target.\n   - Execute rotate_spot with degrees = -180 if the target is to the right of Spot's current heading.\n   - Execute rotate_spot with degrees = 180 if the target is to the left of Spot's current heading.\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before rotating: call_llm to request a new plan.\n\nNote: This revised plan directly rotates Spot to face the target without computing the desired bearing or normalizing angles. It uses the allowed actions and avoids vague directives. If an obstacle is detected ahead, the plan falls back to requesting a new behavior tree from the LLM.",
+          "verifier_output": "pass\n\nThe plan is executable as written. It uses only the allowed actions (rotate_spot), provides numeric values for degrees, does not use vague instructions, avoids unbounded loops or repeated non-progressing actions, checks at_goal before finishing the task, and appropriately calls for a new plan if an obstacle is detected."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"target_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"target_ahead\",\n            \"expected\": false\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -180\n              }\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"target_ahead\",\n            \"expected\": false\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"target_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 180\n              }\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"call_llm\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"finish_task\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot 90 degrees to the right.\n   - Execute rotate_spot with degrees = 90.\n\n2. Move Spot forward by 1 meter.\n   - Execute move_spot with meters = 1.\n\n3. Check if the target is now within 10 meters ahead.\n   - If target_ahead is true, proceed to step 4.\n   - If obstacle_ahead is true, call_llm to request a new plan.\n   - If obstacle_left or obstacle_right is true, rotate Spot to clear the obstacle before moving.\n\n4. Rotate Spot to face the target.\n   - Compute the desired bearing to the target center.\n   - Normalize the desired bearing into the range [-180, 180].\n   - Execute rotate_spot with degrees = normalize(-(desired_bearing - current_heading)).\n\n5. Move Spot forward by 1 meter.\n   - Execute move_spot with meters = 1.\n\n6. Check if Spot is at the target.\n   - If at_goal is true, finish_task.\n   - If obstacle_ahead is true, call_llm to request a new plan.\n   - If obstacle_left or obstacle_right is true, rotate Spot to clear the obstacle before moving.\n\nThis revised plan provides more concrete actions, including bounded numeric values for rotate_spot and move_spot. It also includes checks for obstacles and target visibility before proceeding with further actions. If the next useful action is unclear, the plan falls back to requesting a new behavior tree from the LLM.",
+          "verifier_output": "pass\n\nThe plan adheres to the specified task type and uses only allowed actions: move_spot, rotate_spot, finish_task, and call_llm. Each action includes numeric values for meters and degrees where required, and it avoids vague instructions or unbounded loops. The plan also checks for at_goal and obstacle conditions before proceeding, ensuring safe and bounded progress. It does not repeat failed action patterns or propose more than one bounded progress chunk without a check and replan."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"sequence\",\n            \"children\": [\n              {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 0}}},\n              {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n              {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n              {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}]},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}]\n      },\n      {\"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"sequence\",\n            \"children\": [\n              {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 0}}},\n              {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n              {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n              {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}]},\n          {\"type\": \"condition\", \"observation\": \"obstacle_left\", \"expected\": true},\n          {\"type\": \"sequence\",\n            \"children\": [\n              {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n              {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n              {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n              {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}]},\n          {\"type\": \"condition\", \"observation\": \"obstacle_right\", \"expected\": true},\n          {\"type\": \"sequence\",\n            \"children\": [\n              {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90}}},\n              {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n              {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n              {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}]},\n         {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}]\n    }\n  ]\n}\n\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": -0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot 90 degrees to the right.\n   - Execute rotate_spot with degrees = 90.\n\n2. Move Spot forward by 1 meter.\n   - Execute move_spot with meters = 1.\n\n3. Check if the target is now within 10 meters ahead.\n   - If target_ahead is true, proceed to step 4.\n   - If obstacle_ahead is true, call_llm to request a new plan.\n   - If obstacle_left or obstacle_right is true, rotate Spot to clear the obstacle before moving.\n\n4. Rotate Spot to face the target.\n   - Compute the desired bearing to the target center.\n   - Normalize the desired bearing into the range [-180, 180].\n   - Execute rotate_spot with degrees = normalize(-(desired_bearing - current_heading)).\n\n5. Move Spot forward by 1 meter.\n   - Execute move_spot with meters = 1.\n\n6. Check if Spot is at the target.\n   - If at_goal is true, finish_task.\n   - If obstacle_ahead is true, call_llm to request a new plan.\n   - If obstacle_left or obstacle_right is true, rotate Spot to clear the obstacle before moving.\n\nThis revised plan remains the same as the previous one, as the observations indicate that Spot is still not facing the target and no collision occurred. The plan continues to provide concrete numeric actions and checks for obstacles and target visibility before proceeding with further actions. If the next useful action is unclear, the plan falls back to requesting a new behavior tree from the LLM.",
+          "verifier_output": "pass\n\nThe plan adheres to the task type and uses only allowed actions: move_spot, rotate_spot, finish_task, and call_llm. Each action includes the required numeric parameters, and the plan avoids vague instructions or unbounded loops. It also checks for at_goal and obstacle conditions before proceeding, and it correctly handles potential obstacles by calling for a new plan when necessary. The plan does not repeat failed action patterns or propose more than one bounded progress chunk without checking."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": true},\n          {\"type\": \"sequence\",\n            \"children\": [\n              {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 0}}},\n              {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n              {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n              {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}]},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}]\n      },\n      {\"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": -2.0,
+          "heading": 90.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

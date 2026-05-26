@@ -1,0 +1,113 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 2.0743207365158014,
+  "avg_verifier_inference_time_s": 0.36254190632219735,
+  "avg_decoder_inference_time_s": 2.1859083250164986,
+  "avg_inference_time_s": 4.622770967854498,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot to face the target.\n   - Compute the desired bearing to the target: desired_bearing = atan2(goal_1_y - y, goal_1_x - x) - current_heading.\n   - Normalize the desired bearing into the range [-180, 180] degrees.\n   - Execute rotate_spot with the computed degrees.\n\nFallbacks:\n- If target_ahead is true after rotation, adjust the rotation slightly to ensure Spot is directly facing the target without moving.\n- If obstacle_ahead is true, call_llm to request a new plan considering the obstacle.\n\nNote: Since the task is to face the target, no movement is required, only rotation. The initial heading is 0 (facing +x), so we directly compute the rotation needed to face the target located at (3.5, 3.5) to (4.5, 4.5). The rotation degrees can be calculated using the formula:\n\nrotate_spot(degrees) = normalize(-(desired_bearing - current_heading)) into [-180, 180].\n\nThe exact degrees will depend on Spot's initial heading, which is 0 in this case. The desired bearing will be the angle from Spot's initial heading to the target's center. Once this angle is computed, it should be normalized to ensure it falls within the required range for the rotate_spot action.",
+          "verifier_output": "fail: The plan uses the action 'atan2' and 'normalize' which are not part of the available functions. The plan also fails to specify the numeric degrees for the rotate_spot action."
+        },
+        {
+          "planner_output": "1. Rotate Spot to face the target by 90 degrees clockwise.\n   - Compute the desired bearing to the target: desired_bearing = 90 degrees (assuming initial heading is 0 and target is directly ahead along the y-axis).\n   - Since the target is directly ahead and to the right, rotate Spot 90 degrees clockwise using rotate_spot(90).\n\nFallbacks:\n- If obstacle_ahead is true, call_llm to request a new plan considering the obstacle.\n- If target_ahead is true after rotation, adjust the rotation slightly. However, given the initial conditions, this scenario is unlikely without additional context suggesting Spot is not initially facing along the x-axis.\n\nNote: The exact degrees were estimated based on the initial heading being 0 (facing +x) and the target being directly ahead along the y-axis. This plan assumes a simple 90-degree clockwise rotation to face the target. Adjustments may be needed if additional information indicates a different initial orientation or target position relative to Spot.",
+          "verifier_output": "fail: The plan uses vague instructions \"90 degrees (assuming initial heading is 0 and target is directly ahead along the y-axis)\"; Plan assumes specific initial conditions without verification."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}]\n        }\n      ]\n    }\n  }",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot 45 degrees to the left to adjust the heading.\n   - Use rotate_spot(-45) to turn Spot counter-clockwise.\n\n2. Move Spot forward by 1 meter.\n   - Use move_spot(1) to advance Spot along its current heading.\n\n3. Verify the new heading and position.\n   - Check if target_ahead is true. If not, request a new plan by calling_llm.\n\nFallbacks:\n- If obstacle_ahead becomes true during movement, call_llm to request a new plan considering the obstacle.\n- If target_ahead remains false after the rotation and move, call_llm to generate a new plan.\n\nThis revised plan attempts a 45-degree counter-clockwise rotation followed by a 1-meter move forward. It checks the target_ahead status after each action to ensure progress towards the target. If no progress is made, it calls for a new plan using call_llm.",
+          "verifier_output": "fail: The plan uses rotate_spot action which is not allowed in the face_target task type; The plan suggests a 1-meter move_spot, which complies with the task type rule."
+        },
+        {
+          "planner_output": "1. Directly face the target by computing the desired heading.\n   - Calculate the desired heading as desired_bearing = atan2(cx - cy, x - y), where (cx, cy) are the target center coordinates.\n   - Use rotate_spot to adjust Spot's heading to the desired_bearing.\n\nFallbacks:\n- If obstacle_ahead is true before rotating, call_llm to handle the obstacle.\n\nThis revised plan directly computes the desired heading and uses rotate_spot to face the target, adhering to the task type rules. It also includes a fallback to call_llm if an obstacle is detected before rotating.",
+          "verifier_output": "fail: The plan uses rotate_spot, which lacks numeric degrees; <short concrete reason>"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"call_llm\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": false\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": false\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": false\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": false\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": false\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot to face the target.\n   - Compute the target center: cx = (3.5 + 4.5) / 2 = 4.0 and cy = (3.5 + 4.5) / 2 = 4.0.\n   - Calculate the desired heading: desired_bearing = atan2(4.0 - 0.0, 0.0 - 0.0) = 90 degrees.\n   - Rotate Spot by 90 degrees clockwise using rotate_spot(-90).\n\nFallbacks:\n- If obstacle_left is true before rotating, call_llm to handle the obstacle.\n\nThis revised plan specifies a concrete action to rotate Spot by -90 degrees to face the target, adhering to the given rules and observations. It also includes a fallback to call_llm if an obstacle is detected before rotating.",
+          "verifier_output": "fail: The plan uses the action rotate_spot(-90), which is not a valid action as per the available tools. The correct action should be rotate_spot with the degrees parameter, not a direct degree value."
+        },
+        {
+          "planner_output": "1. Rotate Spot to face the target.\n   - Compute the target center: cx = (3.5 + 4.5) / 2 = 4.0 and cy = (3.5 + 4.5) / 2 = 4.0.\n   - Calculate the desired heading: desired_bearing = atan2(4.0 - 0.0, 0.0 - 0.0) = 90 degrees.\n   - Rotate Spot by 90 degrees clockwise using rotate_spot(90).\n\nFallbacks:\n- If obstacle_left is true before rotating, call_llm to handle the obstacle.\n\nThis revised plan specifies a concrete action to rotate Spot by 90 degrees clockwise using rotate_spot(90), adhering to the given rules and observations. It also includes a fallback to call_llm if an obstacle is detected before rotating.",
+          "verifier_output": "fail: The plan uses the action rotate_spot, which is not allowed as per the rules for the face_target task type."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_left\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}]\n        }\n      ]\n    }\n  }",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    }
+  ]
+}

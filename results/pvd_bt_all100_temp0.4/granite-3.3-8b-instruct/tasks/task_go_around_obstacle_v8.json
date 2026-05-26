@@ -1,0 +1,109 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 4.042840722226538,
+  "avg_verifier_inference_time_s": 0.8071333187865093,
+  "avg_decoder_inference_time_s": 4.192925202311017,
+  "avg_inference_time_s": 9.042899243324065,
+  "final_spot": {
+    "x": 3.1,
+    "y": 0.3,
+    "heading": 270.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n\n1. Rotate Spot to check if the obstacle can be circumnavigated on the left:\n   - rotate_spot(-45)\n\n2. Move Spot forward by 1 meter to get closer to the obstacle:\n   - move_spot(1)\n\n3. Check for obstacles on the left and right:\n   - If obstacle_left is true, proceed with the left side clearance.\n   - If obstacle_right is true, rotate back and attempt a right side clearance.\n   - If neither is true, move forward another meter and attempt to circumnavigate:\n     - rotate_spot(-90)\n     - move_spot(1)\n\n4. If obstacle_ahead is true, call the LLM for a new plan:\n   - call_llm()\n\n5. If neither obstacle_left, obstacle_right, nor obstacle_ahead is true, and the target is not yet reached:\n   - Rotate Spot to face the target (compute desired_bearing and rotate_spot accordingly).\n   - Move Spot forward by 1 meter:\n     - move_spot(1)\n\n6. Repeat steps 3-5 until the target is reached or a new plan is requested from the LLM.\n\nFallbacks:\n\n- If at_goal is true, finish the task:\n  - finish_task()\n\n- If obstacle_ahead is detected before moving and no clear path is identified by rotating left or right, call the LLM for a new plan:\n  - call_llm()\n\nNote: The plan assumes that Spot can detect obstacles within 10 meters and provides boolean observations for obstacle_ahead, obstacle_left, obstacle_right, and target_ahead. The plan prioritizes clearing obstacles to the left first, then right, and only attempts to circumnavigate if no immediate clear path is detected. If all attempts fail, it calls for a new plan from the LLM.",
+          "verifier_output": "fail: The plan uses rotate_spot with non-numeric degrees (-45 and -90) without specifying the robot's current orientation or the desired orientation relative to the obstacle. This lack of concrete instructions makes it impossible for the robot to execute the rotation accurately."
+        },
+        {
+          "planner_output": "1. Compute current Spot heading (assume it's provided as input): let's call it current_heading.\n\n2. Rotate Spot 45 degrees to the left to check for clearance:\n   - rotate_spot(current_heading - 45)\n\n3. Move Spot forward by 1 meter:\n   - move_spot(1)\n\n4. Check for obstacles on the left and right:\n   - If obstacle_left is true, proceed with the left side clearance.\n   - If obstacle_right is true, rotate back to the initial heading and attempt a right side clearance:\n     - rotate_spot(current_heading)\n     - rotate_spot(-45)\n     - move_spot(1)\n   - If neither is true, move forward another meter and attempt to circumnavigate:\n     - rotate_spot(current_heading - 90)\n     - move_spot(1)\n\n5. If obstacle_ahead is true, call the LLM for a new plan:\n   - call_llm()\n\n6. If neither obstacle_left, obstacle_right, nor obstacle_ahead is true, and the target is not yet reached:\n   - Rotate Spot to face the target (compute desired_bearing and rotate_spot accordingly).\n   - Move Spot forward by 1 meter:\n     - move_spot(1)\n\n7. Repeat steps 2-6 until the target is reached or a new plan is requested from the LLM.\n\nFallbacks:\n\n- If at_goal is true, finish the task:\n  - finish_task()\n\n- If obstacle_ahead is detected before moving and no clear path is identified by rotating left or right, call the LLM for a new plan:\n  - call_llm()\n\nNote: The revised plan now uses the current_heading to provide concrete rotation angles, eliminating vague directives.",
+          "verifier_output": "pass\n\nThe provided plan adheres to the specified task type (go_around_obstacle) and uses only the allowed actions (move_spot, rotate_spot, finish_task, call_llm). Each action includes numeric values for meters and degrees as required. The plan avoids vague instructions and does not contain unbounded loops or repeated non-progressing actions. It checks for at_goal before assuming success and appropriately calls the LLM when encountering obstacles or when a new plan is needed. The go_to_target action is not used in this plan, and the plan structure follows the recommended pattern of short progress + check + replan."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_left\", \"expected\": true},\n          {\"type\": \"sequence\", \"children\": [\n            {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n            {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n            {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n          ]},\n          {\"type\": \"condition\", \"observation\": \"obstacle_right\", \"expected\": true},\n          {\"type\": \"sequence\", \"children\": [\n            {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45}}},\n            {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n            {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n            {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n            {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n          ]},\n          {\"type\": \"condition\", \"observation\": \"obstacle_left\", \"expected\": false},\n          {\"type\": \"condition\", \"observation\": \"obstacle_right\", \"expected\": false},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": true,
+          "obstacle_left": true,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 2.4,
+          "y": -1.4,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot 45 degrees to the left to check for clearance:\n   - rotate_spot(final_spot.heading - 45)\n\n2. Move Spot forward by 1 meter:\n   - move_spot(1)\n\n3. Check for obstacles on the left:\n   - If obstacle_left is true, proceed with the left side clearance.\n   - If obstacle_right is false, rotate back to the initial heading and attempt a left side clearance:\n     - rotate_spot(final_spot.heading)\n     - rotate_spot(-45)\n     - move_spot(1)\n   - If obstacle_right is true, call the LLM for a new plan:\n     - call_llm()\n\n4. If obstacle_ahead is true and no clear path is identified by rotating left or right, call the LLM for a new plan:\n   - call_llm()\n\n5. If neither obstacle_left, obstacle_right, nor obstacle_ahead is true, and the target is not yet reached:\n   - Rotate Spot to face the nearest target (compute desired_bearing and rotate_spot accordingly).\n   - Move Spot forward by 1 meter:\n     - move_spot(1)\n\n6. Repeat steps 1-5 until the target is reached or a new plan is requested from the LLM.\n\nFallbacks:\n\n- If at_goal is true, finish the task:\n  - finish_task()\n\n- If obstacle_ahead is detected before moving and no clear path is identified by rotating left or right, call the LLM for a new plan:\n  - call_llm()\n\nNote: The revised plan now uses the final_spot's heading to provide concrete rotation angles, eliminating vague directives.",
+          "verifier_output": "pass\n\nThe provided plan adheres to the specified task type and uses only the allowed actions (move_spot, rotate_spot, finish_task, call_llm). All move_spot and rotate_spot actions include numeric values. The plan avoids vague instructions, unbounded loops, and repeated non-progressing actions. It also checks for at_goal before assuming success and follows a bounded progress chunk approach with checking and replan steps. The plan correctly handles obstacle detection and calls the LLM for a new plan when necessary. The use of final_spot.heading for rotation angles provides concrete instructions."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_left\", \"expected\": true},\n          {\"type\": \"sequence\", \"children\": [\n            {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45}}},\n            {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n            {\"type\": \"condition\", \"observation\": \"obstacle_right\", \"expected\": false},\n            {\"type\": \"sequence\", \"children\": [\n              {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n              {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}}\n            ]}\n          ]},\n          {\"type\": \"condition\", \"observation\": \"obstacle_right\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}]\n        }\n      ]\n    }\n  }",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": true,
+          "obstacle_left": true,
+          "obstacle_right": true,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 3.1,
+          "y": -0.7,
+          "heading": 315.0
+        },
+        "collided": true,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot 45 degrees to the left to check for clearance:\n   - rotate_spot(final_spot.heading - 45)\n\n2. Move Spot forward by 1 meter:\n   - move_spot(1)\n\n3. Check for obstacles on the left:\n   - If obstacle_left is true, proceed with the left side clearance.\n   - If obstacle_right is false, rotate back to the initial heading and attempt a left side clearance:\n     - rotate_spot(final_spot.heading)\n     - rotate_spot(-45)\n     - move_spot(1)\n   - If obstacle_right is true, call the LLM for a new plan:\n     - call_llm()\n\n4. If obstacle_ahead is true and no clear path is identified by rotating left or right, call the LLM for a new plan:\n   - call_llm()\n\n5. If neither obstacle_left, obstacle_right, nor obstacle_ahead is true, and the target is not yet reached:\n   - Rotate Spot to face the nearest target (compute desired_bearing and rotate_spot accordingly).\n   - Move Spot forward by 1 meter:\n     - move_spot(1)\n\nRevised plan with concrete actions:\n\n1. Rotate Spot 315 degrees (from current 315 degrees) to the left:\n   - rotate_spot(315 - 45)\n\n2. Move Spot forward by 1 meter:\n   - move_spot(1)\n\n3. Check for obstacles:\n   - If obstacle_left is true, rotate back to the initial heading and attempt a left side clearance:\n     - rotate_spot(final_spot.heading)\n     - rotate_spot(-45)\n     - move_spot(1)\n   - If obstacle_right is true, call the LLM for a new plan:\n     - call_llm()\n\n4. If obstacle_ahead is true and no clear path is identified by rotating left or right, call the LLM for a new plan:\n   - call_llm()\n\n5. If neither obstacle_left, obstacle_right, nor obstacle_ahead is true, and the target is not yet reached:\n   - Rotate Spot to face the nearest target (compute desired_bearing and rotate_spot accordingly).\n   - Move Spot forward by 1 meter:\n     - move_spot(1)\n\nThis revised plan incorporates the final_spot's heading to provide concrete rotation angles, eliminating vague directives.",
+          "verifier_output": "fail: The plan incorrectly uses the final_spot.heading variable in step 1, which is not accessible at the time the action is executed. This violates rule 2, as it lacks a numeric degree for the rotate_spot action. The correct approach should use the current heading of Spot without referencing final_spot.heading."
+        },
+        {
+          "planner_output": "1. Rotate Spot 45 degrees to the left to check for clearance:\n   - rotate_spot(-45)\n\n2. Move Spot forward by 1 meter:\n   - move_spot(1)\n\n3. Check for obstacles on the left:\n   - If obstacle_left is true, rotate back to the initial heading and attempt a left side clearance:\n     - rotate_spot(45)\n     - move_spot(1)\n   - If obstacle_right is true, call the LLM for a new plan:\n     - call_llm()\n\n4. If obstacle_ahead is true and no clear path is identified by rotating left or right, call the LLM for a new plan:\n   - call_llm()\n\n5. If neither obstacle_left, obstacle_right, nor obstacle_ahead is true, and the target is not yet reached:\n   - Rotate Spot to face the nearest target (compute desired_bearing and rotate_spot accordingly).\n   - Move Spot forward by 1 meter:\n     - move_spot(1)\n\nRevised plan:\n\n1. Rotate Spot 45 degrees to the left:\n   - rotate_spot(-45)\n\n2. Move Spot forward by 1 meter:\n   - move_spot(1)\n\n3. Check for obstacles:\n   - If obstacle_left is true, rotate back to the initial heading and attempt a left side clearance:\n     - rotate_spot(45)\n     - move_spot(1)\n   - If obstacle_right is true, call the LLM for a new plan:\n     - call_llm()\n\n4. If obstacle_ahead is true and no clear path is identified by rotating left or right, call the LLM for a new plan:\n   - call_llm()\n\n5. If neither obstacle_left, obstacle_right, nor obstacle_ahead is true, and the target is not yet reached:\n   - Rotate Spot to face the nearest target (compute desired_bearing and rotate_spot accordingly).\n   - Move Spot forward by 1 meter:\n     - move_spot(1)",
+          "verifier_output": "fail: The plan uses vague instructions \"check for obstacles\" and \"rotate back to the initial heading\" without specifying how. It also lacks a concrete check for at_goal before assuming a new plan is needed."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_left\", \"expected\": true},\n          {\"type\": \"sequence\", \"children\": [\n            {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45}}},\n            {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}}\n          ]},\n          {\"type\": \"condition\", \"observation\": \"obstacle_right\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}]\n      },\n      {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n      {\"type\": \"sequence\", \"children\": [\n        {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 0}}},\n        {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}}\n      ]},\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": true,
+          "obstacle_left": true,
+          "obstacle_right": true,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 3.1,
+          "y": 0.3,
+          "heading": 270.0
+        },
+        "collided": true,
+        "success": false,
+        "replan_requested": false
+      }
+    }
+  ]
+}

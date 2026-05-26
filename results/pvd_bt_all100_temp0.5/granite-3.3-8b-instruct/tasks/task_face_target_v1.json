@@ -1,0 +1,49 @@
+{
+  "bt_count": 1,
+  "perfect_structure": true,
+  "valid_structure_count": 1,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 1.6346365100471303,
+  "avg_verifier_inference_time_s": 0.3675401310320012,
+  "avg_decoder_inference_time_s": 1.7787434800993651,
+  "avg_inference_time_s": 3.7809201211784966,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 315.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Since the task is to face the target, immediately execute a rotate_spot command to align Spot's heading towards the target. Calculate the desired world bearing as the angle from Spot's current heading to the target's center. Use the formula:\n   - desired_bearing = atan2(cx - y, x - y) where cx, cy are the coordinates of the target center (cx=(x1+x2)/2, cy=(y1+y2)/2).\n   - Normalize the desired_bearing into the range [-180, 180] degrees.\n   - Compute rotate_spot degrees = normalize(-(desired_bearing - current_heading)) into [-180, 180].\n   - Execute rotate_spot with the computed degrees.\n\n2. Verify if obstacle_ahead is true before moving. If true, call_llm to request a new plan, as the initial rotation alone may not suffice to clear the obstacle.\n\nFallbacks:\n- If at_goal becomes true (indicating Spot is facing the target), execute finish_task.\n- If obstacle_ahead remains true after the initial rotation, call_llm for further instructions.",
+          "verifier_output": "fail: The plan uses actions outside move_spot, rotate_spot, finish_task, call_llm; calculation of desired_bearing and normalization into degrees is not a valid action."
+        },
+        {
+          "planner_output": "1. Execute rotate_spot with 45 degrees to turn Spot towards the target.\n2. If obstacle_ahead is still true, call_llm to request a new plan.\n\nFallbacks:\n- If at_goal becomes true, finish_task.\n- If obstacle_ahead remains true after the initial rotation, call_llm for further instructions.",
+          "verifier_output": "fail: The plan uses rotate_spot without specifying numeric degrees; The plan suggests calling_llm for obstacle detection instead of checking at_goal after rotation."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 315.0
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 4.42601444402244,
+  "avg_verifier_inference_time_s": 0.5409905896056444,
+  "avg_decoder_inference_time_s": 3.2960031050800658,
+  "avg_inference_time_s": 8.26300813870815,
+  "final_spot": {
+    "x": 1.9,
+    "y": -2.3,
+    "heading": 25.2
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot 90 degrees to the right to attempt moving around the obstacle on its side.\n   Action: rotate_spot(90)\n2. Move Spot forward by 1 meter to approach the obstacle.\n   Action: move_spot(1)\n3. Rotate Spot 90 degrees to the right to adjust heading away from the obstacle.\n   Action: rotate_spot(90)\n4. Move Spot forward by 1 meter to continue around the obstacle.\n   Action: move_spot(1)\n5. Rotate Spot to face the direction of the target.\n   - Compute desired world bearing to the target using the geometry recipe.\n   - Action: rotate_spot(<desired_bearing>)\n6. Move Spot forward by 1 meter toward the target.\n   Action: move_spot(1)\n7. Verify reaching the target or detecting no obstacles. If the target is reached or no obstacles are ahead, finish the task.\n   - If at_goal is true, finish_task.\n   - If obstacle_ahead is false, finish_task.\n\nFallbacks:\n- If at_goal is true after any move, finish_task.\n- If obstacle_ahead is true before moving, rotate_spot(<numeric angle>) or call_llm.\n\nNote: The exact numeric angles for rotate_spot actions in steps 1, 3, and 5 depend on the specific obstacle and target positions, which are not fully detailed in the provided world JSON. The plan assumes general obstacle avoidance and target approach, requiring runtime observations to adjust precise angles.",
+          "verifier_output": "fail: The plan uses vague instructions \"to adjust heading\" and \"to face the direction of the target\" without specifying concrete numeric degrees for rotate_spot actions in steps 1, 3, and 5. These steps require runtime observations to adjust precise angles, which contradicts the requirement for a fully specified plan before reaching the Decoder."
+        },
+        {
+          "planner_output": "1. Rotate Spot 90 degrees to the right to attempt moving around the obstacle on its side.\n   Action: rotate_spot(90)\n2. Move Spot forward by 1 meter to approach the obstacle.\n   Action: move_spot(1)\n3. Rotate Spot 90 degrees to the right to adjust heading away from the obstacle.\n   Action: rotate_spot(90)\n4. Move Spot forward by 1 meter to continue around the obstacle.\n   Action: move_spot(1)\n5. Compute the desired world bearing to the target using the geometry recipe.\n   - Let's assume the target goal_1 is at (12.0, -5.0, 1.0) relative to Spot's initial position (0.0, 0.0, 0.0).\n   - dx = 12.0 - 0.0 = 12.0, dy = -5.0 - 0.0 = -5.0\n   - Desired world bearing = atan2(-5.0, 12.0) \u2248 -21.8 degrees.\n   - Spot's current forward bearing = 0.0 degrees.\n   - rotate_spot degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180] \u2248 -21.8 degrees.\n   - Action: rotate_spot(-21.8)\n6. Move Spot forward by 1 meter toward the target.\n   Action: move_spot(1)\n7. Verify reaching the target or detecting no obstacles. If the target is reached or no obstacles are ahead, finish the task.\n   - If at_goal is true, finish_task.\n   - If obstacle_ahead is false, finish_task.\n\nFallbacks:\n- If at_goal is true after any move, finish_task.\n- If obstacle_ahead is true before moving, rotate_spot(<numeric angle>) or call_llm.\n\nNote: The above plan assumes the target goal_1's relative position and uses it to calculate the desired bearing. In a real scenario, the target's absolute position in the world coordinates should be used for accurate calculations. The plan now specifies concrete numeric degrees for rotate_spot actions in steps 1, 3, and 5.",
+          "verifier_output": "pass\n\nThe provided plan adheres to the rules for the go_around_obstacle task type. It uses only the allowed actions (move_spot, rotate_spot, finish_task), provides numeric meters and degrees for all movement and rotation actions, avoids vague instructions, does not contain unbounded loops or repeated non-progressing actions, checks for at_goal before finishing, and correctly calculates the desired bearing for rotation towards the target."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -21.8}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}]\n        }\n      ]\n    }\n  }",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": true,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": -0.9,
+          "heading": 44.8
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot 45 degrees to the left to address the obstacle detected to the left.\n   Action: rotate_spot(-45)\n2. Move Spot forward by 1 meter to approach the obstacle.\n   Action: move_spot(1)\n3. Rotate Spot 90 degrees to the right to adjust heading away from the obstacle.\n   Action: rotate_spot(90)\n4. Move Spot forward by 1 meter to continue around the obstacle.\n   Action: move_spot(1)\n5. Compute the desired world bearing to the target using the geometry recipe.\n   - Let's assume the target goal_1 is at (12.0, -5.0, 1.0) relative to Spot's current position (0.0, -0.9, 44.8).\n   - dx = 12.0 - 0.0 = 12.0, dy = -5.0 - (-0.9) = -4.1\n   - Desired world bearing = atan2(-4.1, 12.0) \u2248 -19.8 degrees.\n   - Spot's current forward bearing = 44.8 degrees.\n   - rotate_spot degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180] \u2248 -64.6 degrees.\n   - Action: rotate_spot(-64.6)\n6. Move Spot forward by 1 meter toward the target.\n   Action: move_spot(1)\n7. Verify reaching the target or detecting no obstacles. If the target is reached or no obstacles are ahead, finish the task.\n   - If at_goal is true, finish_task.\n   - If obstacle_ahead is false, finish_task.\n\nFallbacks:\n- If at_goal is true after any move, finish_task.\n- If obstacle_ahead is true before moving, rotate_spot(<numeric angle>) or call_llm.\n\nNote: The revised plan now adjusts Spot's heading to address the obstacle detected to the left and recalculates the desired bearing based on the updated position. As before, the target's absolute position in the world coordinates should be used for accurate calculations in a real scenario.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -64.6}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}]\n    }\n  }",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": true,
+          "obstacle_left": true,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 1.9,
+          "y": -2.3,
+          "heading": 25.2
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot 45 degrees to the left to address the obstacle detected to the left.\n   Action: rotate_spot(-45)\n2. Move Spot forward by 1 meter to approach the obstacle.\n   Action: move_spot(1)\n3. Rotate Spot 90 degrees to the right to adjust heading away from the obstacle.\n   Action: rotate_spot(90)\n4. Move Spot forward by 1 meter to continue around the obstacle.\n   Action: move_spot(1)\n5. Compute the desired world bearing to the target using the geometry recipe.\n   - Let's assume the target goal_1 is at (12.0, -5.0, 1.0) relative to Spot's current position (1.9, -2.3, 25.2).\n   - dx = 12.0 - 1.9 \u2248 10.1, dy = -5.0 - (-2.3) \u2248 -2.7\n   - Desired world bearing = atan2(-2.7, 10.1) \u2248 -15.9 degrees.\n   - Spot's current forward bearing = 25.2 degrees.\n   - rotate_spot degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180] \u2248 -51.1 degrees.\n   - Action: rotate_spot(-51.1)\n6. Move Spot forward by 1 meter toward the target.\n   Action: move_spot(1)\n7. Verify reaching the target or detecting no obstacles. If the target is reached or no obstacles are ahead, finish the task.\n   - If at_goal is true, finish_task.\n   - If obstacle_ahead is false, finish_task.\n\nFallbacks:\n- If at_goal is true after any move, finish_task.\n- If obstacle_ahead is true before moving, rotate_spot(<numeric angle>) or call_llm.\n\nNote: The revised plan continues to adjust Spot's heading to address the obstacle detected to the left and recalculates the desired bearing based on the updated position. As before, the target's absolute position in the world coordinates should be used for accurate calculations in a real scenario.\n\nSince the obstacle persists and the target is not yet reached, we will request assistance from the LLM to generate a new plan.\n\nAction: call_llm",
+          "verifier_output": "fail: The plan includes the action rotate_spot(-51.1) in step 5, which is not allowed as per rule 7. The rule states that go_to_target should lack concrete numeric rotate/move actions unless already at_goal."
+        },
+        {
+          "planner_output": "1. Rotate Spot 45 degrees to the left to address the obstacle detected to the left.\n   Action: rotate_spot(-45)\n2. Move Spot forward by 1 meter to approach the obstacle.\n   Action: move_spot(1)\n3. Rotate Spot 90 degrees to the right to adjust heading away from the obstacle.\n   Action: rotate_spot(90)\n4. Move Spot forward by 1 meter to continue around the obstacle.\n   Action: move_spot(1)\n5. Compute the desired world bearing to the target using the geometry recipe.\n   - Let's assume the target goal_1 is at (12.0, -5.0, 1.0) relative to Spot's current position (1.9, -2.3, 25.2).\n   - dx = 12.0 - 1.9 \u2248 10.1, dy = -5.0 - (-2.3) \u2248 -2.7\n   - Desired world bearing = atan2(-2.7, 10.1) \u2248 -15.9 degrees.\n   - Spot's current forward bearing = 25.2 degrees.\n   - Calculate the bearing adjustment: adjust_degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180].\n   - Action: If adjust_degrees > 0, rotate_spot(adjust_degrees); else, rotate_spot(-adjust_degrees).\n6. Move Spot forward by 1 meter toward the target.\n   Action: move_spot(1)\n7. Verify reaching the target or detecting no obstacles. If the target is reached or no obstacles are ahead, finish the task.\n   - If at_goal is true, finish_task.\n   - If obstacle_ahead is false, finish_task.\n\nFallbacks:\n- If at_goal is true after any move, finish_task.\n- If obstacle_ahead is true before moving, rotate_spot(<numeric angle>) or call_llm.\n\nNote: The revised plan now calculates the required rotation adjustment without specifying a concrete angle in advance. This adheres to the rule that numeric rotate/move actions should not be included unless already at the goal. The plan will dynamically adjust the rotation based on the computed bearing difference.\n\nSince the obstacle persists and the target is not yet reached, we will request assistance from the LLM to generate a new plan.\n\nAction: call_llm",
+          "verifier_output": "fail: The plan uses vague instructions \"compute the desired world bearing to the target\" and \"calculate the bearing adjustment\" without providing concrete numeric rotate/move actions unless already at_goal. It also includes a fallback to call_llm without specifying a concrete plan for the LLM to follow."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}},\n         {\n          \"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true\n        },\n        {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}},\n         {\n          \"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true\n        },\n        {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": true,
+          "obstacle_left": true,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 1.9,
+          "y": -2.3,
+          "heading": 25.2
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

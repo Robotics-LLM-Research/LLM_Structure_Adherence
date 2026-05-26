@@ -1,0 +1,113 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 2.2542188726559593,
+  "avg_verifier_inference_time_s": 0.6930987519638924,
+  "avg_decoder_inference_time_s": 3.0401238340418786,
+  "avg_inference_time_s": 5.98744145866173,
+  "final_spot": {
+    "x": 53.2,
+    "y": 30.4,
+    "heading": 145.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Since the task is to face the target, we need to compute the heading to the target. The target center (cx, cy) is calculated as (5.5+6.5)/2, (-2.0-1.0)/2, which gives cx=6.0 and cy=-1.5.\n2. Compute dx=cx-x = 6.0-0.0 = 6.0 and dy=cy-y = -1.5-0.0 = -1.5.\n3. Desired world bearing = atan2(-1.5, 6.0) in degrees.\n4. Spot's current forward bearing = -0.0 (heading).\n5. Compute rotate_spot degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180].\n6. Execute rotate_spot with the computed degrees.\n\nFallbacks:\n- If at_goal is true after rotation, finish_task.\n- If obstacle_ahead is true before rotating, call_llm for a new plan. (In this case, we expect no obstacle directly ahead since the task is straightforward.)\n\nNote: The move_spot action is not required for this task as it is purely a rotation task to face the target.",
+          "verifier_output": "fail: The plan suggests calculating the desired bearing using atan2 and then normalizing the rotation degrees. However, this approach is not directly executable with the provided action set, which only includes rotate_spot with a numeric degree input. A more concrete plan would involve directly computing the angle in degrees and using that for rotate_spot. Additionally, the plan does not explicitly check if the robot is at_goal after rotation, which is a crucial step to confirm task completion."
+        },
+        {
+          "planner_output": "1. Calculate the desired bearing to the target using the formula: degrees = atan2(-1.5, 6.0).\n2. Execute rotate_spot with the computed degrees directly without normalization since the action interface expects degrees.\n3. After executing rotate_spot, check if at_goal is true. If true, finish_task.\n4. If at_goal is false and no obstacle is blocking the path (obstacle_ahead is false), proceed with another bounded move_spot to fine-tune the heading if necessary.\n5. If obstacle_ahead is true before rotating, call_llm for a new plan.\n\nFallbacks:\n- If at_goal is true after rotation, finish_task.\n- If obstacle_ahead is true before rotating, call_llm for a new plan.",
+          "verifier_output": "fail: The plan uses 'calculate the desired bearing to the target' which is a vague instruction; <vague instructions>; The plan uses 'degrees = atan2(-1.5, 6.0)' which is a vague calculation without clear reasoning; <vague calculation>."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -1.0471975511965976\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 0.5\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.5,
+          "y": 0.0,
+          "heading": 359.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot to face the target by executing rotate_spot(-45).\n2. Move Spot forward by 1.0 meter using move_spot(1.0).\n3. Check if at_goal is true. If true, finish_task.\n4. If at_goal is false, check for obstacles. If obstacle_ahead is true, call_llm for a new plan.\n5. If obstacle_ahead is false, repeat the rotate_spot(-45) and move_spot(1.0) sequence.\n\nFallbacks:\n- If at_goal is true after rotation and movement, finish_task.\n- If obstacle_ahead is true before moving, call_llm for a new plan.",
+          "verifier_output": "fail: The plan uses the rotate_spot(-45) action without specifying the reason for this rotation angle; <rotate_spot actions must include concrete numeric degrees>; The plan repeats the rotate_spot(-45) and move_spot(1.0) sequence without checking at_goal after each loop, which could lead to unnecessary actions if the target is reached within the sequence."
+        },
+        {
+          "planner_output": "1. Compute the desired bearing to the target using the given target center (cx, cy) and Spot's current pose (x, y, heading).\n2. Calculate the required rotate_spot degrees as: -normalize(atan2(cy-y, cx-x) - heading).\n3. Execute rotate_spot with the calculated degrees.\n4. Move Spot forward by 1.0 meter using move_spot(1.0).\n5. Check if at_goal is true. If true, finish_task.\n6. If at_goal is false, check for obstacles. If obstacle_ahead is true, call_llm for a new plan.\n7. If obstacle_ahead is false, repeat the rotate_spot and move_spot sequence.\n8. After each loop, check at_goal again. If true, finish_task; if false and no obstacle_ahead, repeat the rotate_spot and move_spot sequence.\n\nFallbacks:\n- If at_goal is true after rotation and movement, finish_task.\n- If obstacle_ahead is true before moving, call_llm for a new plan.",
+          "verifier_output": "fail: The plan uses actions outside move_spot, rotate_spot, finish_task, call_llm; calculate the required rotate_spot degrees as: -normalize(atan2(cy-y, cx-x) - heading) involves non-specified function."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -1.0\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 1.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"call_llm\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 51.1,
+          "y": 33.5,
+          "heading": 295.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Compute the desired bearing to the target using the given target center (cx, cy) and Spot's current pose (x, y, heading).\n2. Calculate the required rotate_spot degrees as: -normalize(atan2(cy-y, cx-x) - heading).\n3. Execute rotate_spot with 30 degrees.\n4. Move Spot forward by 1.0 meter using move_spot(1.0).\n5. Check if at_goal is true. If true, finish_task.\n6. If at_goal is false, check for obstacles. If obstacle_ahead is true, call_llm for a new plan.\n7. If obstacle_ahead is false, repeat the rotate_spot and move_spot sequence.\n8. After each loop, check at_goal again. If true, finish_task; if false and no obstacle_ahead, repeat the rotate_spot and move_spot sequence.\n\nFallbacks:\n- If at_goal is true after rotation and movement, finish_task.\n- If obstacle_ahead is true before moving, call_llm for a new plan.",
+          "verifier_output": "fail: The plan uses vague instructions \"calculate desired bearing\" and \"normalize(atan2(cy-y, cx-x) - heading)\"; it also assumes success without checking at_goal before calling finish_task; it lacks concrete numeric rotate/move actions unless already at_goal."
+        },
+        {
+          "planner_output": "1. Calculate dx = 6.0 - 0.0 and dy = -1.0 - 0.0.\n2. Compute desired_bearing = atan2(-dy, dx) * 180 / pi - heading.\n3. Determine rotate_spot_degrees = normalize(-(desired_bearing - heading)) into [-180, 180].\n4. Execute rotate_spot with 30 degrees.\n5. Move Spot forward by 1.0 meter using move_spot(1.0).\n6. Check if at_goal is true. If true, finish_task.\n7. If at_goal is false, check for obstacles. If obstacle_ahead is true, call_llm for a new plan.\n8. If obstacle_ahead is false, repeat the rotate_spot and move_spot sequence.\n9. After each loop, check at_goal again. If true, finish_task; if false and no obstacle_ahead, repeat the rotate_spot and move_spot sequence.\n\nFallbacks:\n- If at_goal is true after rotation and movement, finish_task.\n- If obstacle_ahead is true before moving, call_llm for a new plan.",
+          "verifier_output": "fail: The plan uses vague instructions \"compute desired_bearing\" and \"normalize(-(desired_bearing - heading)) into [-180, 180]\"; The plan uses vague instructions \"determine rotate_spot_degrees\" without specifying a concrete numeric rotation action."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 30\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 1.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"call_llm\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 53.2,
+          "y": 30.4,
+          "heading": 145.0
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

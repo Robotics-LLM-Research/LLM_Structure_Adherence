@@ -1,0 +1,49 @@
+{
+  "bt_count": 1,
+  "perfect_structure": true,
+  "valid_structure_count": 1,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 5.466600554995239,
+  "avg_verifier_inference_time_s": 2.120384917478077,
+  "avg_decoder_inference_time_s": 2.4368332950398326,
+  "avg_inference_time_s": 10.023818767513148,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 27.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "### Main Plan:\n\n1. **Compute Target Center:**\n   - Target rectangle for \"goal_1\" is defined by corners (3.5, -2.5) and (4.5, -1.5).\n   - Compute center: \n     - \\( cx = \\frac{3.5 + 4.5}{2} = 4.0 \\)\n     - \\( cy = \\frac{-2.5 + (-1.5)}{2} = -2.0 \\)\n\n2. **Calculate Desired Bearing:**\n   - Current Spot pose: \\( (x, y, \\text{heading}) = (0.0, 0.0, 0.0) \\)\n   - Compute differences: \n     - \\( dx = cx - x = 4.0 - 0.0 = 4.0 \\)\n     - \\( dy = cy - y = -2.0 - 0.0 = -2.0 \\)\n   - Desired world bearing: \n     - \\( \\text{atan2}(dy, dx) = \\text{atan2}(-2.0, 4.0) \\approx -26.57 \\) degrees\n\n3. **Calculate Forward Bearing:**\n   - Spot forward bearing: \n     - \\( -\\text{heading} = -0.0 = 0.0 \\) degrees\n\n4. **Determine Rotation:**\n   - Rotate degrees: \n     - \\( \\text{normalize}(-( \\text{desired_bearing} - \\text{forward_bearing})) = \\text{normalize}(-(-26.57 - 0.0)) = \\text{normalize}(26.57) \\)\n     - Since \\( 26.57 \\) is within \\([-180, 180]\\), no further adjustment is needed.\n\n5. **Execute Rotation:**\n   - Rotate Spot by 27 degrees (rounded from 26.57).\n\n### Fallbacks:\n\n- **If at_goal is true:**\n  - Execute `finish_task()`.\n\n- **If obstacle_ahead is true before moving:**\n  - Execute `rotate_spot(90)` to turn Spot to face +y direction, then call `call_llm()` to request a new plan.",
+          "verifier_output": "Fail: \n1. The plan uses `face_target` as a task type, but it includes a `move_spot` action, which is not allowed for `face_target`.\n2. The plan suggests rotating Spot by 27 degrees without checking if the rotation is necessary (i.e., if Spot is already facing the target)."
+        },
+        {
+          "planner_output": "### Revised Main Plan:\n\n1. **Compute Target Center:**\n   - Target rectangle for \"goal_1\" is defined by corners (3.5, -2.5) and (4.5, -1.5).\n   - Compute center: \n     - \\( cx = \\frac{3.5 + 4.5}{2} = 4.0 \\)\n     - \\( cy = \\frac{-2.5 + (-1.5)}{2} = -2.0 \\)\n\n2. **Calculate Desired Bearing:**\n   - Current Spot pose: \\( (x, y, \\text{heading}) = (0.0, 0.0, 0.0) \\)\n   - Compute differences: \n     - \\( dx = cx - x = 4.0 - 0.0 = 4.0 \\)\n     - \\( dy = cy - y = -2.0 - 0.0 = -2.0 \\)\n   - Desired world bearing: \n     - \\( \\text{atan2}(dy, dx) = \\text{atan2}(-2.0, 4.0) \\approx -26.57 \\) degrees\n\n3. **Calculate Forward Bearing:**\n   - Spot forward bearing: \n     - \\( -\\text{heading} = -0.0 = 0.0 \\) degrees\n\n4. **Determine Rotation:**\n   - Calculate rotation needed:\n     - \\( \\text{rotate_degrees} = \\text{normalize}(-(\\text{desired_bearing} - \\text{forward_bearing})) = \\text{normalize}(-(-26.57 - 0.0)) = \\text{normalize}(26.57) \\)\n     - Since \\( 26.57 \\) is within \\([-180, 180]\\), no further adjustment is needed.\n\n5. **Check if Rotation is Necessary:**\n   - If \\( \\text{rotate_degrees} \\neq 0 \\), execute `rotate_spot(27)` (rounded from 26.57).\n\n### Fallbacks:\n\n- **If at_goal is true:**\n  - Execute `finish_task()`.",
+          "verifier_output": "The plan appears to be well-structured and follows the guidelines for the task type \"face_target.\" Let's evaluate it against the criteria:\n\n1. **Actions Used:** The plan uses `rotate_spot` and `finish_task`, both of which are allowed actions.\n2. **Numeric Values:** The `rotate_spot` action specifies a numeric degree (27 degrees), which is appropriate.\n3. **Vague Instructions:** The plan does not contain vague instructions like \"move closer\" or \"rotate toward.\"\n4. **Unbounded Loops:** There are no unbounded loops or repeated non-progressing actions.\n5. **at_goal Check:** The plan includes a check for `at_goal` and calls `finish_task()` if true.\n6. **face_target with move_spot:** The plan does not use `move_spot` in the `face_target` task.\n7. **go_to_target and go_around_obstacle:** These are not applicable to the `face_target` task.\n8. **move_to_closest_target:** Not applicable here.\n9. **Repeated Failed Patterns:** There are no repeated failed action patterns.\n10. **Bounded Progress Chunks:** The plan proposes a single bounded action (`rotate_spot`) followed by a check (`at_goal`).\n\nThe plan is logically sound and adheres to the specified rules for the \"face_target\" task type. Therefore, the plan is executable as written.\n\n**Output:**\n\npass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 27}}\n          },\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 27.0
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

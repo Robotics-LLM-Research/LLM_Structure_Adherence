@@ -1,0 +1,109 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 3.7115717665990813,
+  "avg_verifier_inference_time_s": 0.6768281553988345,
+  "avg_decoder_inference_time_s": 3.417303681645232,
+  "avg_inference_time_s": 7.805703603643147,
+  "final_spot": {
+    "x": 95.0,
+    "y": 0.6,
+    "heading": 44.8
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Compute the distance to each target from the current Spot position:\n   - Distance to goal_1: sqrt((4.5-0)^2 + (2.5-0)^2) = 5.54 meters\n   - Distance to goal_2: sqrt((2.0-0)^2 + (-4.5-0)^2) = 5.83 meters\n   - Distance to goal_3: sqrt((-6.5-0)^2 + (-0.5-0)^2) = 7.81 meters\n\n2. Identify the closest target: goal_2 with a distance of 5.83 meters.\n\n3. Execute a short rotate/move attempt towards goal_2:\n   - Compute the desired bearing to goal_2: desired_bearing = atan2(2.5-0, 4.5-0) = 31.7 degrees.\n   - Compute the forward bearing of Spot: forward_bearing = 0 degrees.\n   - Compute the rotate_spot degrees: rotate_spot = normalize(-(31.7 - 0)) = -31.7 degrees (normalize to be within [-180, 180]).\n   - Compute the move_spot meters: move_spot = min(5.83, 2.0) = 2.0 meters.\n\n4. Verify the execution:\n   - If obstacle_ahead is true, call_llm for a new plan.\n   - If obstacle_left or obstacle_right is true, adjust the rotation strategy and retry.\n   - If at_goal is true, finish_task.\n\nFallbacks:\n- If the attempt fails due to obstacles and call_llm is used, the Decoder will need to incorporate the final_spot position for further planning.\n- If two consecutive attempts fail without making progress (target_ahead is false), change the heading strategy before moving again.",
+          "verifier_output": "fail: The plan uses vague instructions \"compute the desired bearing\" and \"compute the forward bearing of Spot\", and it lacks explicit checking of at_goal condition after the move_spot action."
+        },
+        {
+          "planner_output": "1. Calculate the distance to each target from the current Spot position:\n   - Distance to goal_2 center: sqrt((2.0-0)^2 + (-4.5-0)^2) = 5.83 meters\n\n2. Identify the closest target: goal_2.\n\n3. Determine the required rotation to face goal_2:\n   - Desired bearing to goal_2: desired_bearing = atan2(-4.5, 2.0) = -68.2 degrees.\n   - Normalize desired_bearing into [-180, 180]: rotate_spot = -68.2 degrees.\n\n4. Move Spot forward by a bounded distance:\n   - Move_spot: 2.0 meters.\n\n5. Verify the execution:\n   - Check if at_goal is true after the move_spot action. If true, finish_task.\n   - If obstacle_ahead is true, call_llm for a new plan.\n   - If obstacle_left or obstacle_right is true, adjust the rotation strategy and retry.\n\nFallbacks:\n- If the attempt fails due to obstacles and call_llm is used, the Decoder will need to incorporate the final_spot position for further planning.\n- If two consecutive attempts fail without making progress (target_ahead is false), change the heading strategy before moving again.",
+          "verifier_output": "fail: The plan uses vague instructions \"adjust the rotation strategy and retry\" without concrete numeric degrees for rotation; move_spot lacks numeric meters without specifying the current position relative to the target."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}},\n         {\n          \"type\": \"condition\",\n          \"observation\": \"obstacle_ahead\",\n          \"expected\": true\n        },\n        {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}},\n        {\n          \"type\": \"condition\",\n          \"observation\": \"obstacle_ahead\",\n          \"expected\": true\n        },\n        {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 2.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "1. Since the previous plan failed and replan_requested is true, we need to adjust our strategy. Given the final_spot (x=2.0, y=0.0, heading=0.0), we will recompute the closest target.\n\n2. Recalculate the distance to each target from the final Spot position:\n   - Distance to goal_2 center: sqrt((2.0-2.0)^2 + (-4.5-0)^2) = 4.5 meters (no change, goal_2 remains closest).\n\n3. Determine the required rotation to face goal_2:\n   - Desired bearing to goal_2: desired_bearing = atan2(-4.5, 2.0) = -68.2 degrees.\n   - Normalize desired_bearing into [-180, 180]: rotate_spot = -68.2 degrees.\n\n4. Move Spot forward by a bounded distance:\n   - Move_spot: 1.5 meters.\n\n5. Verify the execution:\n   - Check if at_goal is true after the move_spot action. If true, finish_task.\n   - If obstacle_ahead is true, call_llm for a new plan.\n   - If obstacle_left or obstacle_right is true, adjust the rotation strategy and retry.\n\nFallbacks:\n- If the attempt fails and call_llm is used, the Decoder will need to incorporate the final_spot position for further planning.\n- If two consecutive attempts fail without making progress (target_ahead is false), change the heading strategy before moving again.",
+          "verifier_output": "pass\n\nThe provided plan adheres to the task type and rules specified. It uses only the allowed actions (move_spot, rotate_spot, finish_task, call_llm), specifies numeric values for meters and degrees, avoids vague instructions, and does not contain unbounded loops or repeated non-progressing actions. The plan also checks for at_goal before finishing the task and incorporates replaning when necessary."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 1.5\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"call_llm\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 98.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Given the final_spot (x=98.0, y=0.0, heading=0.0) and the observation that target_ahead is false, we need to adjust our strategy.\n\n2. Recalculate the distance to each target from the final Spot position:\n   - Distance to goal_1 center: sqrt((98.0-4.5)^2 + (0.0-2.5)^2) \u2248 98.5 meters.\n   - Distance to goal_2 center: sqrt((98.0-2.0)^2 + (0.0+4.5)^2) \u2248 99.5 meters.\n   - Distance to goal_3 center: sqrt((98.0+6.5)^2 + (0.0+0.5)^2) \u2248 106.5 meters.\n\n3. Since goal_2 is the closest target, determine the required rotation to face it:\n   - Desired bearing to goal_2: desired_bearing = atan2(-4.5, 76.0) \u2248 -21.8 degrees.\n   - Normalize desired_bearing into [-180, 180]: rotate_spot = -21.8 degrees.\n\n4. Move Spot forward by a bounded distance:\n   - Move_spot: 1.5 meters.\n\n5. Verify the execution:\n   - Check if at_goal is true after the move_spot action. If true, finish_task.\n   - If obstacle_ahead is true, call_llm for a new plan.\n   - If obstacle_left or obstacle_right is true, adjust the rotation strategy and retry.\n\nFallbacks:\n- If the attempt fails and call_llm is used, the Decoder will need to incorporate the final_spot position for further planning.\n- If two consecutive attempts fail without making progress (target_ahead is false), change the heading strategy before moving again.",
+          "verifier_output": "fail: The plan suggests using move_spot with a numeric value of 1.5 meters, which complies with rule 2. However, it does not check if target_ahead is true before issuing move_spot, violating rule 9. Additionally, the plan lacks a clear bounded progress chunk before re-planning, contravening rule 12."
+        },
+        {
+          "planner_output": "1. From the final_spot (x=98.0, y=0.0, heading=0.0) and the observation that target_ahead is false, we need to adjust our strategy.\n\n2. Recalculate the distance to each target from the final Spot position:\n   - Distance to goal_1 center: sqrt((98.0-4.5)^2 + (0.0-2.5)^2) \u2248 98.5 meters.\n   - Distance to goal_2 center: sqrt((98.0-2.0)^2 + (0.0+4.5)^2) \u2248 99.5 meters.\n   - Distance to goal_3 center: sqrt((98.0+6.5)^2 + (0.0+0.5)^2) \u2248 106.5 meters.\n\n3. Since goal_2 is the closest target, determine the required rotation to face it:\n   - Desired bearing to goal_2: desired_bearing = atan2(-4.5, 76.0) \u2248 -21.8 degrees.\n   - Normalize desired_bearing into [-180, 180]: rotate_spot = -21.8 degrees.\n\n4. Execute a bounded progress chunk:\n   - Rotate Spot by -21.8 degrees: rotate_spot(-21.8).\n   - Move Spot forward by a bounded distance: move_spot(1.5).\n\n5. Verify the execution:\n   - Check if at_goal is true after the move_spot action. If true, finish_task.\n   - If obstacle_ahead is true, call_llm for a new plan.\n   - If obstacle_left or obstacle_right is true, adjust the rotation strategy and retry.\n\nFallbacks:\n- If the attempt fails and call_llm is used, the Decoder will need to incorporate the final_spot position for further planning.\n- If two consecutive attempts fail without making progress (target_ahead is false), change the heading strategy before moving again.",
+          "verifier_output": "pass\n\nThe provided plan adheres to the task type and rules specified. It uses only the allowed actions (move_spot, rotate_spot, finish_task, call_llm), provides numeric values for meters and degrees, avoids vague instructions, and does not contain unbounded loops or repeated non-progressing actions. The plan also checks for at_goal before assuming success and incorporates a bounded progress chunk with re-planning in case of failure."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"target_ahead\",\n            \"expected\": false\n          },\n          {\n            \"type\": \"sequence\",\n            \"children\": [\n              {\n                \"type\": \"action\",\n                \"call\": {\n                  \"tool_name\": \"rotate_spot\",\n                  \"arguments\": {\n                    \"degrees\": -21.8\n                  }\n                }\n              },\n              {\n                \"type\": \"action\",\n                \"call\": {\n                  \"tool_name\": \"move_spot\",\n                  \"arguments\": {\n                    \"meters\": 1.5\n                  }\n                }\n              },\n              {\n                \"type\": \"condition\",\n                \"observation\": \"at_goal\",\n                \"expected\": true\n              },\n              {\n                \"type\": \"action\",\n                \"call\": {\n                  \"tool_name\": \"finish_task\",\n                  \"arguments\": {}\n                }\n              }\n            ]\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"call_llm\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_left\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"call_llm\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_right\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"call_llm\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 95.0,
+          "y": 0.6,
+          "heading": 44.8
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    }
+  ]
+}

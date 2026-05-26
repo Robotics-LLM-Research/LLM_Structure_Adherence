@@ -1,0 +1,81 @@
+{
+  "bt_count": 2,
+  "perfect_structure": true,
+  "valid_structure_count": 2,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 2.676482215494616,
+  "avg_verifier_inference_time_s": 0.4165442910452839,
+  "avg_decoder_inference_time_s": 3.1028535330551676,
+  "avg_inference_time_s": 6.1958800395950675,
+  "final_spot": {
+    "x": 256.0,
+    "y": 0.0,
+    "heading": 180.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Since the task is to face the target, we need to compute the desired heading towards \"goal_1\".\n2. Calculate the center of \"goal_1\": cx = (2.5 + 3.5) / 2 = 3.0, cy = (2.5 + 3.5) / 2 = 3.0.\n3. Compute the differences: dx = cx - x = 3.0 - 0.0 = 3.0, dy = cy - y = 3.0 - 0.0 = 3.0.\n4. Calculate the desired world bearing using atan2(dy, dx): desired_bearing = atan2(3.0, 3.0) = 45 degrees (rounded to the nearest integer).\n5. Spot's current forward bearing is 0 degrees (heading=0).\n6. Compute the rotation needed: rotate_spot degrees = normalize(-(45 - 0)) into [-180, 180] = 135 degrees.\n7. Execute the rotation: rotate_spot(135).\n8. Verify if Spot is facing the target by checking if at_goal is true. If not, repeat from step 1 with final_spot as the new starting point.\n\nFallbacks:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before rotating, call_llm for a new plan.",
+          "verifier_output": "fail: The plan uses the rotate_spot action, which is not allowed for the face_target task type; <rotate_spot(135)>"
+        },
+        {
+          "planner_output": "Main plan:\n1. Given the task is to face the target directly, we need to compute the desired heading towards \"goal_1\".\n2. Calculate the center of \"goal_1\": cx = (2.5 + 3.5) / 2 = 3.0, cy = (2.5 + 3.5) / 2 = 3.0.\n3. Compute the differences: dx = cx - x = 3.0 - 0.0 = 3.0, dy = cy - y = 3.0 - 0.0 = 3.0.\n4. Calculate the desired world bearing using atan2(dy, dx): desired_bearing = atan2(3.0, 3.0) = 45 degrees (rounded to the nearest integer).\n5. Spot's current forward bearing is 0 degrees (heading=0).\n6. Since we cannot use rotate_spot, we need to adjust our approach. Instead of rotating, we will directly move Spot to face the target.\n7. Compute the move_spot distance: move_spot meters = min(sqrt(dx^2 + dy^2), 2.0) = min(3.0, 2.0) = 2.0 meters.\n8. Move Spot forward along the current heading until it reaches within 2 meters of the target: move_spot(2).\n9. Verify if Spot is facing the target by checking if at_goal is true. If not, repeat from step 8 with final_spot as the new starting point.\n\nFallbacks:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before moving, call_llm for a new plan.",
+          "verifier_output": "fail: The plan uses the rotate_spot action which is not allowed; The plan suggests using move_spot greater than 2.0 meters without ensuring the target is ahead, which is against the rules."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"call_llm\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 2.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": false\n          },\n          {\n            \"type\": \"sequence\",\n            \"children\": [\n              {\n                \"type\": \"action\",\n                \"call\": {\n                  \"tool_name\": \"move_spot\",\n                  \"arguments\": {\n                    \"meters\": 2.0\n                  }\n                }\n              },\n              {\n                \"type\": \"condition\",\n                \"observation\": \"at_goal\",\n                \"expected\": false\n              }\n            ]\n          }\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 256.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Since Spot did not face the target and there were no obstacles, we need to revise our approach. We will now attempt a more precise rotation to face the target.\n2. Compute the desired heading towards \"goal_1\": desired_bearing = 45 degrees (from previous calculation).\n3. Spot's current forward bearing is 0 degrees (heading=0).\n4. Calculate the rotation angle needed to face the target: rotate_spot degrees = normalize(-(45 - 0)) into [-180, 180] = 45 degrees (already within range).\n5. Rotate Spot to face the target: rotate_spot(45).\n6. Verify if Spot is facing the target by checking if at_goal is true. If not, repeat from step 5 with final_spot as the new starting point.\n\nFallbacks:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before rotating, call_llm for a new plan.",
+          "verifier_output": "fail: The plan uses vague instructions \"normalize(-(45 - 0)) into [-180, 180]\"; rotate_spot action lacks concrete numeric rotate action as it directly uses 45 degrees without checking if it's within the [-180, 180] range."
+        },
+        {
+          "planner_output": "1. Compute the desired heading towards \"goal_1\": desired_bearing = 45 degrees.\n2. Spot's current forward bearing is 0 degrees (heading=0).\n3. Calculate the rotation angle needed to face the target: rotate_spot degrees = -45 (since 45 degrees is already within the [-180, 180] range).\n4. Rotate Spot to face the target: rotate_spot(-45).\n5. Verify if Spot is facing the target by checking if at_goal is true. If not, repeat from step 4 with final_spot as the new starting point.\n\nFallbacks:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before rotating, call_llm for a new plan.",
+          "verifier_output": "fail: The plan uses rotate_spot without numeric degrees; rotate_spot(-45) lacks explicit numeric degrees."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -45\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"call_llm\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 256.0,
+          "y": 0.0,
+          "heading": 180.0
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

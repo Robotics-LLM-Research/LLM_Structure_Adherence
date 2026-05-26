@@ -1,0 +1,105 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 7.296626454248326,
+  "avg_verifier_inference_time_s": 2.163331698742695,
+  "avg_decoder_inference_time_s": 4.993300568351212,
+  "avg_inference_time_s": 14.453258721342234,
+  "final_spot": {
+    "x": 2.3,
+    "y": 5.5,
+    "heading": 293.2
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "### Main Plan:\n\n1. **Compute Target Center:**\n   - Target center coordinates: \\( cx = \\frac{2.1 + 2.9}{2} = 2.5 \\), \\( cy = \\frac{5.6 + 6.4}{2} = 6.0 \\).\n\n2. **Calculate Desired Bearing:**\n   - \\( dx = 2.5 - 0.0 = 2.5 \\)\n   - \\( dy = 6.0 - 0.0 = 6.0 \\)\n   - Desired world bearing = \\( \\text{atan2}(6.0, 2.5) \\approx 67.38 \\) degrees.\n\n3. **Calculate Forward Bearing:**\n   - Spot forward bearing = \\(-0.0 = 0.0\\) degrees.\n\n4. **Calculate Rotation:**\n   - Rotate degrees = \\( \\text{normalize}(-(67.38 - 0.0)) = -67.38 \\) degrees.\n   - Normalize to \\([-180, 180]\\): \\(-67.38\\) degrees.\n\n5. **Rotate Spot:**\n   - `rotate_spot(-67.38)`\n\n6. **Check for Obstacles:**\n   - If `obstacle_ahead` is true, call `call_llm()`.\n\n7. **Calculate Distance to Center:**\n   - Distance to center = \\( \\sqrt{2.5^2 + 6.0^2} \\approx 6.53 \\) meters.\n\n8. **Move Spot:**\n   - Move distance = \\(\\min(6.53, 2.0) = 2.0\\) meters.\n   - `move_spot(2.0)`\n\n9. **Check Progress:**\n   - If `at_goal` is true, execute `finish_task()`.\n   - If `target_ahead` is false, recompute bearing and repeat from step 2 using the new Spot position.\n\n### Fallbacks:\n\n- **If `at_goal` is true:**\n  - Execute `finish_task()`.\n\n- **If `obstacle_ahead` is true before moving:**\n  - Execute `call_llm()` to handle the obstacle.",
+          "verifier_output": "fail: `move_spot` lacks numeric meters; `move_spot` lacks numeric meters.\n\nThe plan specifies `move_spot(2.0)` in step 8, which is correct. However, the plan does not specify a numeric value for `move_spot` in step 9 when checking progress and potentially repeating the movement. The plan should include a specific numeric value for `move_spot` in all instances where it is used."
+        },
+        {
+          "planner_output": "### Revised Main Plan:\n\n1. **Compute Target Center:**\n   - Target center coordinates: \\( cx = \\frac{2.1 + 2.9}{2} = 2.5 \\), \\( cy = \\frac{5.6 + 6.4}{2} = 6.0 \\).\n\n2. **Calculate Desired Bearing:**\n   - \\( dx = 2.5 - 0.0 = 2.5 \\)\n   - \\( dy = 6.0 - 0.0 = 6.0 \\)\n   - Desired world bearing = \\( \\text{atan2}(6.0, 2.5) \\approx 67.38 \\) degrees.\n\n3. **Calculate Forward Bearing:**\n   - Spot forward bearing = \\(-0.0 = 0.0\\) degrees.\n\n4. **Calculate Rotation:**\n   - Rotate degrees = \\( \\text{normalize}(-(67.38 - 0.0)) = -67.38 \\) degrees.\n   - Normalize to \\([-180, 180]\\): \\(-67.38\\) degrees.\n\n5. **Rotate Spot:**\n   - `rotate_spot(-67.38)`\n\n6. **Check for Obstacles:**\n   - If `obstacle_ahead` is true, call `call_llm()`.\n\n7. **Calculate Distance to Center:**\n   - Distance to center = \\( \\sqrt{2.5^2 + 6.0^2} \\approx 6.53 \\) meters.\n\n8. **Move Spot:**\n   - Move distance = \\(\\min(6.53, 2.0) = 2.0\\) meters.\n   - `move_spot(2.0)`\n\n9. **Check Progress:**\n   - If `at_goal` is true, execute `finish_task()`.\n   - If `target_ahead` is false, recompute bearing and repeat from step 2 using the new Spot position.\n\n10. **Recompute and Move Again if Needed:**\n    - If `target_ahead` is false after step 8, recompute:\n      - New \\( dx = cx - \\text{new } x \\)\n      - New \\( dy = cy - \\text{new } y \\)\n      - New desired world bearing = \\( \\text{atan2}(\\text{new } dy, \\text{new } dx) \\)\n      - New Spot forward bearing = \\(-\\text{new heading}\\)\n      - New rotate degrees = \\( \\text{normalize}(-(\\text{new desired bearing} - \\text{new forward bearing})) \\)\n      - `rotate_spot(\\text{new rotate degrees})`\n      - New distance to center = \\( \\sqrt{\\text{new } dx^2 + \\text{new } dy^2} \\)\n      - New move distance = \\(\\min(\\text{new distance to center}, 2.0)\\)\n      - `move_spot(\\text{new move distance})`\n\n11. **Final Check:**\n    - If `at_goal` is true after step 10, execute `finish_task()`.",
+          "verifier_output": "fail: `rotate_spot(-67.38)` lacks integer degrees; `move_spot(2.0)` lacks integer meters; `move_spot(new move distance)` lacks integer meters; `rotate_spot(new rotate degrees)` lacks integer degrees; plan contains vague instructions: recompute and move again if needed; plan contains unbounded loop: recompute and move again if needed."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -67.38}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -67.38}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.8,
+          "y": 1.8,
+          "heading": 292.6
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "### Revised Main Plan:\n\n1. **Current Position and Target Center:**\n   - Current Spot position: \\( x = 0.8 \\), \\( y = 1.8 \\), heading = 292.6 degrees.\n   - Target center coordinates: \\( cx = 2.5 \\), \\( cy = 6.0 \\).\n\n2. **Calculate New Desired Bearing:**\n   - \\( dx = 2.5 - 0.8 = 1.7 \\)\n   - \\( dy = 6.0 - 1.8 = 4.2 \\)\n   - New desired world bearing = \\( \\text{atan2}(4.2, 1.7) \\approx 68.20 \\) degrees.\n\n3. **Calculate New Forward Bearing:**\n   - Spot forward bearing = \\(-292.6 \\equiv 67.4\\) degrees (normalized to \\([-180, 180]\\)).\n\n4. **Calculate New Rotation:**\n   - New rotate degrees = \\( \\text{normalize}(-(68.20 - 67.4)) = -0.80 \\) degrees.\n   - Normalize to \\([-180, 180]\\): \\(-0.80\\) degrees.\n\n5. **Rotate Spot:**\n   - `rotate_spot(-0.80)`\n\n6. **Check for Obstacles:**\n   - If `obstacle_ahead` is true, call `call_llm()`.\n\n7. **Calculate New Distance to Center:**\n   - New distance to center = \\( \\sqrt{1.7^2 + 4.2^2} \\approx 4.57 \\) meters.\n\n8. **Move Spot:**\n   - Move distance = \\(\\min(4.57, 2.0) = 2.0\\) meters.\n   - `move_spot(2.0)`\n\n9. **Check Progress:**\n   - If `at_goal` is true, execute `finish_task()`.\n   - If `target_ahead` is false, recompute bearing and repeat from step 2 using the new Spot position.\n\n10. **Recompute and Move Again if Needed:**\n    - If `target_ahead` is false after step 8, recompute:\n      - New \\( dx = cx - \\text{new } x \\)\n      - New \\( dy = cy - \\text{new } y \\)\n      - New desired world bearing = \\( \\text{atan2}(\\text{new } dy, \\text{new } dx) \\)\n      - New Spot forward bearing = \\(-\\text{new heading}\\)\n      - New rotate degrees = \\( \\text{normalize}(-(\\text{new desired bearing} - \\text{new forward bearing})) \\)\n      - `rotate_spot(\\text{new rotate degrees})`\n      - New distance to center = \\( \\sqrt{\\text{new } dx^2 + \\text{new } dy^2} \\)\n      - New move distance = \\(\\min(\\text{new distance to center}, 2.0)\\)\n      - `move_spot(\\text{new move distance})`\n\n11. **Final Check:**\n    - If `at_goal` is true after step 10, execute `finish_task()`.",
+          "verifier_output": "The plan appears to be well-structured and adheres to the rules for the `go_to_target` task type. Here's a breakdown of the evaluation:\n\n1. **Actions Used**: The plan uses `move_spot`, `rotate_spot`, `finish_task`, and `call_llm`, all of which are allowed actions.\n\n2. **Numeric Values**: All `move_spot` and `rotate_spot` actions include specific numeric values for meters and degrees, respectively.\n\n3. **Vague Instructions**: The plan avoids vague instructions and provides clear, concrete steps.\n\n4. **Unbounded Loops**: The plan includes checks for `at_goal` and `target_ahead`, ensuring that it does not enter unbounded loops or long search patterns.\n\n5. **Assumptions**: The plan checks for `at_goal` before calling `finish_task`, ensuring it does not assume success without verification.\n\n6. **face_target and go_to_target**: The plan does not misuse `face_target` or `go_to_target` as specified.\n\n7. **move_to_closest_target**: The plan correctly uses `move_spot` with a distance of 2.0 meters, which is within the allowed limit unless `target_ahead` is true.\n\n8. **go_around_obstacle**: The plan calls `call_llm()` if an obstacle is detected, which is appropriate for handling obstacles.\n\n9. **Repeated Patterns**: The plan does not repeat any previously failed action patterns.\n\n10. **Progress Chunks**: The plan proposes short progress chunks (2.0 meters) followed by checks and potential replanning.\n\nGiven these points, the plan is executable as written.\n\n**Output:**\n\npass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -0.80\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": false\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 2.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"target_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -0.80\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 2.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 1.5,
+          "y": 3.7,
+          "heading": 291.8
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "### Revised Main Plan:\n\n1. **Current Position and Target Center:**\n   - Current Spot position: \\( x = 1.5 \\), \\( y = 3.7 \\), heading = 291.8 degrees.\n   - Target center coordinates: \\( cx = 2.5 \\), \\( cy = 6.0 \\).\n\n2. **Calculate New Desired Bearing:**\n   - \\( dx = 2.5 - 1.5 = 1.0 \\)\n   - \\( dy = 6.0 - 3.7 = 2.3 \\)\n   - New desired world bearing = \\( \\text{atan2}(2.3, 1.0) \\approx 66.80 \\) degrees.\n\n3. **Calculate New Forward Bearing:**\n   - Spot forward bearing = \\(-291.8 \\equiv 68.2\\) degrees (normalized to \\([-180, 180]\\)).\n\n4. **Calculate New Rotation:**\n   - New rotate degrees = \\( \\text{normalize}(-(66.80 - 68.2)) = 1.40 \\) degrees.\n   - Normalize to \\([-180, 180]\\): \\(1.40\\) degrees.\n\n5. **Rotate Spot:**\n   - `rotate_spot(1.40)`\n\n6. **Check for Obstacles:**\n   - If `obstacle_ahead` is true, call `call_llm()`.\n\n7. **Calculate New Distance to Center:**\n   - New distance to center = \\( \\sqrt{1.0^2 + 2.3^2} \\approx 2.55 \\) meters.\n\n8. **Move Spot:**\n   - Move distance = \\(\\min(2.55, 2.0) = 2.0\\) meters.\n   - `move_spot(2.0)`\n\n9. **Check Progress:**\n   - If `at_goal` is true, execute `finish_task()`.\n   - If `target_ahead` is false, recompute bearing and repeat from step 2 using the new Spot position.\n\n10. **Recompute and Move Again if Needed:**\n    - If `target_ahead` is false after step 8, recompute:\n      - New \\( dx = cx - \\text{new } x \\)\n      - New \\( dy = cy - \\text{new } y \\)\n      - New desired world bearing = \\( \\text{atan2}(\\text{new } dy, \\text{new } dx) \\)\n      - New Spot forward bearing = \\(-\\text{new heading}\\)\n      - New rotate degrees = \\( \\text{normalize}(-(\\text{new desired bearing} - \\text{new forward bearing})) \\)\n      - `rotate_spot(\\text{new rotate degrees})`\n      - New distance to center = \\( \\sqrt{\\text{new } dx^2 + \\text{new } dy^2} \\)\n      - New move distance = \\(\\min(\\text{new distance to center}, 2.0)\\)\n      - `move_spot(\\text{new move distance})`\n\n11. **Final Check:**\n    - If `at_goal` is true after step 10, execute `finish_task()`.",
+          "verifier_output": "pass\n\nThe plan is well-structured and adheres to the rules for the \"go_to_target\" task type. Here's a breakdown of why it passes:\n\n1. **Actions Used**: The plan only uses `move_spot`, `rotate_spot`, `finish_task`, and `call_llm`, which are the allowed actions.\n\n2. **Numeric Values**: All `move_spot` and `rotate_spot` actions have specific numeric values for meters and degrees, respectively.\n\n3. **Concrete Instructions**: The plan avoids vague instructions and provides clear, concrete steps for movement and rotation.\n\n4. **Progress Check**: The plan includes checks for `at_goal` and `target_ahead`, ensuring progress is verified before proceeding.\n\n5. **Bounded Movement**: The plan limits movement to a maximum of 2.0 meters per step unless `target_ahead` is true, adhering to the rules.\n\n6. **Replanning**: The plan includes a mechanism to recompute and replan if the target is not ahead, ensuring bounded progress chunks.\n\nOverall, the plan is executable as written and meets all the specified criteria."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 1.40}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"target_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 1.40}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 2.3,
+          "y": 5.5,
+          "heading": 293.2
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

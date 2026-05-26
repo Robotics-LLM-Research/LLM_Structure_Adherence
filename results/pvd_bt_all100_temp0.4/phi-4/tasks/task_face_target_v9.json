@@ -1,0 +1,49 @@
+{
+  "bt_count": 1,
+  "perfect_structure": true,
+  "valid_structure_count": 1,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 3.9303225700277835,
+  "avg_verifier_inference_time_s": 1.2778091665240936,
+  "avg_decoder_inference_time_s": 4.5919637880288064,
+  "avg_inference_time_s": 9.800095524580684,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 14.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "### Main Plan:\n\n1. **Compute Target Center:**\n   - Target center coordinates: \\( cx = \\frac{5.5 + 6.5}{2} = 6.0 \\), \\( cy = \\frac{-2.0 + (-1.0)}{2} = -1.5 \\).\n\n2. **Calculate Desired Bearing:**\n   - \\( dx = cx - x = 6.0 - 0.0 = 6.0 \\)\n   - \\( dy = cy - y = -1.5 - 0.0 = -1.5 \\)\n   - Desired bearing = \\( \\text{atan2}(-1.5, 6.0) \\approx -14.04^\\circ \\)\n\n3. **Calculate Forward Bearing:**\n   - Spot's forward bearing = \\(-\\text{heading} = -0.0 = 0.0^\\circ\\)\n\n4. **Compute Rotation:**\n   - Rotate degrees = \\(\\text{normalize}(-( -14.04 - 0.0)) = \\text{normalize}(14.04) = 14.04^\\circ\\)\n\n5. **Rotate Spot:**\n   - Execute: `rotate_spot(14)`\n\n### Fallbacks:\n\n- **If at_goal is true:** \n  - Execute: `finish_task()`\n\n- **If obstacle_ahead is true before moving:**\n  - Execute: `rotate_spot(90)` (to clear the obstacle by rotating 90 degrees to the right)\n\nThis plan ensures Spot faces the target by calculating the exact rotation needed based on the target's center and Spot's current position and heading.",
+          "verifier_output": "Fail: `rotate_spot(14)` lacks numeric degrees precision; `rotate_spot` requires exact degrees, not rounded.\n\nThe plan specifies `rotate_spot(14)`, which rounds the calculated rotation of `14.04` degrees to `14`. The `rotate_spot` function requires precise numeric degrees, so the plan must use `rotate_spot(14.04)` to ensure accuracy."
+        },
+        {
+          "planner_output": "### Revised Main Plan:\n\n1. **Compute Target Center:**\n   - Target center coordinates: \\( cx = \\frac{5.5 + 6.5}{2} = 6.0 \\), \\( cy = \\frac{-2.0 + (-1.0)}{2} = -1.5 \\).\n\n2. **Calculate Desired Bearing:**\n   - \\( dx = cx - x = 6.0 - 0.0 = 6.0 \\)\n   - \\( dy = cy - y = -1.5 - 0.0 = -1.5 \\)\n   - Desired bearing = \\( \\text{atan2}(-1.5, 6.0) \\approx -14.04^\\circ \\)\n\n3. **Calculate Forward Bearing:**\n   - Spot's forward bearing = \\(-\\text{heading} = -0.0 = 0.0^\\circ\\)\n\n4. **Compute Rotation:**\n   - Rotate degrees = \\(\\text{normalize}(-( -14.04 - 0.0)) = \\text{normalize}(14.04) = 14.04^\\circ\\)\n\n5. **Rotate Spot:**\n   - Execute: `rotate_spot(14.04)`\n\n### Fallbacks:\n\n- **If at_goal is true:** \n  - Execute: `finish_task()`\n\n- **If obstacle_ahead is true before moving:**\n  - Execute: `rotate_spot(90)` (to clear the obstacle by rotating 90 degrees to the right)",
+          "verifier_output": "fail: rotate_spot lacks numeric degrees; face_target uses move_spot.\n\n- The `rotate_spot` action specifies `14.04`, which is a numeric degree, so that part is correct. However, the fallback action `rotate_spot(90)` is too vague and lacks context for when it should be used, potentially leading to an incorrect action without checking the current situation.\n- The plan uses `face_target`, which should not involve any `move_spot` actions. The plan correctly avoids `move_spot`, but the fallback plan suggests a `rotate_spot` without ensuring it's appropriate for the `face_target` task, which could imply an unnecessary movement if not handled correctly."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 14.04\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 90\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 14.0
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

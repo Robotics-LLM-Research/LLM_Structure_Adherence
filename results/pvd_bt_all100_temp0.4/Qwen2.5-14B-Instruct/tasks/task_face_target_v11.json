@@ -1,0 +1,77 @@
+{
+  "bt_count": 2,
+  "perfect_structure": true,
+  "valid_structure_count": 2,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 2.86286800300392,
+  "avg_verifier_inference_time_s": 0.08423955963614087,
+  "avg_decoder_inference_time_s": 2.7171355265309103,
+  "avg_inference_time_s": 5.664243089170971,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 243.4
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Compute the center of the target (cx, cy) using the provided target coordinates.\n2. Compute the desired world bearing to the target center from the current Spot pose.\n3. Compute the forward bearing of Spot based on its current heading.\n4. Calculate the required rotation degrees to align Spot's heading with the desired world bearing.\n5. Execute rotate_spot with the calculated degrees.\n\nFallbacks:\n- If obstacle_ahead is true before moving: call_llm.\n\nLet's compute the target center first:\n- cx = (-2.5 + -1.5) / 2 = -2.0\n- cy = (4.5 + 5.5) / 2 = 5.0\n\nNow, compute the desired world bearing:\n- dx = cx - x = -2.0 - 0.0 = -2.0\n- dy = cy - y = 5.0 - 0.0 = 5.0\n- desired_bearing = atan2(5.0, -2.0) in degrees\n\nSince Spot's current heading is 0, the forward bearing is 0 degrees.\n\nCalculate the required rotation degrees:\n- rotate_degrees = normalize(-(desired_bearing - 0)) into [-180, 180]\n\nLet's assume the computed desired_bearing is approximately 116.57 degrees (atan2(5, -2) * (180 / pi)).\n\nTherefore, the required rotation is:\n- rotate_degrees = normalize(-(116.57 - 0)) = normalize(-116.57) = 180 - 116.57 = 63.43 degrees\n\nMain plan:\n1. rotate_spot(63.43)",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": false\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 63.43\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 63.4
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Given the previous attempt did not succeed and the target is still not ahead of Spot, we need to reassess the heading strategy. Since the target is not ahead and we have already rotated, we should calculate the new desired rotation to face the target again.\n\nMain plan:\n1. Compute the desired rotation degrees to face the target from the final Spot pose (x=0.0, y=0.0, heading=63.4).\n2. Execute rotate_spot with the calculated degrees.\n\nLet's compute the desired rotation degrees again:\n- cx = -2.0\n- cy = 5.0\n- dx = -2.0 - 0.0 = -2.0\n- dy = 5.0 - 0.0 = 5.0\n- desired_bearing = atan2(5.0, -2.0) in degrees \u2248 116.57 degrees\n- Spot's current heading = 63.4 degrees\n- forward_bearing = -63.4 degrees\n- rotate_degrees = normalize(-(116.57 - (-63.4))) = normalize(-179.97) = 179.97 degrees (since we need to rotate counter-clockwise)\n\nMain plan:\n1. rotate_spot(-179.97)",
+          "verifier_output": "fail: Uses vague instructions: calculate direction; repeat;"
+        },
+        {
+          "planner_output": "Main plan:\n1. rotate_spot(-179.97)\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: call_llm.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -179.97}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 243.4
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

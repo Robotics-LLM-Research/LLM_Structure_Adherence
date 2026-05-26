@@ -1,0 +1,109 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 3.9787859733682125,
+  "avg_verifier_inference_time_s": 0.8348469300428405,
+  "avg_decoder_inference_time_s": 4.061890056046347,
+  "avg_inference_time_s": 8.875522959457399,
+  "final_spot": {
+    "x": 7.0,
+    "y": 3.0,
+    "heading": 0.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot 90 degrees to the right to prepare for moving around the obstacle.\n   Action: rotate_spot(90)\n\n2. Move Spot forward by 1 meter to start the maneuver around the obstacle.\n   Action: move_spot(1)\n\n3. Verify if the obstacle is no longer directly ahead. If obstacle_ahead is still true, change the strategy to move around the obstacle.\n   - Rotate Spot 90 degrees to the left to adjust the heading.\n     Action: rotate_spot(-90)\n   - Move Spot forward by 1 meter.\n     Action: move_spot(1)\n\n4. Repeat steps 3 until Spot is no longer detecting an obstacle directly ahead or has successfully navigated around it.\n\n5. Once clear of the obstacle, compute the target center (cx, cy) for goal_1.\n   - Calculate dx = cx - x and dy = cy - y.\n   - Desired world bearing = atan2(dy, dx) in degrees.\n   - Spot forward bearing = -heading in degrees.\n   - rotate_spot degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180].\n   - move_spot meters = min(distance_to_center, 2.0), unless a shorter safe step is needed.\n\n6. Execute the computed rotate_spot and move_spot actions until at_goal is true for goal_1.\n\nFallbacks:\n- If at_goal is true during any step, finish the task with finish_task().\n- If obstacle_ahead is detected before moving and no clear path is found after two attempts with different initial rotations, call_llm() to request a new behavior tree from the planner.",
+          "verifier_output": "fail: The plan contains vague instructions in step 4: \"Repeat steps 3 until Spot is no longer detecting an obstacle directly ahead or has successfully navigated around it.\" This instruction lacks a concrete stopping condition for the loop, which violates rule 4."
+        },
+        {
+          "planner_output": "1. Rotate Spot 90 degrees to the right to prepare for moving around the obstacle.\n   Action: rotate_spot(90)\n\n2. Move Spot forward by 1 meter to start the maneuver around the obstacle.\n   Action: move_spot(1)\n\n3. If obstacle_ahead is still true, rotate Spot 90 degrees to the left.\n   Action: rotate_spot(-90)\n\n4. Move Spot forward by 1 meter.\n   Action: move_spot(1)\n\n5. Check if obstacle_ahead is false. If true, repeat steps 3 and 4.\n\n6. If obstacle_ahead is false after two attempts with different initial rotations, proceed to navigate towards the target.\n\n7. Compute the target center (cx, cy) for goal_1.\n   - Calculate dx = cx - x and dy = cy - y.\n   - Desired world bearing = atan2(dy, dx) in degrees.\n   - Spot forward bearing = -heading in degrees.\n   - rotate_spot degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180].\n   - move_spot meters = min(distance_to_center, 2.0), unless a shorter safe step is needed.\n\n8. Execute the computed rotate_spot and move_spot actions until at_goal is true for goal_1.\n\nFallbacks:\n- If at_goal is true during any step, finish the task with finish_task().\n- If obstacle_ahead is detected before moving and remains true after two attempts with different initial rotations, call_llm() to request a new behavior tree from the planner.",
+          "verifier_output": "fail: The plan lacks numeric degrees for rotate_spot in step 1 and step 3; lacks numeric meters for move_spot in step 2 and step 4; uses vague instruction \"If obstacle_ahead is still true\" in step 5; contains an unbounded loop in step 5 without a clear termination condition; assumes success without checking at_goal in step 6 and step 7."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -1.0,
+          "y": -1.0,
+          "heading": 180.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot 90 degrees to the right to prepare for moving around the obstacle.\n   Action: rotate_spot(90)\n\n2. Move Spot forward by 1 meter to start the maneuver around the obstacle.\n   Action: move_spot(1)\n\n3. If obstacle_ahead is still true, rotate Spot 90 degrees to the left.\n   Action: rotate_spot(-90)\n\n4. Move Spot forward by 1 meter.\n   Action: move_spot(1)\n\n5. Check if obstacle_ahead is false. If true, repeat steps 3 and 4.\n\n6. If obstacle_ahead is false after two attempts with different initial rotations, proceed to navigate towards the target.\n\n7. Compute the target center (cx, cy) for goal_1.\n   - Calculate dx = cx - x and dy = cy - y.\n   - Desired world bearing = atan2(dy, dx) in degrees.\n   - Spot forward bearing = -heading in degrees.\n   - rotate_spot degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180].\n   - move_spot meters = min(distance_to_center, 2.0), unless a shorter safe step is needed.\n\n8. Execute the computed rotate_spot and move_spot actions until at_goal is true for goal_1.\n\nRevised plan with bounded numeric actions:\n\n1. Rotate Spot 90 degrees to the right.\n   Action: rotate_spot(90)\n\n2. Move Spot forward by 1 meter.\n   Action: move_spot(1)\n\n3. If obstacle_ahead is still true, rotate Spot 90 degrees to the left.\n   Action: rotate_spot(-90)\n\n4. Move Spot forward by 1 meter.\n   Action: move_spot(1)\n\n5. Check obstacle_ahead. If true, repeat steps 3 and 4.\n\n6. If obstacle_ahead is false after two attempts with different initial rotations, proceed to navigate towards the target.\n\n7. Compute the target center (cx, cy) for goal_1.\n   - Calculate dx = cx - x and dy = cy - y.\n   - Desired world bearing = atan2(dy, dx) in degrees.\n   - Spot forward bearing = -heading in degrees.\n   - rotate_spot degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180].\n   - move_spot meters = min(distance_to_center, 2.0), unless a shorter safe step is needed.\n\n8. Execute the computed rotate_spot and move_spot actions until at_goal is true for goal_1.\n\nSince replan_requested is True and the task was not completed, we should request a new behavior tree from the planner.\n\nAction: call_llm()",
+          "verifier_output": "pass\n\nThe provided plan adheres to the task type go_around_obstacle and uses only the allowed actions: move_spot, rotate_spot, finish_task, and call_llm. Each action includes the required numeric parameters. The plan also avoids vague instructions and unbounded loops, and it checks the obstacle_ahead condition before proceeding. The computation for navigating towards the target is well-defined with bounded numeric actions. The plan correctly incorporates replaning by calling call_llm() when necessary. Therefore, the plan is executable as written."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"sequence\", \"children\": [\n            {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false},\n            {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n          ]}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": true,
+          "obstacle_right": true,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 5.0,
+          "y": 4.0,
+          "heading": 90.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot 90 degrees to the left to address the obstacle on the right.\n   Action: rotate_spot(-90)\n\n2. Move Spot forward by 1 meter to approach the obstacle on the right.\n   Action: move_spot(1)\n\n3. If obstacle_right is still true, rotate Spot 90 degrees to the right.\n   Action: rotate_spot(90)\n\n4. Move Spot forward by 1 meter.\n   Action: move_spot(1)\n\n5. Check obstacle_right. If true, repeat steps 3 and 4.\n\n6. If obstacle_right is false after two attempts with different initial rotations, proceed to navigate towards the target.\n\n7. Compute the target center (cx, cy) for goal_1.\n   - Calculate dx = cx - x and dy = cy - y.\n   - Desired world bearing = atan2(dy, dx) in degrees.\n   - Spot forward bearing = -heading in degrees.\n   - rotate_spot degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180].\n   - move_spot meters = min(distance_to_center, 2.0), unless a shorter safe step is needed.\n\n8. Execute the computed rotate_spot and move_spot actions until at_goal is true for goal_1.\n\nSince replan_requested is False and the task was not completed, we should request a new behavior tree from the planner.\n\nAction: call_llm()",
+          "verifier_output": "fail: The plan contains vague instructions \"If obstacle_right is still true\" and \"If obstacle_right is false after two attempts with different initial rotations\"; The plan uses a long search pattern \"repeat steps 3 and 4\" without a bounded safe step plus replanning; The plan assumes success without checking at_goal in the final navigation step."
+        },
+        {
+          "planner_output": "1. Rotate Spot 90 degrees to the left to address the obstacle on the right.\n   Action: rotate_spot(-90)\n\n2. Move Spot forward by 1 meter to approach the obstacle on the right.\n   Action: move_spot(1)\n\n3. Check obstacle_right. If true, rotate Spot 90 degrees to the right.\n   Action: rotate_spot(90)\n\n4. Move Spot forward by 1 meter.\n   Action: move_spot(1)\n\n5. Check obstacle_right. If true, repeat steps 3 and 4.\n\n6. If obstacle_right is false after two attempts with different initial rotations, proceed to navigate towards the target.\n\n7. Compute the target center (cx, cy) for goal_1.\n   - Calculate dx = cx - x and dy = cy - y.\n   - Desired world bearing = atan2(dy, dx) in degrees.\n   - Spot forward bearing = -heading in degrees.\n   - rotate_spot degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180].\n   - move_spot meters = min(distance_to_center, 2.0), unless a shorter safe step is needed.\n\n8. Execute the computed rotate_spot and move_spot actions until at_goal is true for goal_1.\n\n9. If at_goal is not true, call_llm for a new behavior tree.\n\nAction: call_llm()",
+          "verifier_output": "fail: The plan contains vague instructions \"Check obstacle_right\" and \"If true, rotate Spot 90 degrees to the right. Action: rotate_spot(90)\"; \"If true, repeat steps 3 and 4.\" without specifying how to handle the case when obstacle_right is false after two attempts. Additionally, the plan assumes success without checking at_goal in step 6, which violates rule 12."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_right\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"sequence\", \"children\": [\n            {\"type\": \"condition\", \"observation\": \"obstacle_right\", \"expected\": true},\n            {\"type\": \"sequence\", \"children\": [\n              {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90}}},\n              {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}}\n            ]}\n          ]},\n          {\"type\": \"condition\", \"observation\": \"obstacle_right\", \"expected\": false},\n          {\"type\": \"sequence\", \"children\": [\n            {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\n              \"degrees\": -90\n            }}},\n            {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\n              \"meters\": 1\n            }}},\n            {\"type\": \"sequence\", \"children\": [\n              {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\n                \"degrees\": -90\n              }}},\n              {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\n                \"meters\": 1\n              }}}\n            ]}\n          ]}\n        ]}\n      ]\n      }\n    \n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": true,
+          "obstacle_left": true,
+          "obstacle_right": true,
+          "target_ahead": true,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 7.0,
+          "y": 3.0,
+          "heading": 0.0
+        },
+        "collided": true,
+        "success": false,
+        "replan_requested": false
+      }
+    }
+  ]
+}

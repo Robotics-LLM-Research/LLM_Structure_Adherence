@@ -1,0 +1,113 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 2.9223448975244537,
+  "avg_verifier_inference_time_s": 0.410869032862441,
+  "avg_decoder_inference_time_s": 3.9517779352997118,
+  "avg_inference_time_s": 7.284991865686607,
+  "final_spot": {
+    "x": 3.4,
+    "y": -1.5,
+    "heading": 4.5
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Since an obstacle is ahead, rotate Spot 90 degrees to the right to change its heading and attempt to move around the obstacle.\n\nMain plan:\n1. Rotate Spot 90 degrees to the right: rotate_spot(90)\n2. Move Spot forward by 1 meter to attempt to clear the obstacle: move_spot(1)\n3. Check if obstacle_ahead is still true. If so, continue rotating and moving until the obstacle is avoided.\n\nFallbacks:\n- If at_goal is true, finish_task.\n- If obstacle_ahead remains true after rotating and moving, call_llm to request a new behavior tree for a more complex obstacle-avoidance strategy.",
+          "verifier_output": "fail: The plan lacks concrete numeric rotate/move actions unless already at_goal; The plan does not specify a bounded safe step plus replanning for go_around_obstacle."
+        },
+        {
+          "planner_output": "1. Rotate Spot 45 degrees to the right, then move forward by 1 meter.\n2. Check if obstacle_ahead is false. If true, continue rotating and moving in smaller increments until the obstacle is avoided.\n\nMain plan:\n1. Rotate Spot 45 degrees to the right: rotate_spot(45)\n2. Move Spot forward by 1 meter: move_spot(1)\n3. Check if obstacle_ahead is false. If true, rotate 45 degrees and move 1 meter repeatedly until the obstacle is avoided.\n\nFallbacks:\n- If at_goal is true, finish_task.\n- If obstacle_ahead remains true after multiple attempts, call_llm to request a new behavior tree for a more complex obstacle-avoidance strategy.",
+          "verifier_output": "fail: Main plan violates rule #10; go_around_obstacle requires bounded safe steps plus replanning, not repeated non-progressing actions."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false}\n        ]\n      },\n      {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}},\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}]\n    }\n  }",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": true,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.7,
+          "y": -0.7,
+          "heading": 45.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot 45 degrees to the right: rotate_spot(45)\n2. Move Spot forward by 1 meter: move_spot(1)\n3. Check if obstacle_left is true. If true, rotate 45 degrees to the left and move 1 meter.\n4. Check if obstacle_ahead is false. If true, rotate Spot to face the target's center and move forward by 1 meter.\n\nRevised plan:\n1. Rotate Spot 45 degrees to the right: rotate_spot(45)\n2. Move Spot forward by 1 meter: move_spot(1)\n3. Check if obstacle_left is true. If true, rotate 45 degrees to the left: rotate_spot(-45), then move forward by 1 meter: move_spot(1).\n4. Check if obstacle_ahead is false. If true, compute the desired heading to the target's center, then rotate Spot: rotate_spot(<desired_heading>), and move forward by 1 meter: move_spot(1).\n\nFallbacks:\n- If at_goal is true, finish_task.\n- If obstacle_ahead remains true after multiple attempts, call_llm to request a new behavior tree for a more complex obstacle-avoidance strategy.",
+          "verifier_output": "fail: The revised plan includes the prohibited vague instruction \"compute the desired heading to the target's center\"; <desired_heading> is not a concrete numeric value for rotate_spot. Additionally, the plan suggests rotate_spot without specifying degrees, which is against the rules."
+        },
+        {
+          "planner_output": "1. Rotate Spot 45 degrees to the right: rotate_spot(45)\n2. Move Spot forward by 1 meter: move_spot(1)\n3. Check if obstacle_left is true. If true, rotate 45 degrees to the left: rotate_spot(-45), then move forward by 1 meter: move_spot(1).\n4. Check if obstacle_ahead is false. If true, compute the desired heading to the target's center (desired_heading = normalize(-(atan2(-2, 8 - 0) - 0))), then rotate Spot: rotate_spot(<desired_heading>), and move forward by 1 meter: move_spot(1).\n\nRevised plan:\n1. Rotate Spot 45 degrees to the right: rotate_spot(45)\n2. Move Spot forward by 1 meter: move_spot(1)\n3. Check if obstacle_left is true. If true, rotate 45 degrees to the left: rotate_spot(-45), then move forward by 1 meter: move_spot(1).\n4. Check if obstacle_ahead is false. If true, compute the desired heading to the target's center (desired_heading = normalize(-(atan2(-2, 8 - 0) - 0))), then rotate Spot: rotate_spot(<desired_heading>), and move forward by 1 meter: move_spot(1).\n\nFallbacks:\n- If at_goal is true, finish_task.\n- If obstacle_ahead remains true after multiple attempts, call_llm to request a new behavior tree for a more complex obstacle-avoidance strategy.",
+          "verifier_output": "fail: The plan includes vague instructions \"compute the desired heading\" and \"rotate Spot\" without specifying numeric degrees, which violates rule #4. It also fails to bound the safe step size for move_spot in the next attempt, violating rule #9."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_left\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": true,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 1.7,
+          "y": -0.7,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot 45 degrees to the right: rotate_spot(45)\n2. Move Spot forward by 1 meter: move_spot(1)\n3. Check if obstacle_left is true. If true, rotate 45 degrees to the left: rotate_spot(-45), then move forward by 1 meter: move_spot(1).\n4. Check if obstacle_ahead is false. If true, compute the desired heading to the target's center (desired_heading = normalize(-(atan2(-2, 8 - 1.7) - atan2(0.7, -0.0))), then rotate Spot: rotate_spot(<desired_heading>), and move forward by 1 meter: move_spot(1).\n\nRevised plan:\n1. Rotate Spot 45 degrees to the right: rotate_spot(45)\n2. Move Spot forward by 1 meter: move_spot(1)\n3. Check if obstacle_left is true. If true, rotate 45 degrees to the left: rotate_spot(-45), then move forward by 1 meter: move_spot(1).\n4. Compute the desired heading to the target's center: desired_heading = normalize(-(atan2(-2, 8 - 1.7) - atan2(0.7, -0.0)))\n5. Rotate Spot by the desired heading: rotate_spot(<desired_heading>)\n6. Move Spot forward by 1 meter: move_spot(1)\n\nFallbacks:\n- If at_goal is true, finish_task.\n- If obstacle_ahead remains true after multiple attempts, call_llm to request a new behavior tree for a more complex obstacle-avoidance strategy.",
+          "verifier_output": "fail: The plan uses the vague instruction 'compute the desired heading to the target's center' in step 4 and step 5; <vague instruction>"
+        },
+        {
+          "planner_output": "1. Rotate Spot 45 degrees to the right: rotate_spot(45)\n2. Move Spot forward by 1 meter: move_spot(1)\n3. Check if obstacle_left is true. If true, rotate 45 degrees to the left: rotate_spot(-45), then move forward by 1 meter: move_spot(1).\n4. Compute the desired heading to the target's center:\n   - dx = -2 - 1.7 = -3.7\n   - dy = -4 + 0.7 = -3.3\n   - desired_heading = -atan2(dy, dx) = -atan2(-3.3, -3.7) \u2248 40.5 degrees\n5. Rotate Spot by the desired heading: rotate_spot(40.5)\n6. Move Spot forward by 1 meter: move_spot(1)\n\nRevised plan:\n1. Rotate Spot 45 degrees to the right: rotate_spot(45)\n2. Move Spot forward by 1 meter: move_spot(1)\n3. Check if obstacle_left is true. If true, rotate 45 degrees to the left: rotate_spot(-45), then move forward by 1 meter: move_spot(1).\n4. Compute the desired heading to the target's center:\n   - dx = -2 - 1.7 = -3.7\n   - dy = -4 + 0.7 = -3.3\n   - desired_heading = -atan2(dy, dx) \u2248 40.5 degrees\n5. Rotate Spot by the desired heading: rotate_spot(40.5)\n6. Move Spot forward by 1 meter: move_spot(1)\n\nFallbacks:\n- If at_goal is true, finish_task.\n- If obstacle_ahead remains true after multiple attempts, call_llm to request a new behavior tree for a more complex obstacle-avoidance strategy.",
+          "verifier_output": "fail: rotate_spot action in step 4 does not provide numeric degrees for the desired heading calculation."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_left\", \"expected\": true},\n          {\n            \"type\": \"sequence\",\n            \"children\": [\n              {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n              {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}}\n            ]\n          },\n          {\"type\": \"condition\", \"observation\": \"obstacle_left\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 45}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -40.5}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": true,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 3.4,
+          "y": -1.5,
+          "heading": 4.5
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

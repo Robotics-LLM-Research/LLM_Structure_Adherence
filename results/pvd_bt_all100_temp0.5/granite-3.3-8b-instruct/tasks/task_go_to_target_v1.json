@@ -1,0 +1,45 @@
+{
+  "bt_count": 1,
+  "perfect_structure": true,
+  "valid_structure_count": 1,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 3.8656477979384363,
+  "avg_verifier_inference_time_s": 0.7463463889434934,
+  "avg_decoder_inference_time_s": 3.3517320399405435,
+  "avg_inference_time_s": 7.963726226822473,
+  "final_spot": {
+    "x": 4.0,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot to face the target. Since the target is ahead, rotate_spot(degrees) should be chosen to align Spot's heading with the direction to the target.\n2. Compute the target center: cx = (3.5 + 4.5) / 2 = 4.0, cy = (-0.5 + 0.5) / 2 = 0.0.\n3. Compute dx = cx - x = 4.0 - 0.0 = 4.0, dy = cy - y = 0.0 - 0.0 = 0.0.\n4. Compute desired world bearing = atan2(dy, dx) = atan2(0, 4) \u2248 0 degrees (Spot is already aligned along the x-axis towards the target).\n5. Since Spot's forward bearing is 0.0 (facing +x), and desired bearing is also 0.0, no rotation is needed.\n6. Compute distance_to_center = sqrt(dx^2 + dy^2) = sqrt(4^2 + 0^2) = 4 meters.\n7. Execute move_spot(4.0) to approach the target.\n\nFallbacks:\n- If at_goal is true after moving: finish_task.\n- If obstacle_ahead is true before moving: Rotate Spot to avoid the obstacle using rotate_spot(<numeric angle>) and then call_llm() for a new plan.\n\nNote: Since Spot starts facing the positive x-axis and the target is directly ahead along the x-axis, no rotation is initially required. Directly move Spot 4 meters forward. If an obstacle is encountered, adjust the heading and call for a new plan.",
+          "verifier_output": "pass\n\nThe plan is executable as written. It uses only allowed actions (rotate_spot and move_spot), provides numeric values for degrees and meters, avoids vague instructions, does not contain unbounded loops or repeated non-progressing actions, checks at_goal before finishing the task, and correctly computes the required movement and rotation without invoking forbidden actions."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}},\n         {\n          \"type\": \"condition\",\n          \"observation\": \"obstacle_ahead\",\n          \"expected\": true\n        },\n        {\n          \"type\": \"sequence\",\n          \"children\": [\n            {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 180}}},\n            {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n          ]\n        }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 4.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 4.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

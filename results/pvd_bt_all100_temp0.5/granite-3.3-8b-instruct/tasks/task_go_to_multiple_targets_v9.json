@@ -1,0 +1,109 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 5.244909257604741,
+  "avg_verifier_inference_time_s": 0.8660083775874228,
+  "avg_decoder_inference_time_s": 5.809036322675335,
+  "avg_inference_time_s": 11.919953957867499,
+  "final_spot": {
+    "x": -128.3,
+    "y": 5.7,
+    "heading": 334.7
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Identify the nearest unvisited target from the current Spot position. In this case, it's \"goal_1\".\n2. Calculate the desired world bearing to \"goal_1\" from the current heading (0 degrees).\n3. Compute the rotate_spot degrees to align Spot's forward bearing with the desired bearing to \"goal_1\".\n4. Execute a rotate_spot action with the computed degrees.\n5. Calculate the distance_to_center to \"goal_1\".\n6. Execute a move_spot action towards \"goal_1\" with meters set to the minimum of distance_to_center and 2.0.\n7. Upon reaching \"goal_1\", recompute the nearest unvisited target from the new position.\n8. Repeat steps 3-7 for the newly identified nearest unvisited target until all targets are visited.\n9. Once all targets have been visited, execute finish_task().\n\nFallbacks:\n- If at_goal is true at any point, execute finish_task().\n- If obstacle_ahead is true before moving, adjust the heading using rotate_spot and try moving again. If the obstacle cannot be bypassed, call_llm for a new plan.\n- If two consecutive attempts result in target_ahead being false and at_goal being false, change the heading strategy before moving again.",
+          "verifier_output": "fail: The plan uses vague instructions \"Calculate the desired world bearing\" and \"Compute the rotate_spot degrees\", which do not specify the exact numeric values needed for the rotate_spot action. Also, the plan lacks explicit checks for at_goal after each move_spot action."
+        },
+        {
+          "planner_output": "1. Identify the nearest unvisited target, \"goal_1\", from the current Spot position.\n2. Calculate the desired world bearing to \"goal_1\": desired_bearing = atan2(-(0.5 - 0.0), 3.0 - 0.0) = 63.43 degrees.\n3. Compute the rotate_spot degrees to align Spot's forward bearing with the desired bearing to \"goal_1\": rotate_spot_degrees = -desired_bearing + 0.0 = -63.43 degrees.\n4. Execute rotate_spot(-63.43).\n5. Calculate the distance_to_center to \"goal_1\": distance_to_center = sqrt((3.0 - 0.0)^2 + (0.5 - 0.0)^2) = 3.16 meters.\n6. Execute move_spot(min(3.16, 2.0) = 2.0).\n7. Check at_goal: If at_goal is true, execute finish_task(); otherwise, proceed.\n8. Identify the nearest unvisited target from the new position. In this case, it's \"goal_2\".\n9. Calculate the desired world bearing to \"goal_2\": desired_bearing = atan2(5.0 - 2.0, -2.0 - 0.0) = 116.57 degrees.\n10. Compute the rotate_spot degrees to align Spot's forward bearing with the desired bearing to \"goal_2\": rotate_spot_degrees = -desired_bearing + 0.0 = -116.57 degrees.\n11. Execute rotate_spot(-116.57).\n12. Calculate the distance_to_center to \"goal_2\": distance_to_center = sqrt((5.0 - 2.0)^2 + (-2.0 - 0.0)^2) = 3.61 meters.\n13. Execute move_spot(min(3.61, 2.0) = 2.0).\n14. Check at_goal: If at_goal is true, execute finish_task(); otherwise, proceed.\n15. Repeat steps 8-14 for the newly identified nearest unvisited target until all targets are visited.\n16. Once all targets have been visited, execute finish_task().\n\nFallbacks:\n- If at_goal is true at any point, execute finish_task().\n- If obstacle_ahead is true before moving, adjust the heading using rotate_spot and try moving again. If the obstacle cannot be bypassed, call_llm for a new plan.\n- If two consecutive attempts result in target_ahead being false and at_goal being false, change the heading strategy before moving again.",
+          "verifier_output": "pass\n\nThe provided plan adheres to all necessary constraints for the go_to_multiple_targets task type.\n\n- It uses only allowed actions: move_spot, rotate_spot, finish_task, and doesn't use call_llm until explicitly necessary as a fallback.\n- All move_spot actions have specified numeric meters.\n- All rotate_spot actions have specified numeric degrees.\n- The plan avoids vague instructions.\n- It includes checks for at_goal to ensure bounded progress.\n- It doesn't use face_target or go_to_target inappropriately.\n- There are no unbounded loops or repeated non-progressing actions.\n- The plan incorporates fallback strategies for obstacles and repeated failures to reach the target.\n\nOverall, the plan is clear, executable, and follows the required task-specific rules."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": -2.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          },\n          {\n            \"type\": \"sequence\",\n            \"children\": [\n              {\n                \"type\": \"action\",\n                \"call\": {\n                  \"tool_name\": \"rotate_spot\",\n                  \"arguments\": {\n                    \"degrees\": -63.43\n                  }\n                }\n              },\n              {\n                \"type\": \"action\",\n                \"call\": {\n                  \"tool_name\": \"move_spot\",\n                  \"arguments\": {\n                    \"meters\": 2.0\n                  }\n                }\n              },\n              {\n                \"type\": \"condition\",\n                \"observation\": \"at_goal\",\n                \"expected\": true\n              },\n              {\n                \"type\": \"action\",\n                \"call\": {\n                  \"tool_name\": \"finish_task\",\n                  \"arguments\": {}\n                }\n              }\n            ]\n          },\n          {\n            \"type\": \"sequence\",\n            \"children\": [\n              {\n                \"type\": \"action\",\n                \"call\": {\n                  \"tool_name\": \"rotate_spot\",\n                  \"arguments\": {\n                    \"degrees\": -116.57\n                  }\n                }\n              },\n              {\n                \"type\": \"action\",\n                \"call\": {\n                  \"tool_name\": \"move_spot\",\n                  \"arguments\": {\n                    \"meters\": 2.0\n                  }\n                }\n              },\n              {\n                \"type\": \"condition\",\n                \"observation\": \"at_goal\",\n                \"expected\": true\n              },\n              {\n                \"type\": \"action\",\n                \"call\": {\n                  \"tool_name\": \"finish_task\",\n                  \"arguments\": {}\n                }\n              }\n            ]\n          },\n          {\n            \"type\": \"fallback\",\n            \"children\": [\n              {\n                \"type\": \"action\",\n                \"call\": {\n                  \"tool_name\": \"call_llm\",\n                  \"arguments\": {}\n                }\n              }\n            ]\n          }\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -128.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot to align with the nearest unvisited target, \"goal_1\": rotate_spot(-63.43).\n2. Move Spot towards \"goal_1\": move_spot(2.0).\n3. Check at_goal: If at_goal is true, execute finish_task(); otherwise, proceed.\n4. Rotate Spot to align with the next nearest unvisited target, \"goal_2\": rotate_spot(-116.57).\n5. Move Spot towards \"goal_2\": move_spot(2.0).\n6. Check at_goal: If at_goal is true, execute finish_task(); otherwise, proceed.\n7. Rotate Spot to align with the next nearest unvisited target, \"goal_3\": calculate the desired bearing to \"goal_3\" and compute rotate_spot_degrees = -desired_bearing + 0.0.\n8. Execute rotate_spot(rotate_spot_degrees).\n9. Calculate the distance_to_center to \"goal_3\": distance_to_center = sqrt((7.0 - (-128.0))^2 + (-0.5 - 0.0)^2) = 130.14 meters.\n10. Since the distance is greater than 10 meters, execute move_spot(2.0) as a short bounded step.\n11. Check at_goal: If at_goal is true, execute finish_task(); otherwise, proceed.\n12. If obstacle_ahead is true before moving, adjust the heading using rotate_spot and try moving again. If the obstacle cannot be bypassed, call_llm for a new plan.\n13. Repeat steps 7-11 for the newly identified nearest unvisited target until all targets are visited.\n14. Once all targets have been visited, execute finish_task().\n\nFallbacks:\n- If at_goal is true at any point, execute finish_task().\n- If two consecutive attempts result in target_ahead being false and at_goal being false, change the heading strategy before moving again.",
+          "verifier_output": "fail: The plan uses vague instructions \"calculate the desired bearing to 'goal_3'\" and \"compute rotate_spot_degrees = -desired_bearing + 0.0\"; <vague instructions>"
+        },
+        {
+          "planner_output": "1. Rotate Spot to align with the nearest unvisited target, \"goal_1\": rotate_spot(-63.43).\n2. Move Spot towards \"goal_1\": move_spot(2.0).\n3. Check at_goal: If at_goal is true, execute finish_task(); otherwise, proceed.\n4. Rotate Spot to align with the next nearest unvisited target, \"goal_2\": rotate_spot(-116.57).\n5. Move Spot towards \"goal_2\": move_spot(2.0).\n6. Check at_goal: If at_goal is true, execute finish_task(); otherwise, proceed.\n7. Compute the desired bearing to \"goal_3\": desired_bearing = atan2(-0.5, 7.0 - (-128.0)) = -0.87 radians or -50.14 degrees.\n8. Calculate the forward bearing of Spot: forward_bearing = -0.0 degrees.\n9. Compute rotate_spot degrees: rotate_spot_degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180] = -50.14 degrees.\n10. Execute rotate_spot(-50.14).\n11. Calculate the distance_to_center to \"goal_3\": distance_to_center = sqrt((7.0 - (-128.0))^2 + (-0.5 - 0.0)^2) = 130.14 meters.\n12. Since the distance is greater than 10 meters, execute move_spot(2.0) as a short bounded step.\n13. Check at_goal: If at_goal is true, execute finish_task(); otherwise, proceed.\n14. If obstacle_ahead is true before moving, adjust the heading using rotate_spot and try moving again. If the obstacle cannot be bypassed, call_llm for a new plan.\n15. Repeat steps 7-13 for the newly identified nearest unvisited target until all targets are visited.\n16. Once all targets have been visited, execute finish_task().\n\nFallbacks:\n- If at_goal is true at any point, execute finish_task().\n- If two consecutive attempts result in target_ahead being false and at_goal being false, change the heading strategy before moving again.",
+          "verifier_output": "fail: Rotation angles are not within the range of -180 to 180 degrees; rotate_spot(-63.43) and rotate_spot(-116.57) are outside this range."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -63.43}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -116.57}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": false}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -0.87}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": false},\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"sequence\",\n            \"children\": [\n              {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -50.14}}},\n              {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n              {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n              {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}},\n              {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": false}\n            ]\n          },\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}},\n         {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -130.4,
+          "y": 6.9,
+          "heading": 204.8
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot to align with the nearest unvisited target, \"goal_1\": rotate_spot(-63.43).\n2. Move Spot towards \"goal_1\": move_spot(2.0).\n3. Check at_goal: If at_goal is true, execute finish_task(); otherwise, proceed.\n4. Rotate Spot to align with the next nearest unvisited target, \"goal_2\": rotate_spot(-116.57).\n5. Move Spot towards \"goal_2\": move_spot(2.0).\n6. Check at_goal: If at_goal is true, execute finish_task(); otherwise, proceed.\n7. Compute the desired bearing to \"goal_3\": desired_bearing = atan2(-0.5, 7.0 - (-128.0)) = -0.87 radians or -50.14 degrees.\n8. Calculate the forward bearing of Spot: forward_bearing = -0.0 degrees.\n9. Compute rotate_spot degrees: rotate_spot_degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180] = -50.14 degrees.\n10. Execute rotate_spot(-50.14).\n11. Calculate the distance_to_center to \"goal_3\": distance_to_center = sqrt((7.0 - (-128.0))^2 + (-0.5 - 0.0)^2) = 130.14 meters.\n12. Since the distance is greater than 10 meters, execute move_spot(2.0) as a short bounded step.\n13. Check at_goal: If at_goal is true, execute finish_task(); otherwise, proceed.\n14. If obstacle_ahead is true before moving, adjust the heading using rotate_spot and try moving again. If the obstacle cannot be bypassed, call_llm for a new plan.\n15. Repeat steps 7-13 for the newly identified nearest unvisited target until all targets are visited.\n16. Once all targets have been visited, execute finish_task().\n\nRevised plan with concrete actions:\n\n1. rotate_spot(-63.43)\n2. move_spot(2.0)\n3. If at_goal is true, finish_task; otherwise, proceed.\n4. rotate_spot(-116.57)\n5. move_spot(2.0)\n6. If at_goal is true, finish_task; otherwise, proceed.\n7. Compute desired_bearing to \"goal_3\": desired_bearing = -50.14 degrees.\n8. Calculate forward_bearing: forward_bearing = 0.0 degrees.\n9. Compute rotate_spot_degrees: rotate_spot_degrees = -50.14 degrees.\n10. rotate_spot(-50.14)\n11. Calculate distance_to_center to \"goal_3\": distance_to_center = 130.14 meters.\n12. Since distance_to_center > 10 meters, move_spot(2.0).\n13. If at_goal is true, finish_task; otherwise, proceed.\n14. If obstacle_ahead is true, adjust heading and try moving again. If obstacle cannot be bypassed, call_llm for a new plan.\n15. Repeat steps 7-14 for the next nearest unvisited target.\n16. Once all targets are visited, finish_task.",
+          "verifier_output": "pass\n\nThe plan adheres to the task type and uses only allowed actions: move_spot, rotate_spot, finish_task, and call_llm. Each action includes numeric values as required. The plan avoids vague instructions and contains no unbounded loops or repeated non-progressing actions. It also checks at_goal before assuming success and includes provisions for potential obstacles. The plan is structured into bounded progress chunks with checks and replan steps. Therefore, it passes verification."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -63.43}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -116.57}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -50.14}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}]\n    }\n  }",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -128.3,
+          "y": 5.7,
+          "heading": 334.7
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,105 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 2.951433314505266,
+  "avg_verifier_inference_time_s": 0.8494852752482984,
+  "avg_decoder_inference_time_s": 2.4879600376201174,
+  "avg_inference_time_s": 6.288878627373682,
+  "final_spot": {
+    "x": 107.3,
+    "y": -147.6,
+    "heading": 64.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot to face the target:\n   - rotate_spot(compute_desired_bearing - current_heading)\n\n2. Move Spot towards the target:\n   - move_spot(min(distance_to_center, 2.0))\n\n3. Verify progress:\n   - Check if at_goal is true. If true, finish_task.\n   - If obstacle_ahead is true before moving, call_llm for a new plan.\n\nFallbacks:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before moving, call_llm.\n\nNote: The compute_desired_bearing and distance_to_center need to be calculated using the provided geometry recipe based on Spot's current position and the target's coordinates.",
+          "verifier_output": "fail: The plan uses an action outside the allowed functions: rotate_spot(compute_desired_bearing - current_heading); move_spot(min(distance_to_center, 2.0)); check if at_goal is true. The rotate_spot action must specify a numeric degree value, not a computed difference."
+        },
+        {
+          "planner_output": "1. Compute the desired bearing to the target:\n   - desired_bearing = compute_desired_bearing_degrees\n\n2. Rotate Spot to face the target:\n   - rotate_spot(desired_bearing - current_heading)\n\n3. Move Spot towards the target:\n   - move_spot(min(distance_to_center, 2.0))\n\n4. Verify progress:\n   - Check if at_goal is true. If true, finish_task.\n   - If obstacle_ahead is true before moving, call_llm for a new plan.\n\nFallbacks:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before moving, call_llm.\n\nNote: The compute_desired_bearing_degrees and distance_to_center need to be calculated using the provided geometry recipe based on Spot's current position and the target's coordinates.",
+          "verifier_output": "fail: The plan uses actions outside move_spot, rotate_spot, finish_task, call_llm; compute_desired_bearing_degrees and distance_to_center are not part of the provided action tools."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 1\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 1\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"call_llm\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 51.2,
+          "y": -32.6,
+          "heading": 64.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "1. Compute the desired bearing to the target:\n   - desired_bearing = compute_desired_bearing_degrees\n\n2. Rotate Spot to face the target:\n   - rotate_spot(desired_bearing - current_heading)\n\n3. Move Spot towards the target:\n   - move_spot(min(distance_to_center, 2.0))\n\n4. Verify progress:\n   - Check if at_goal is true. If true, finish_task.\n   - If obstacle_ahead is true before moving, call_llm for a new plan.\n\nRevised plan with concrete actions:\n\n1. Compute the desired bearing to goal_1:\n   - desired_bearing = compute_desired_bearing_degrees\n\n2. Rotate Spot to face goal_1:\n   - rotate_spot(desired_bearing - current_heading)\n\n3. Move Spot towards goal_1:\n   - move_spot(min(sqrt((2.55-0)^2 + (5.45-0)^2), 2.0))\n\n4. Verify progress:\n   - Check if at_goal is true. If true, finish_task.\n   - If obstacle_ahead is true before moving, call_llm for a new plan.\n\nNote: The compute_desired_bearing_degrees and distance_to_center need to be calculated using the provided geometry recipe based on Spot's current position and the target's coordinates. In this case, the distance_to_center is approximately 6.25 meters, so we use min(6.25, 2.0) = 2.0 meters for the move_spot action.",
+          "verifier_output": "pass\n\nThe plan adheres to the task type and rules specified. It uses only allowed actions (move_spot, rotate_spot, finish_task, call_llm), provides numeric values for meters and degrees, avoids vague instructions, does not contain loops or unbounded patterns, checks at_goal before assuming success, and correctly uses move_spot with a limit of 2.0 meters when not already at the target. The plan also correctly incorporates the geometry recipe for computing distance_to_center and desired_bearing."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 90\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 2.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"call_llm\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 51.2,
+          "y": -32.6,
+          "heading": 64.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot to reduce the angle to the target:\n   - rotate_spot(desired_bearing - current_heading)\n\n2. Move Spot towards the target:\n   - move_spot(min(distance_to_center, 2.0))\n\n3. Verify progress:\n   - Check if at_goal is true. If true, finish_task.\n   - If obstacle_ahead is true before moving, call_llm for a new plan.\n\nRevised plan with concrete actions:\n\n1. Rotate Spot to reduce the angle to goal_1:\n   - rotate_spot(desired_bearing - current_heading)\n\n2. Move Spot towards goal_1:\n   - move_spot(min(sqrt((2.55-51.2)^2 + (5.45--32.6)^2), 2.0))\n\n3. Verify progress:\n   - Check if at_goal is true. If true, finish_task.\n   - If obstacle_ahead is true before moving, call_llm for a new plan.\n\nNote: The distance_to_center is approximately 62.87 meters, so we use min(62.87, 2.0) = 2.0 meters for the move_spot action. However, since Spot is far from the target, this move might not be feasible. In such cases, it's better to request call_llm for a new plan.\n\nRevised plan considering the current Spot position:\n\n1. Rotate Spot to reduce the angle to goal_1:\n   - rotate_spot(desired_bearing - current_heading)\n\n2. Move Spot towards goal_1:\n   - move_spot(min(sqrt((2.55-0)^2 + (5.45-0)^2), 2.0))\n\n3. Verify progress:\n   - Check if at_goal is true. If true, finish_task.\n   - If obstacle_ahead is true before moving, call_llm for a new plan.\n\nNote: The distance_to_center is approximately 6.25 meters, so we use min(6.25, 2.0) = 2.0 meters for the move_spot action.",
+          "verifier_output": "pass\n\nThe revised plan adheres to the task type and world information provided. It uses only the allowed actions (move_spot, rotate_spot, finish_task, call_llm) and provides concrete numeric values for meters and degrees. The plan also includes a check for at_goal and obstacle_ahead, and it appropriately limits the move_spot action to a maximum of 2.0 meters. There are no vague instructions, unbounded loops, or repeated failed action patterns. The plan also correctly calculates the distance to the target before each move_spot action."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": false},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 107.3,
+          "y": -147.6,
+          "heading": 64.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    }
+  ]
+}

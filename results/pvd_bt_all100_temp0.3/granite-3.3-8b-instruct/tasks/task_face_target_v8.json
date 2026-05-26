@@ -1,0 +1,49 @@
+{
+  "bt_count": 1,
+  "perfect_structure": true,
+  "valid_structure_count": 1,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 2.106949837470893,
+  "avg_verifier_inference_time_s": 0.39004326396388933,
+  "avg_decoder_inference_time_s": 2.2925068780314177,
+  "avg_inference_time_s": 4.7894999794662,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 351.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Since the task is to face the target, we need to compute the angle to rotate Spot towards the target.\n2. Calculate the target center: cx = (x1 + x2) / 2 = (5.5 + 6.5) / 2 = 6.0, cy = (y1 + y2) / 2 = (1.0 + 2.0) / 2 = 1.5.\n3. Compute dx = cx - x = 6.0 - 0 = 6.0 and dy = cy - y = 1.5 - 0 = 1.5.\n4. Desired world bearing = atan2(dy, dx) = atan2(1.5, 6.0) \u2248 19.5 degrees.\n5. Spot's current forward bearing = -heading = -0 = 0 degrees (since Spot starts facing +x).\n6. Rotate_spot degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180] = normalize(-(19.5 - 0)) \u2248 -19.5 degrees.\n7. Execute rotate_spot(-19.5) to face the target.\n\nFallbacks:\n- If at_goal is true after rotation, finish_task.\n- If obstacle_ahead is true before rotating, call_llm to request a new plan considering the obstacle.\n\nNote: The initial Spot state is facing +x, and the target is at approximately 19.5 degrees relative to this heading. The plan rotates Spot counterclockwise by approximately -19.5 degrees to face the target.",
+          "verifier_output": "fail: The plan uses actions outside move_spot, rotate_spot, finish_task, call_llm; compute the target center, calculate dx and dy, desired world bearing, and normalize the rotation angle are not valid actions."
+        },
+        {
+          "planner_output": "1. Rotate Spot 19.5 degrees clockwise to face the target.\n\nFallbacks:\n- If at_goal is true after rotation, finish_task.\n- If obstacle_ahead is true before rotating, call_llm to request a new plan considering the obstacle.",
+          "verifier_output": "fail: The plan uses rotate_spot without numeric degrees; vague instruction 'face the target'; assumes success without checking at_goal."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}},\n         {\n          \"type\": \"condition\",\n          \"observation\": \"obstacle_ahead\",\n          \"expected\": true\n        },\n        {\n          \"type\": \"action\",\n          \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}\n        }\n        ]\n      },\n      {\"type\": \"sequence\", \"children\": [\n        {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 19.5}}},\n        {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n        {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n      ]}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 351.0
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

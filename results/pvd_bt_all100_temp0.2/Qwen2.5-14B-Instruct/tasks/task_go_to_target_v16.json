@@ -1,0 +1,105 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 2.5138813609664794,
+  "avg_verifier_inference_time_s": 0.2616955392586533,
+  "avg_decoder_inference_time_s": 4.005845295304122,
+  "avg_inference_time_s": 6.781422195529255,
+  "final_spot": {
+    "x": 5.4,
+    "y": -2.5,
+    "heading": 26.5
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Compute the center of the target rectangle: cx = (7.1 + 7.9) / 2 = 7.5, cy = (-3.4 + -2.6) / 2 = -3.0.\n2. Compute dx = cx - x = 7.5 - 0.0 = 7.5, dy = cy - y = -3.0 - 0.0 = -3.0.\n3. Compute desired_bearing = atan2(dy, dx) = atan2(-3.0, 7.5) \u2248 -23.2 degrees.\n4. Compute forward_bearing = -heading = 0 degrees.\n5. Compute rotate_angle = normalize(-(desired_bearing - forward_bearing)) = normalize(-(-23.2 - 0)) = normalize(23.2) = 23.2 degrees.\n6. rotate_spot(23.2)\n7. Compute distance_to_center = sqrt(dx^2 + dy^2) = sqrt(7.5^2 + (-3.0)^2) = sqrt(56.25 + 9) = sqrt(65.25) \u2248 8.08 meters.\n8. move_spot(2.0)\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before moving: rotate_spot(90) or call_llm.",
+          "verifier_output": "fail: Uses atan2 and sqrt without specifying these as call_llm; move_spot(2.0) without checking at_goal; proposes more than one bounded progress chunk for the next attempt instead of short progress + check + replan."
+        },
+        {
+          "planner_output": "Main plan:\n1. Compute the center of the target rectangle: cx = (7.1 + 7.9) / 2 = 7.5, cy = (-3.4 + -2.6) / 2 = -3.0.\n2. call_llm()\n3. rotate_spot(23.2)\n4. move_spot(2.0)\n5. If at_goal is true: finish_task.\n6. If obstacle_ahead is true: rotate_spot(90) or call_llm.",
+          "verifier_output": "fail: Uses vague instruction \"call_llm()\" without a clear reason; Unbounded loop with conditional call_llm without progress action."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 23.2}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 1.8,
+          "y": -0.8,
+          "heading": 23.2
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Compute the center of the target rectangle: cx = (7.1 + 7.9) / 2 = 7.5, cy = (-3.4 + -2.6) / 2 = -3.0.\n2. From final_spot (x=1.8, y=-0.8, heading=23.2), compute dx = 7.5 - 1.8 = 5.7 and dy = -3.0 - (-0.8) = -2.2.\n3. Desired world bearing = atan2(-2.2, 5.7) = -22.6 degrees.\n4. Spot forward bearing = -23.2 degrees.\n5. rotate_spot(0.6)\n6. move_spot(2.0)\n7. If at_goal is true: finish_task.\n8. If obstacle_ahead is true: rotate_spot(90) or call_llm.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 0.6}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 3.6,
+          "y": -1.6,
+          "heading": 23.8
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Compute the center of the target rectangle: cx = (7.1 + 7.9) / 2 = 7.5, cy = (-3.4 + -2.6) / 2 = -3.0.\n2. From final_spot (x=3.6, y=-1.6, heading=23.8), compute dx = 7.5 - 3.6 = 3.9 and dy = -3.0 - (-1.6) = -1.4.\n3. Desired world bearing = atan2(-1.4, 3.9) = -21.1 degrees.\n4. Spot forward bearing = -23.8 degrees.\n5. rotate_spot(2.7)\n6. move_spot(2.0)\n7. If at_goal is true: finish_task.\n8. If obstacle_ahead is true: call_llm.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 2.7}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 2.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 5.4,
+          "y": -2.5,
+          "heading": 26.5
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 1.4851166901838344,
+  "avg_verifier_inference_time_s": 0.30993354896781966,
+  "avg_decoder_inference_time_s": 2.4768625727156177,
+  "avg_inference_time_s": 4.271912811867272,
+  "final_spot": {
+    "x": -15.7,
+    "y": -27.4,
+    "heading": 135.6
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot to face the target.\n   - Compute the desired world bearing to the target:\n     - cx = (-6.5 - 5.5) / 2 = -6.0, cy = (-1.7 - 0.7) / 2 = -1.2\n     - dx = -6.0 - 0.0 = -6.0, dy = -1.2 - 0.0 = -1.2\n     - Desired world bearing = atan2(-1.2, -6.0) \u2248 71.565 degrees\n   - Compute Spot's forward bearing:\n     - Spot's forward bearing = -0.0 degrees (facing +x)\n   - Calculate rotate_spot degrees:\n     - rotate_spot = normalize(-(71.565 - 0)) into [-180, 180] \u2248 71.565 degrees\n   - Execute rotate_spot(71.565)\n\n2. Verify if Spot is facing the target:\n   - If target_ahead is true and obstacle_ahead is false, proceed to finish_task.\n   - If obstacle_ahead is true, call_llm for a new plan.\n\nFallbacks:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before rotating, call_llm.",
+          "verifier_output": "fail: The plan uses vague instructions \"Compute the desired world bearing to the target\" and \"Compute Spot's forward bearing\"; it also uses vague instruction \"Calculate rotate_spot degrees\". These should be replaced with concrete instructions using available functions."
+        },
+        {
+          "planner_output": "1. Rotate Spot to face the target:\n   - Compute target center: cx = (-6.5 - 5.5) / 2 = -6.0, cy = (-1.7 - 0.7) / 2 = -1.2\n   - Compute dx = -6.0 - 0.0 = -6.0, dy = -1.2 - 0.0 = -1.2\n   - Desired world bearing = atan2(-1.2, -6.0) \u2248 71.565 degrees\n   - Spot's forward bearing = -0.0 degrees (facing +x)\n   - rotate_spot degrees = normalize(-(71.565 - 0)) into [-180, 180] \u2248 71.565 degrees\n   - Execute rotate_spot(71.565)\n\n2. Verify if Spot is facing the target:\n   - If target_ahead is true and obstacle_ahead is false, proceed to finish_task.\n   - If obstacle_ahead is true, call_llm for a new plan.\n\nFallbacks:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before rotating, call_llm.",
+          "verifier_output": "fail: The plan uses the rotate_spot action outside the allowed functions; it also lacks a concrete numeric rotate action for the rotation degrees."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 71.565\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"target_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": false\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"call_llm\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 71.6
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Fine-tune Spot's heading to face the target:\n   - Rotate Spot an additional 0.5 degrees toward the target: rotate_spot(0.5)\n\n2. Verify if Spot is facing the target:\n   - If target_ahead is true and obstacle_ahead is false, proceed to finish_task.\n   - If obstacle_ahead is true, call_llm for a new plan.\n\nFallbacks:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before rotating, call_llm.",
+          "verifier_output": "fail: The plan uses the action rotate_spot without specifying the numeric degrees; <short concrete reason> rotate_spot(0.5) lacks explicit degrees parameter."
+        },
+        {
+          "planner_output": "1. Rotate Spot 0.5 degrees toward the target: rotate_spot(0.5)\n\nFallbacks:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before rotating, call_llm.",
+          "verifier_output": "fail: The plan uses rotate_spot without numeric degrees; The plan uses vague instruction 'toward' in rotate_spot."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}},\n        \n{\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n        {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}]\n      },\n      {\"type\": \"sequence\", \"children\": [\n        {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 0.5}}}\n      ]}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 103.6
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot 0.5 degrees toward the target: rotate_spot(0.5)\n2. Move Spot forward 0.5 meters: move_spot(0.5)\n\nFallbacks:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before moving, call_llm.",
+          "verifier_output": "fail: rotate_spot lacks numeric degrees; move_spot lacks numeric meters"
+        },
+        {
+          "planner_output": "1. Rotate Spot 0.5 degrees toward the target: rotate_spot(0.5)\n2. Move Spot forward 0.5 meters: move_spot(0.5)\n\nFallbacks:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before moving, call_llm.",
+          "verifier_output": "fail: rotate_spot action lacks numeric degrees; move_spot action lacks numeric meters."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"obstacle_ahead\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 0.5}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 0.5}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -15.7,
+          "y": -27.4,
+          "heading": 135.6
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    }
+  ]
+}
