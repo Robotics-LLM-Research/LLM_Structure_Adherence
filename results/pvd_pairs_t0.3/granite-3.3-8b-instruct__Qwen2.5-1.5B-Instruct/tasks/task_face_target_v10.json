@@ -1,0 +1,55 @@
+{
+  "bt_count": 3,
+  "perfect_structure": false,
+  "valid_structure_count": 0,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 2.5978297480226806,
+  "avg_verifier_inference_time_s": 0.024727069035482902,
+  "avg_decoder_inference_time_s": 53.139323396647036,
+  "avg_inference_time_s": 55.7618802137052,
+  "final_spot": null,
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot to adjust its heading towards the target. Calculate the desired bearing to the target using the target center coordinates (cx, cy) and Spot's current pose (x, y, heading). Compute rotate_spot degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180].\n2. Execute the rotation: call rotate_spot with the computed degrees.\n3. Verify if Spot is facing the target by checking if target_ahead is true. If true, proceed to the next step; if false, call_llm to request a new plan, as the current strategy is insufficient.\n4. If target_ahead is true, execute a small move_spot forward to get closer to the target. Compute move_spot meters = min(distance_to_center, 2.0), ensuring Spot does not exceed a safe step.\n5. Verify if at_goal is true. If true, call finish_task to signal the task completion. If false, recompute the desired bearing and repeat from step 1.\n\nFallbacks:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before moving, call_llm.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"condition\",\n        \"observation\": \"target_ahead\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -180\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"target_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"sequence\",\n            \"children\": [\n              {\n                \"type\": \"action\",\n                \"call\": {\n                  \"tool_name\": \"move_spot\",\n                  \"arguments\": {\n                    \"meters\": 2.0\n                  }\n                }\n              },\n              {\n                \"type\": \"condition\",\n                \"observation\": \"at_goal\",\n                \"expected\": true\n              },\n              {\n                \"type\": \"sequence\",\n                \"children\": [\n                  {\n                    \"type\": \"action\",\n                    \"call\": {\n                      \"tool_name\": \"finish_task\"\n                    \t\t\t\t\t\t\n                  \t\t\t\t\t\t\n                    ,\n                    \"arguments\": {}\n                  }\n                }\n              ]\n            }\n          ]\n        }\n      ]\n    },\n    {\n      \"type\": \"condition\",\n      \"observation\": \"obstacle_ahead\",\n      \"expected\": true\n    },\n    {\n      \"type\": \"action\",\n      \"call\": {\n        \"tool_name\": \"call_llm\"\n      \t\t\t\t\t\t\n      \t\t\t\t\t\t\n        ,\n        \"arguments\": {}\n      }\n    }\n  ]\n}",
+      "plan_results": {
+        "error": "Invalid JSON: Expecting ',' delimiter: line 79 column 2 (char 1714)"
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot to face the target.\n   - Compute the desired world bearing to the target: desired_bearing = atan2(cx - y, x - x) where cx=(1.5+2.5)/2 and cy=(4.5+5.5)/2.\n   - Compute Spot's forward bearing: Spot_forward_bearing = -0.0 (current heading).\n   - Calculate the rotate_spot degrees: rotate_spot = normalize(-(desired_bearing - Spot_forward_bearing)) into [-180, 180].\n   - Execute rotate_spot action with the computed degrees.\n\nFallbacks:\n- If at_goal is true after rotation: finish_task.\n- If obstacle_ahead is true before rotating: call_llm for a new plan.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"condition\",\n        \"observation\": \"at_goal\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -180\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"sequence\",\n            \"children\": [\n              {\n                \"type\": \"action\",\n                \"call\": {\n                  \"tool_name\": \"rotate_spot\",\n                  \"arguments\": {\n                    \"degrees\": 180\n                  }\n                }\n              },\n              {\n                \"type\": \"condition\",\n                \"observation\": \"at_goal\",\n                \"expected\": true\n              },\n              {\n                \"type\": \"sequence\",\n                \"children\": [\n                  {\n                    \"type\": \"action\",\n                    \"call\": {\n                      \"tool_name\": \"finish_task\"",
+      "plan_results": {
+        "error": "Invalid JSON: Expecting ',' delimiter: line 50 column 49 (char 1239)"
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Since the task is to face the target, we need to compute the desired heading to face \"goal_1\".\n2. Calculate the target center: cx = (1.5 + 2.5) / 2 = 2.0, cy = (4.5 + 5.5) / 2 = 5.0.\n3. Compute dx = cx - x = 2.0 - 0.0 = 2.0 and dy = cy - y = 5.0 - 0.0 = 5.0.\n4. Calculate the desired world bearing: desired_bearing = atan2(dy, dx) = atan2(5.0, 2.0) \u2248 68.2 degrees.\n5. Spot's current forward bearing is 0.0 degrees (since heading=0.0).\n6. Compute rotate_spot degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180]: rotate_spot(68.2).\n7. Execute the rotate_spot action with the computed degrees.\n8. Verify if at_goal is true. If true, finish_task.\n\nFallbacks:\n- If obstacle_ahead is true before rotating, call_llm for a new plan as rotation might not be feasible without further information.\n- If obstacle_left or obstacle_right is true, adjust the rotation strategy based on the detected obstacle location.\n\nNote: The plan assumes no obstacles are present directly ahead, and the rotation is straightforward. If obstacles are detected, additional steps to navigate around them would be required, potentially involving calling the LLM for a new plan.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\n            \"degrees\": -68.2\n          }\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_left\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_right\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\n            \"degrees\": -68.2\n          }\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"at_goal\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"finish_task\"",
+      "plan_results": {
+        "error": "Invalid JSON: Expecting ',' delimiter: line 46 column 37 (char 937)"
+      }
+    }
+  ]
+}

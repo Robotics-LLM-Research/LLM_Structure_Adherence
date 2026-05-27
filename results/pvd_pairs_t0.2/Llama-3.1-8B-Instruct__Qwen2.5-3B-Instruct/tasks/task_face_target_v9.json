@@ -1,0 +1,105 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 0.8768801112892106,
+  "avg_verifier_inference_time_s": 0.06371481323731132,
+  "avg_decoder_inference_time_s": 2.275943965340654,
+  "avg_inference_time_s": 3.216538889867176,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. rotate_spot(90.0)\n2. finish_task()\n\nExplanation:\nSince the task is to face the target, we need to rotate Spot to face the target. The target is located at (5.5, -1.5) and Spot is at (0, 0). The desired world bearing to the target is atan2(-1.5, 5.5) = -26.565 degrees. Since Spot's current heading is 0 degrees, we need to rotate 90 degrees to face the target. \n\nNote that we do not need to move Spot, as the task only requires it to face the target. Therefore, after rotating, we can finish the task.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"sequence\",\n    \"children\": [\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\n            \"degrees\": 90.0\n          }\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"at_goal\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          }\n        ]\n      },\n      {\n        \"type\": \"fallback\",\n        \"children\": [\n          {\n            \"type\": \"sequence\",\n            \"children\": [\n              {\n                \"type\": \"action\",\n                \"call\": {\n                  \"tool_name\": \"call_llm\",\n                  \"arguments\": {}\n                }\n              }\n            ]\n          }\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. rotate_spot(90.0)\n2. move_spot(0.0)\n3. rotate_spot(-90.0)\n4. move_spot(0.0)\n5. call_llm()\n\nExplanation:\nSince the previous plan did not succeed, we need to re-evaluate the situation. The final Spot pose is back at the starting position (0, 0) with a heading of 0 degrees. We still need to face the target, which is at (5.5, -1.5).\n\nTo face the target, we need to rotate Spot 90 degrees to the right (since the target is at a negative y-coordinate). We do this in two steps: first, rotate 90 degrees to the right (step 1), then move 0 meters to ensure Spot doesn't move (step 2), then rotate 90 degrees to the left to face the target (step 3), and finally move 0 meters again (step 4).\n\nHowever, since we are still not facing the target after these steps, we need to request a new behavior tree from the LLM to get a revised plan.",
+          "verifier_output": "fail: call_llm proposed after unsuccessful steps; should check at_goal first; repeat failed action pattern"
+        },
+        {
+          "planner_output": "1. rotate_spot(90.0)\n2. move_spot(0.0)\n3. rotate_spot(-90.0)\n4. move_spot(0.0)\n5. at_goal\n6. finish_task\n\nExplanation:\nWe removed the call_llm() action and added a check for at_goal after the last two steps. If the target is still not reached after these steps, we will finish the task.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"sequence\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90.0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 0.0}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90.0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 0.0}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "1. rotate_spot(90.0)\n2. move_spot(0.0)\n3. rotate_spot(-90.0)\n4. move_spot(0.0)\n5. call_llm",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90.0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 0.0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90.0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 0.0}}}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90.0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 0.0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -90.0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 0.0}}}\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    }
+  ]
+}

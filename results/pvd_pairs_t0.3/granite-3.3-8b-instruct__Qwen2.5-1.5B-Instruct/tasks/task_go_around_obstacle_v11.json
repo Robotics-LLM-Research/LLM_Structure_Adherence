@@ -1,0 +1,55 @@
+{
+  "bt_count": 3,
+  "perfect_structure": false,
+  "valid_structure_count": 0,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 3.0838301820137226,
+  "avg_verifier_inference_time_s": 0.021147727345426876,
+  "avg_decoder_inference_time_s": 49.30175832965566,
+  "avg_inference_time_s": 52.40673623901481,
+  "final_spot": null,
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n\n1. Rotate Spot 90 degrees to the right to prepare for moving around the obstacle.\n   - Action: rotate_spot(90)\n\n2. Move Spot forward by 1 meter to start approaching the obstacle.\n   - Action: move_spot(1)\n\n3. Verify if the obstacle is still ahead. If obstacle_ahead is true, rotate again to find a clear path.\n   - If obstacle_ahead is true, rotate 90 degrees to the right.\n   - Action: rotate_spot(90)\n\n4. Move Spot forward by 1 meter again.\n   - Action: move_spot(1)\n\n5. Repeat steps 3 and 4 until Spot is no longer detecting an obstacle directly ahead.\n   - Continue rotating 90 degrees right and moving 1 meter forward whenever obstacle_ahead is true.\n\n6. Once Spot is not detecting an obstacle directly ahead, rotate to face the target.\n   - Calculate the desired bearing to the target (goal_1).\n   - Action: rotate_spot(<desired_bearing_degrees>)\n\n7. Move Spot forward by 1 meter towards the target.\n   - Action: move_spot(1)\n\n8. Verify if Spot has reached the target. If at_goal is true, finish the task.\n   - If at_goal is true, finish_task()\n\n9. If Spot has not reached the target, continue with short bounded moves and rotations, always recomputing the nearest target and adjusting the heading accordingly.\n   - Recompute the nearest target center.\n   - Rotate to the new desired bearing.\n   - Move forward by a bounded distance.\n   - Repeat until at_goal is true or further movement is blocked.\n\nFallbacks:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before moving, rotate_spot or call_llm.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\n            \"degrees\": 90\n          }\n        }\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"move_spot\",\n          \"arguments\": {\n            \"meters\": 1\n          }\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\n            \"degrees\": 90\n          }\n        }\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"move_spot\",\n          \"arguments\": {\n            \"meters\": 1\n          }\n        }\n      },\n      {\n        \"type\": \"fallback\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\"",
+      "plan_results": {
+        "error": "Invalid JSON: Expecting ',' delimiter: line 62 column 41 (char 1247)"
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot to check left: rotate_spot(-15).\n2. Verify if obstacle_left is false. If true, proceed to move towards the target; if false, adjust heading and try again.\n3. If obstacle_left is false, rotate Spot to face the target: calculate desired_bearing using the target's center coordinates relative to Spot's current position. Use rotate_spot to adjust Spot's heading to align with the desired_bearing, ensuring the rotation degrees are within [-180, 180].\n4. Move Spot forward: move_spot(1.0) towards the target.\n5. Verify if at_goal is true. If true, finish_task.\n6. If at_goal is false and obstacle_ahead is false, continue with the next move. If obstacle_ahead is true, call_llm to request a new plan.\n7. If obstacle_ahead is true and obstacle_left/right are false, adjust heading to navigate around the obstacle:\n   - If obstacle is on the left, rotate Spot right: rotate_spot(15).\n   - If obstacle is on the right, rotate Spot left: rotate_spot(-15).\n8. Repeat steps 4 to 7 until Spot successfully navigates around the obstacle and reaches the target or a new plan is requested.\n\nFallbacks:\n- If at_goal is true at any point, finish_task.\n- If obstacle_ahead is detected and neither obstacle_left nor obstacle_right is detected, call_llm for a new plan.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -15\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_left\",\n            \"expected\": false\n          },\n          {\n            \"type\": \"sequence\",\n            \"children\": [\n              {\n                \"type\": \"action\",\n                \"call\": {\n                  \"tool_name\": \"rotate_spot\",\n                  \"arguments\": {\n                    \"degrees\": -15\n                  }\n                }\n              },\n              {\n                \"type\": \"action\",\n                \"call\": {\n                  \"tool_name\": \"move_spot\",\n                  \"arguments\": {\n                    \"meters\": 1.0\n                  }\n                }\n              },\n              {\n                \"type\": \"condition\",\n                \"observation\": \"at_goal\",\n                \"expected\": true\n              },\n              {\n                \"type\": \"action\",\n                \"call\": {\n                  \"tool_name\": \"finish_task\"",
+      "plan_results": {
+        "error": "Invalid JSON: Expecting ',' delimiter: line 56 column 45 (char 1390)"
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot 90 degrees to the right to prepare for moving around the obstacle.\n   - Action: rotate_spot(90)\n\n2. Move Spot forward by 1 meter to initiate the obstacle avoidance maneuver.\n   - Action: move_spot(1)\n\n3. Rotate Spot 90 degrees to the right to adjust the heading toward the new path around the obstacle.\n   - Action: rotate_spot(90)\n\n4. Move Spot forward by 1 meter, checking for obstacles before proceeding.\n   - Action: move_spot(1)\n\n5. If no obstacle is detected ahead, continue moving forward in a straight line to reach the target. Otherwise, adjust the heading to avoid the obstacle and repeat the process of moving forward in small increments.\n   - Action: If obstacle_ahead is false, move_spot(1); else, adjust heading to avoid obstacle and move_spot(1).\n\n6. Once the target is reached, finish the task.\n   - Action: finish_task()\n\nFallbacks:\n- If at_goal is true during any step, execute finish_task().\n- If an obstacle is detected and cannot be avoided with the current strategy (two consecutive attempts without progress), call_llm() to request a new behavior tree.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 90\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 1\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 90\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 1\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": false\n          },\n          {\n            \"type\": \"sequence\",\n            \"children\": [\n              {\n                \"type\": \"action\",\n                \"call\": {\n                  \"tool_name\": \"move_spot\",\n                  \"arguments\": {\n                    \"meters\": 1\n                  }\n                }\n              },\n              {\n                \"type\": \"condition\",\n                \"observation\": \"at_goal\",\n                \"expected\": true\n              },\n              {\n                \"type\": \"action\",\n                \"call\": {\n                  \"tool_name\": \"finish_task\"",
+      "plan_results": {
+        "error": "Invalid JSON: Expecting ',' delimiter: line 74 column 45 (char 1759)"
+      }
+    }
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 1.192603854520712,
+  "avg_verifier_inference_time_s": 0.34688630469221,
+  "avg_decoder_inference_time_s": 1.3306526109809056,
+  "avg_inference_time_s": 2.8701427701938274,
+  "final_spot": {
+    "x": 0.2,
+    "y": 0.5,
+    "heading": 279.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Based on the task type and the given information, here is a possible plan.\n\nMain plan:\n1. call_llm() \n2. rotate_spot(-45.0)\n3. move_spot(0.5)\n4. rotate_spot(-45.0)\n5. move_spot(0.5)\n6. rotate_spot(45.0)\n7. move_spot(0.5)\n8. rotate_spot(45.0)\n9. move_spot(0.5)\n10. call_llm()\n\nReasoning:\n- Since there are no obstacles in the world, we can directly move towards the closest target.\n- The closest target is goal_1 with center coordinates (2.0, 4.0).\n- From the initial Spot position (0.0, 0.0) with heading 0.0, we need to rotate Spot towards the target.\n- We calculate the desired bearing as atan2(4.0, 2.0) = 63.43 degrees.\n- The Spot's forward bearing is 0 degrees, so we need to rotate Spot by -(63.43 - 0) = -63.43 degrees.\n- Since the rotate_spot action requires degrees, we normalize the angle to -63.43 within the range [-180, 180] which is -63.43.\n- We choose a move_spot of 0.5 meters to move towards the target in a safe bounded step.\n- After the first move, we recompute the target center from the final Spot position and repeat the rotate/move cycle.\n- Since the target_ahead is true before moving, we rotate Spot by 45.0 degrees in both success and failure cases.\n- We continue this process until the at_goal condition is met.\n- If the at_goal condition is met, we finish the task.\n- If the task is not completed after 4 attempts, we call the LLM to get a new plan.",
+          "verifier_output": "fail: Unbounded loop; Long search pattern; Repeated non-progressing actions\n\n\nThe plan contains an unbounded loop and long search pattern due to repeated rotate/move actions without a clear termination condition. It also includes repeated non-progressing actions (multiple rotate/move cycles) without checking the at_goal condition after each move."
+        },
+        {
+          "planner_output": "Main plan:\n1. call_llm() \n2. rotate_spot(45.0)\n3. move_spot(0.5)\n4. at_goal\n5. finish_task()\n\nRevised reasoning:\n- Since there are no obstacles in the world, we can directly move towards the closest target.\n- The closest target is goal_1 with center coordinates (2.0, 4.0).\n- From the initial Spot position (0.0, 0.0) with heading 0.0, we need to rotate Spot towards the target.\n- We calculate the desired bearing as atan2(4.0, 2.0) = 63.43 degrees.\n- The Spot's forward bearing is 0 degrees, so we need to rotate Spot by -(63.43 - 0) = -63.43 degrees.\n- Since the rotate_spot action requires degrees, we normalize the angle to -63.43 within the range [-180, 180] which is -63.43.\n- We choose a move_spot of 0.5 meters to move towards the target in a safe bounded step.\n- After the first move, we check if we have reached the target.\n- If the at_goal condition is met, we finish the task.\n- If not, we call the LLM to get a new plan.",
+          "verifier_output": "fail: The plan uses an unbounded loop; It assumes success without checking at_goal; It proposes more than one bounded progress chunk for the next attempt instead of short progress + check + replan.\n\n1. The plan assumes success without checking at_goal, which can lead to an unbounded loop if the Spot does not reach the target.\n2. The plan calls call_llm() after the first move without checking if the Spot has already reached the target, which can result in unnecessary actions.\n3. The plan suggests more than one bounded progress chunk by moving 0.5 meters and then calling LLM without checking the at_goal condition."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -63.43}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 0.5}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.2,
+          "y": 0.4,
+          "heading": 296.6
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Revised plan:\n1. rotate_spot(163.7)\n2. move_spot(0.5)\n3. at_goal\n4. finish_task()\n\nRevised reasoning:\n- Spot was rotated to face the target, but the move was incomplete.\n- From the final Spot pose (0.2, 0.4) with heading 296.6, we need to rotate Spot towards the target.\n- We calculate the desired bearing as atan2(2.0-0.4, 4.0-0.2) = 67.37 degrees.\n- The Spot's forward bearing is 296.6 degrees, so we need to rotate Spot by -(67.37 - 296.6) = 229.23 degrees.\n- Since the rotate_spot action requires degrees, we normalize the angle to 229.23 within the range [-180, 180] which is 229.23.\n- We choose a move_spot of 0.5 meters to move towards the target in a safe bounded step.\n- After the first move, we check if we have reached the target.\n- If the at_goal condition is met, we finish the task.\n- If not, we call the LLM to get a new plan.",
+          "verifier_output": "fail: The plan uses an unbounded loop; go_around_obstacle gives a long route instead of one bounded safe step plus replanning; It repeats a failed action pattern described in feedback; It proposes more than one bounded progress chunk for the next attempt instead of short progress + check + replan."
+        },
+        {
+          "planner_output": "1. call_llm()\n2. rotate_spot(-105.0)\n3. move_spot(0.5)\n4. at_goal\n5. finish_task()",
+          "verifier_output": "fail: The plan uses an unbounded search pattern; at_goal is not a valid action; rotate_spot lacks numeric degrees."
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -105.0}}},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 0.5}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.2,
+          "y": 0.4,
+          "heading": 296.6
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. call_llm()\n2. rotate_spot(-73.4)\n3. move_spot(0.5)\n4. at_goal\n5. finish_task()",
+          "verifier_output": "fail: The plan uses an unbounded loop by repeatedly calling call_llm() without a progress check; move_spot lacks numeric meters."
+        },
+        {
+          "planner_output": "1. rotate_spot(-73.4)\n2. move_spot(0.5)\n3. at_goal\n4. finish_task()",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"sequence\",\n    \"children\": [\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -73.4}}},\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 0.5}}},\n      {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.2,
+          "y": 0.5,
+          "heading": 279.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    }
+  ]
+}

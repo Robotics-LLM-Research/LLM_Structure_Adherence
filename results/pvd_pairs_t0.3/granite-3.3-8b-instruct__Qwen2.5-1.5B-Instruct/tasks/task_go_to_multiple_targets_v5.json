@@ -1,0 +1,55 @@
+{
+  "bt_count": 3,
+  "perfect_structure": false,
+  "valid_structure_count": 0,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 4.668765033983315,
+  "avg_verifier_inference_time_s": 0.022506717359647155,
+  "avg_decoder_inference_time_s": 49.15227416301301,
+  "avg_inference_time_s": 53.84354591435597,
+  "final_spot": null,
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "1. Compute the distance and bearing to the nearest target, \"goal_1\".\n   - dx = 2.0 - 0.0 = 2.0\n   - dy = -0.5 - 0.0 = -0.5\n   - Desired bearing = atan2(-0.5, 2.0) \u2248 -116.57 degrees\n   - Spot forward bearing = 0 degrees\n   - rotate_spot degrees = normalize(-(-116.57 - 0)) \u2248 116.57 degrees\n   - move_spot meters = min(sqrt(2.0^2 + 0.5^2), 2.0) \u2248 2.0 meters\n\n2. Execute the rotate_spot(116.57) and move_spot(2.0) actions.\n\n3. Verify if at_goal is true. If true, finish_task.\n\n4. If at_goal is false, check for obstacles. If obstacle_ahead is true, rotate_spot(-116.57) and try moving again.\n\n5. If obstacle_ahead is false, proceed to the next target, \"goal_2\".\n\n6. Compute the distance and bearing to the next target, \"goal_2\".\n   - dx = 5.0 - 2.0 = 3.0\n   - dy = -1.5 - 0.0 = -1.5\n   - Desired bearing = atan2(-1.5, 3.0) \u2248 -85.26 degrees\n   - Spot forward bearing = 0 degrees\n   - rotate_spot degrees = normalize(-(-85.26 - 0)) \u2248 85.26 degrees\n   - move_spot meters = min(sqrt(3.0^2 + 1.5^2), 2.0) \u2248 2.0 meters\n\n7. Execute the rotate_spot(85.26) and move_spot(2.0) actions.\n\n8. Verify if at_goal is true. If true, finish_task.\n\n9. If at_goal is false, check for obstacles. If obstacle_ahead is true, rotate_spot(-85.26) and try moving again.\n\n10. If obstacle_ahead is false, continue to the next target, \"goal_2\" (repeating the process if necessary).\n\nFallbacks:\n- If at_goall is true at any point, finish_task.\n- If obstacle_ahead is true before moving, rotate_spot in the opposite direction and recompute the bearing for the next attempt.\n- If two attempts in a row result in target_ahead=false and at_goal=false, adjust the heading strategy before moving again.\n- If encountering persistent obstacles, call_llm for a new behavior tree.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"condition\",\n        \"observation\": \"at_goal\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -116.57\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 2.0\n              }\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 116.57\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 2.0\n              }\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\"",
+      "plan_results": {
+        "error": "Invalid JSON: Expecting ',' delimiter: line 72 column 41 (char 1549)"
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "1. Compute the distance to each target from Spot's initial position:\n   - Distance to goal_1: sqrt((2.0-0)^2 + (-0.5-0)^2) = 2.24 meters\n   - Distance to goal_2: sqrt((5.0-0)^2 + (-2.5-0)^2) = 7.07 meters\n\n2. Choose the nearest target, which is goal_1.\n\n3. Calculate the desired bearing to goal_1:\n   - Desired bearing = atan2(-0.5, 2.0) = -116.57 degrees (relative to Spot's initial heading of 0 degrees).\n\n4. Since Spot's initial heading is 0 degrees, and the desired bearing to goal_1 is -116.57 degrees, we need to rotate Spot counter-clockwise.\n\n5. Calculate the rotate_spot degrees:\n   - rotate_spot(-116.57)\n\n6. Move Spot forward by a bounded distance (e.g., 1.5 meters) towards goal_1:\n   - move_spot(1.5)\n\n7. Verify progress:\n   - If at_goal is true for goal_1, finish_task.\n   - If obstacle_ahead is true before moving, rotate_spot(<numeric angle>) or call_llm.\n   - If target_ahead is false, rotate before moving again.\n   - If two attempts in a row keep target_ahead=false and at_goal=false, change heading strategy before moving again.\n\n8. If Spot successfully reaches goal_1 without hitting an obstacle, mark it as visited and proceed to the next nearest target, goal_2.\n\n9. Repeat steps 3-8 for goal_2, adjusting the rotate_spot degrees and move_spot meters accordingly.\n\nFallbacks:\n- If at_goal is true for any target, finish_task.\n- If obstacle_ahead is true before moving, rotate_spot(<numeric angle>) or call_llm.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\n            \"degrees\": -116.57\n          }\n        }\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"move_spot\",\n          \"arguments\": {\n            \"meters\": 1.5\n          }\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"at_goal\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"finish_task\"",
+      "plan_results": {
+        "error": "Invalid JSON: Expecting ',' delimiter: line 36 column 37 (char 709)"
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "1. Compute the distance and desired heading to the nearest target, \"goal_1\".\n   - dx = goal_1.cx - Spot.x = 2.5 - 0.0 = 2.5\n   - dy = goal_1.cy - Spot.y = -0.25 - 0.0 = -0.25\n   - distance_to_center = sqrt(dx^2 + dy^2) = sqrt(2.5^2 + (-0.25)^2) \u2248 2.52 meters\n   - desired_bearing = atan2(-0.25, 2.5) \u2248 -10.29 degrees\n   - Spot.heading = 0 degrees, so forward_bearing = 0 degrees\n   - rotate_spot degrees = normalize(-(desired_bearing - forward_bearing)) \u2248 normalize(-(-10.29 - 0)) \u2248 10.29 degrees\n\n2. Execute the rotate action:\n   - rotate_spot(10.29)\n\n3. Verify progress:\n   - If target_ahead is true and obstacle_ahead is false, proceed to move.\n   - If obstacle_ahead is true or target_ahead is false, revise the heading strategy and try again.\n\n4. Move Spot toward the target:\n   - move_spot(2.0)\n\n5. Verify progress:\n   - If at_goal is true, finish the task.\n   - If obstacle_ahead is true, revise the heading strategy and call_llm for a new plan.\n   - If target_ahead is false and at_goal is false, revise the heading strategy and try again.\n\n6. Repeat steps 1-5 for the next nearest target, \"goal_2\".\n\nFallbacks:\n- If at_goal is true for either target, finish_task.\n- If obstacle_ahead is true before moving, revise the heading strategy or call_llm.\n\nNote: The plan assumes that the targets are reachable without encountering obstacles. If an obstacle is detected, the plan suggests revising the heading strategy and potentially calling the LLM for a new plan. The plan prioritizes short, bounded moves to ensure safety and adaptability.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"condition\",\n        \"observation\": \"target_ahead\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\n            \"degrees\": 10.29\n          }\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 2.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\"",
+      "plan_results": {
+        "error": "Invalid JSON: Expecting ',' delimiter: line 44 column 41 (char 947)"
+      }
+    }
+  ]
+}

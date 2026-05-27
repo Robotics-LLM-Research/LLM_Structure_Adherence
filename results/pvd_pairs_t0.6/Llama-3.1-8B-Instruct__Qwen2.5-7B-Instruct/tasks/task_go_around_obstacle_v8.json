@@ -1,0 +1,113 @@
+{
+  "bt_count": 3,
+  "perfect_structure": true,
+  "valid_structure_count": 3,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 1.3420331366554212,
+  "avg_verifier_inference_time_s": 0.17218352082030228,
+  "avg_decoder_inference_time_s": 1.9374386879693095,
+  "avg_inference_time_s": 3.451655345445033,
+  "final_spot": {
+    "x": 0.4,
+    "y": -1.4,
+    "heading": 135.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. rotate_spot(58)\n2. move_spot(1.0)\n3. call_llm()\n\nReasoning:\n\n1. Since obstacle_ahead is true, Spot is blocked by an obstacle directly ahead. We need to rotate Spot to go around it. The desired bearing to the target is computed by first finding the center of the target rectangle. The target center is cx=(8.0+10.0)/2=9.0 and cy=(-1.0+1.0)/2=0. The desired bearing is atan2(0-0, 9.0-0)=0 degrees. Spot's forward bearing is -0.0 (since it's facing +x initially), so the rotation needed is -(0-0)=0 degrees. However, since we're planning from Spot's initial orientation (heading=0), we don't need to rotate yet.\n\n2. However, to make progress, we'll rotate Spot to face the target, then move a short distance. First, we need to rotate Spot to face the target. The desired bearing is 0 degrees, and Spot's current bearing is 0 degrees. We don't need to rotate, but we do need to rotate to avoid the obstacle. The obstacle to the right is wall_2, and the angle from Spot to wall_2 is 90 degrees. Since we need to turn toward -y, the rotation is 90 degrees. However, we should rotate away from the obstacle to the left instead, which is wall_1, and the angle from Spot to wall_1 is 90 degrees. Since we need to turn toward -y, the rotation is 90 degrees. But we're blocked by wall_2 to the right, so we'll rotate left to face the gap between the two walls. The angle from Spot to the gap between wall_1 and wall_2 is 90 degrees. Since we need to turn toward -y, the rotation is -(90-90)=0 degrees is incorrect. The correct rotation should be 90 degrees left, but since we're blocked by wall_2 to the right, we need to rotate left to face the gap between the two walls. The angle from Spot to the gap between wall_1 and wall_2 is 90 degrees. Since we need to turn toward -y, the rotation is -90 degrees.\n\nHowever, I made a calculation error. Let's analyze again. Since the Spot is blocked by an obstacle directly ahead, it should rotate 90 degrees to the left to face the gap between the two walls. The rotation is -90 degrees.\n\n3. After rotating, Spot should move a short distance to make progress. Since we're not at the goal yet, and there's an obstacle ahead, we'll move 1.0 meters. \n\n4. After attempting to move, we need to re-plan. Since we're still not at the goal, we'll call the LLM to get a new plan.\n\nNote: This plan assumes that the LLM can handle the situation and provide a better plan. If not, we might need to add more steps to the plan.",
+          "verifier_output": "fail: It contains an unbounded loop, long search pattern, or repeated non-progressing actions; The plan incorrectly calculates the rotation as -90 degrees when a 90-degree left rotation is needed to face the gap between the two walls."
+        },
+        {
+          "planner_output": "1. rotate_spot(90)\n2. move_spot(1.0)\n3. call_llm()\n\nExplanation:\n- The rotation needed to face the gap between the two walls is indeed 90 degrees to the left, not -90 degrees.\n- The plan now includes a clear rotation to face the gap, then a short move to make progress.\n- If the plan fails, the LLM will be called to provide a new plan.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 90}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 1.0}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {} }}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": -1.0,
+          "heading": 90.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. move_spot(1.0)\n2. rotate_spot(90)\n3. move_spot(1.0)\n4. call_llm()\n\nExplanation:\n- The previous plan has failed, so a new plan must be generated.\n- Since there is no obstacle ahead, we can try to move forward.\n- If the movement fails, we need to reassess the situation and call the LLM to get a new plan.",
+          "verifier_output": "fail: It assumes success without checking at_goal; It gives a long route instead of one bounded safe step plus replanning."
+        },
+        {
+          "planner_output": "1. rotate_spot(-45)\n2. move_spot(0.5)\n3. call_llm()\n\nExplanation:\n- The revised plan first checks if there's a safe step to the left.\n- If the move is safe, the plan will continue; if not, the LLM will be called to reassess the situation.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 0.5}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": true,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.4,
+          "y": -1.4,
+          "heading": 45.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. call_llm()\n2. rotate_spot(45)\n3. move_spot(0.5)\n4. call_llm()\n\nExplanation:\n- The previous plan failed, so we call the LLM to get a new plan.\n- The LLM plan rotates 45 degrees, which is the opposite direction of the previous rotation, to potentially create a safe path around the obstacle.\n- Then, it moves 0.5 meters, which is a short step, to try to find a safe path around the obstacle.\n- If the plan still fails, the LLM will be called again to reassess the situation.",
+          "verifier_output": "fail: long route instead of one bounded safe step plus replanning; repeated failed action pattern described in feedback.\n\nExplanation:\n- The plan suggests a long route by repeatedly calling `call_llm()` without providing bounded, safe steps.\n- The repeated pattern of calling `call_llm()` after each action indicates an unbounded loop without progress."
+        },
+        {
+          "planner_output": "1. rotate_spot(135)\n2. move_spot(0.5)\n3. call_llm()\n4. rotate_spot(-45)\n5. move_spot(0.5)\n6. call_llm()\n7. finish_task()\n\nExplanation:\n- The revised plan first rotates 135 degrees to change the heading, then moves 0.5 meters to try to find a safe path around the obstacle.\n- If the plan still fails, the LLM is called to reassess the situation.\n- The second attempt rotates -45 degrees to adjust the heading again, then moves another 0.5 meters to try to find a safe path.\n- If the plan still fails, the LLM is called again.\n- If the plan succeeds, the task is finished.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": 135}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 0.5}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"rotate_spot\", \"arguments\": {\"degrees\": -45}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"move_spot\", \"arguments\": {\"meters\": 0.5}}},\n          {\"type\": \"condition\", \"observation\": \"at_goal\", \"expected\": true},\n          {\"type\": \"action\", \"call\": {\"tool_name\": \"finish_task\", \"arguments\": {} }}\n        ]\n      },\n      {\"type\": \"action\", \"call\": {\"tool_name\": \"call_llm\", \"arguments\": {}}}\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.4,
+          "y": -1.4,
+          "heading": 135.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": true
+      }
+    }
+  ]
+}

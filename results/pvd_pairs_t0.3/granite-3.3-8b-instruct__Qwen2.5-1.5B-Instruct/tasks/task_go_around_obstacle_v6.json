@@ -1,0 +1,73 @@
+{
+  "bt_count": 3,
+  "perfect_structure": false,
+  "valid_structure_count": 1,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 2.8401576386531815,
+  "avg_verifier_inference_time_s": 0.02134914300404489,
+  "avg_decoder_inference_time_s": 33.24951603768083,
+  "avg_inference_time_s": 36.111022819338054,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Since obstacle_ahead is true, rotate Spot 90 degrees to the left to attempt to clear the obstacle. Execute rotate_spot(-90).\n2. Move Spot forward by 1 meter to check if the obstacle is cleared. Execute move_spot(1).\n3. Verify if obstacle_ahead is still true. If false, proceed to target. If true, rotate Spot 90 degrees to the right and try moving forward again. Execute rotate_spot(90) and move_spot(1).\n4. If obstacle_ahead is still true after the second attempt, call_llm to request a new behavior tree, as the current strategy is insufficient.\n\nFallbacks:\n- If at_goal is true during any step, finish_task.\n- If obstacle_ahead is false before moving, proceed to the target directly. Compute the desired bearing to the target and execute rotate_spot and move_spot accordingly.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"sequence\",\n    \"children\": [\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\n            \"degrees\": -90\n          }\n        }\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"move_spot\",\n          \"arguments\": {\n            \"meters\": 1\n          }\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 90\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 1\n              }\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\"",
+      "plan_results": {
+        "error": "Invalid JSON: Expecting ',' delimiter: line 59 column 34 (char 1195)"
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "1. Since an obstacle is directly ahead (obstacle_ahead = true), rotate Spot to the right to attempt a 45-degree turn to the right to avoid the obstacle. Rotate_spot(-45).\n2. After rotating, check if the obstacle is no longer directly ahead (obstacle_ahead = false). If true, proceed to move towards the target. If false, call_llm() to request a new plan as the current strategy is insufficient.\n3. If obstacle_ahead is now false, calculate the target center (cx, cy) for goal_1. Compute dx = cx - x and dy = cy - y.\n4. Calculate the desired world bearing as desired_bearing = atan2(dy, dx) in degrees.\n5. Calculate Spot's forward bearing as Spot_forward_bearing = -current_heading.\n6. Determine the rotate_spot degrees as normalize(-(desired_bearing - Spot_forward_bearing)) into the range [-180, 180].\n7. Compute the distance_to_center as sqrt(dx^2 + dy^2).\n8. Determine the move_spot meters as min(distance_to_center, 2.0), ensuring Spot takes a safe step toward the target.\n9. Execute move_spot(meters) to move Spot forward along its current heading.\n10. Upon reaching the target or determining it's unreachable, check if at_goal is true. If true, finish_task(). If false, call_llm() to request a new plan as the current strategy is insufficient.\n\nFallbacks:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before moving, rotate_spot or call_llm based on the new situation.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\n            \"degrees\": -45\n          }\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"move_spot\",\n          \"arguments\": {\n            \"meters\": -2.0\n          }\n        }\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": true,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot to the right by -45 degrees to attempt avoiding the obstacle. rotate_spot(-45).\n2. Check if obstacle_ahead is now false. If true, proceed to move towards the target. If false, call_llm() to request a new plan as the current strategy is insufficient.\n3. If obstacle_ahead is now false, calculate the target center (cx, cy) for goal_1. Compute dx = cx - x and dy = cy - y.\n4. Calculate the desired world bearing as desired_bearing = atan2(dy, dx) in degrees.\n5. Calculate Spot's forward bearing as Spot_forward_bearing = -current_heading.\n6. Determine the rotate_spot degrees as normalize(-(desired_bearing - Spot_forward_bearing)) into the range [-180, 180].\n7. Compute the distance_to_center as sqrt(dx^2 + dy^2).\n8. Determine the move_spot meters as min(distance_to_center, 2.0), ensuring Spot takes a safe step toward the target.\n9. Execute move_spot(meters) to move Spot forward along its current heading.\n10. Upon reaching the target or determining it's unreachable, check if at_goal is true. If true, finish_task(). If false, call_llm() to request a new plan as the current strategy is insufficient.\n\nFallbacks:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before moving, rotate_spot or call_llm based on the new situation.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -45\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"sequence\",\n            \"children\": [\n              {\n                \"type\": \"action\",\n                \"call\": {\n                  \"tool_name\": \"move_spot\",\n                  \"arguments\": {\n                    \"meters\": 2.0\n                  }\n                }\n              },\n              {\n                \"type\": \"condition\",\n                \"observation\": \"at_goal\",\n                \"expected\": true\n              },\n              {\n                \"type\": \"action\",\n                \"call\": {\n                  \"tool_name\": \"finish_task\"",
+      "plan_results": {
+        "error": "Invalid JSON: Expecting ',' delimiter: line 47 column 45 (char 1145)"
+      }
+    }
+  ]
+}

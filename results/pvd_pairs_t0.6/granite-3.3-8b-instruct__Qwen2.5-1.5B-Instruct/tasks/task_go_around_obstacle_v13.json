@@ -1,0 +1,87 @@
+{
+  "bt_count": 3,
+  "perfect_structure": false,
+  "valid_structure_count": 2,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 4.788134947651997,
+  "avg_verifier_inference_time_s": 0.023020281339995563,
+  "avg_decoder_inference_time_s": 17.748420165968128,
+  "avg_inference_time_s": 22.55957539496012,
+  "final_spot": {
+    "x": 3.7,
+    "y": 2.9,
+    "heading": 290.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "**Main plan:**\n\n1. Rotate Spot to check left side:\n   - rotate_spot(-20)\n\n2. Move Spot forward to check for obstacles on the left:\n   - move_spot(1.0)\n\n3. Verify if obstacle_ahead is false:\n   - If obstacle_ahead is false, proceed to move towards the target. If not, rotate again to adjust heading.\n\n4. Calculate the target center (cx, cy):\n   - cx = (9.0 + 11.0) / 2 = 10.0, cy = (-4.0 + -2.0) / 2 = -3.0\n\n5. Calculate dx and dy from Spot's current position (0, 0) to the target center (10, -3):\n   - dx = 10.0 - 0 = 10.0, dy = -3.0 - 0 = -3.0\n\n6. Compute the desired bearing to the target:\n   - desired_bearing = atan2(-3.0, 10.0) \u2248 -14.06 degrees\n\n7. Compute Spot's current forward bearing:\n   - Spot's current forward bearing = 0 degrees (since heading = 0)\n\n8. Determine the necessary rotation to face the target:\n   - rotate_spot_degrees = normalize(-(desired_bearing - Spot's forward bearing)) into [-180, 180]\n   - rotate_spot_degrees \u2248 -14.06 degrees\n\n9. Rotate Spot to face the target:\n   - rotate_spot(-14.06)\n\n10. Move Spot towards the target:\n    - move_spot(1.0)\n\n11. Re-evaluate the situation after each move; if obstacle_ahead is true, adjust heading by rotating appropriately before moving again.\n\n12. Repeat steps 10 and 11 until at_goal is true or Spot reaches the target area without obstacles blocking the path.\n\n**Fallbacks:**\n\n- If at_goal is true during any check, execute finish_task().\n- If obstacle_ahead is detected while moving, before executing another move, rotate Spot to avoid the obstacle by calling rotate_spot with a suitable angle to clear the obstacle path. If the obstacle cannot be navigated around, call_llm() to request a new behavior tree.\n\n**Note:** This plan assumes that Spot can detect and respond to the mentioned observations (obstacle_ahead, obstacle_left, obstacle_right, target_ahead) accurately. Adjustments to the rotation and movement distances may be necessary based on real-time sensor data and the exact nature of the obstacles and the target environment.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -20\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 1.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": false\n          }\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"move_spot\",\n          \"arguments\": {\n            \"meters\": 1.0\n          }\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": true,
+          "obstacle_left": true,
+          "obstacle_right": true,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 3.4,
+          "y": 2.0,
+          "heading": 320.0
+        },
+        "collided": true,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "**Revised Plan:**\n\n1. Rotate Spot to the right to avoid immediate obstacles:\n   - rotate_spot(15)\n\n2. Move Spot forward to check for clearance on the right:\n   - move_spot(1.0)\n\n3. Verify if obstacle_ahead is false:\n   - If obstacle_ahead is false, proceed to move towards the target. If not, rotate again to adjust heading.\n\n4. Rotate Spot further to align with the target:\n   - rotate_spot(-30)\n\n5. Move Spot forward towards the target:\n   - move_spot(1.0)\n\n6. Check again for obstacles and adjust heading if necessary:\n   - If obstacle_ahead is true, rotate Spot to the left by 10 degrees:\n     - rotate_spot(10)\n   - Then attempt to move forward:\n     - move_spot(1.0)\n\n7. If the path remains blocked, request a new behavior tree from the LLM:\n   - call_llm()\n\n**Note:** This plan involves smaller, more frequent adjustments to navigate around the obstacles. The specific rotation and movement values are chosen to minimize the risk of collision while progressing towards the target. If the obstacles cannot be effectively bypassed with these adjustments, the call_llm action is invoked to request a potentially more sophisticated plan from the LLM.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"sequence\",\n    \"children\": [\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\n            \"degrees\": 15\n          }\n        }\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"move_spot\",\n          \"arguments\": {\n            \"meters\": 1.0\n          }\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\n            \"degrees\": -30\n          }\n        }\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"move_spot\",\n          \"arguments\": {\n            \"meters\": 1.0\n          }\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\n            \"degrees\": 10\n          }\n        }\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"move_spot\",\n          \"arguments\": {\n            \"meters\": 1.0\n          }\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\"",
+      "plan_results": {
+        "error": "Invalid JSON: Expecting ',' delimiter: line 82 column 34 (char 1618)"
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "**Revised Plan:**\n\n1. Rotate Spot to check the left side:\n   - rotate_spot(-30)\n\n2. Move Spot forward to check for obstacles on the left:\n   - move_spot(1.0)\n\n3. Verify if obstacle_ahead is false:\n   - If obstacle_ahead is false, proceed to move towards the target. If not, rotate again to adjust heading.\n\n4. Calculate the target center (cx, cy):\n   - cx = (9.0 + 11.0) / 2 = 10.0, cy = (-4.0 + -2.0) / 2 = -3.0\n\n5. Calculate dx and dy from Spot's current position (3.4, 2.0) to the target center (10, -3):\n   - dx = 10.0 - 3.4 = 6.6, dy = -3.0 - 2.0 = -5.0\n\n6. Compute the desired bearing to the target:\n   - desired_bearing = atan2(-5.0, 6.6) \u2248 -36.87 degrees\n\n7. Compute Spot's current forward bearing:\n   - Spot's current forward bearing = 320 degrees\n\n8. Determine the necessary rotation to face the target:\n   - rotate_spot_degrees = normalize(-(desired_bearing - Spot's forward bearing)) into [-180, 180]\n   - rotate_spot_degrees \u2248 -36.87 degrees\n\n9. Rotate Spot to face the target:\n   - rotate_spot(-36.87)\n\n10. Move Spot towards the target:\n    - move_spot(1.0)\n\n11. Re-evaluate the situation after each move; if obstacle_ahead is true, adjust heading by rotating appropriately before moving again.\n\n12. If obstacle_left and obstacle_right are still true after rotation, attempt a different approach:\n    - Rotate Spot to check the right side: rotate_spot(30)\n    - Move Spot forward to check for obstacles on the right: move_spot(1.0)\n    - Verify if obstacle_ahead is false:\n      - If obstacle_ahead is false, proceed to move towards the target. If not, request LLM assistance with call_llm().\n\n13. If at_goal is true during any check, execute finish_task().\n\n14. If reaching the target remains unresolved, continue the process of short bounded moves with intermittent heading adjustments until at_goal is true or a clear path to the target is established.\n\n**Note:** This plan assumes that Spot can detect and respond to the mentioned observations (obstacle_ahead, obstacle_left, obstacle_right, target_ahead) accurately. Adjustments to the rotation and movement distances may be necessary based on real-time sensor data and the exact nature of the obstacles and the target environment. If the situation persists without resolution, request call_llm() to seek further guidance.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -30\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 1.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": false\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 30\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 1.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": false\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -36.87\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 1.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\"\n            \t\t\t\t\n         \t\t,\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"call_llm\"\n        \t\t\t\t\n          ,\n              \"arguments\": {}\n            }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": true,
+          "obstacle_left": true,
+          "obstacle_right": true,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 3.7,
+          "y": 2.9,
+          "heading": 290.0
+        },
+        "collided": true,
+        "success": false,
+        "replan_requested": false
+      }
+    }
+  ]
+}

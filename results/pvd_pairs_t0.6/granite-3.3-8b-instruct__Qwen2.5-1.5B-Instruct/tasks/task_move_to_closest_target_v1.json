@@ -1,0 +1,73 @@
+{
+  "bt_count": 3,
+  "perfect_structure": false,
+  "valid_structure_count": 1,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 3.5972032623443133,
+  "avg_verifier_inference_time_s": 0.024500107353863616,
+  "avg_decoder_inference_time_s": 33.07221993998004,
+  "avg_inference_time_s": 36.69392330967821,
+  "final_spot": {
+    "x": 2.4,
+    "y": 1.2,
+    "heading": 329.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "1. Compute the center of each target:\n   - goal_close: cx = (2.5 + 3.5) / 2 = 3.0, cy = (-0.5 + 0.5) / 2 = 0.0\n   - goal_far: cx = (6.5 + 7.5) / 2 = 7.0, cy = (3.5 + 4.5) / 2 = 4.0\n\n2. Calculate the distance to each target center from Spot's initial position (0, 0):\n   - distance_to_goal_close = sqrt((3.0 - 0.0)^2 + (0.0 - 0.0)^2) = 3.0\n   - distance_to_goal_far = sqrt((7.0 - 0.0)^2 + (4.0 - 0.0)^2) = 8.06\n\n3. Goal_close is the closest target, with a distance of 3.0 meters.\n\n4. Main plan:\n   1. Rotate Spot to face the goal_close:\n      - rotate_spot(0, -90) # Rotate counter-clockwise by 90 degrees to face -y (rightward).\n   2. Move Spot toward goal_close:\n      - move_spot(3.0) # Move forward 3.0 meters to reach the center of goal_close.\n\n5. Fallbacks:\n   - If at_goal is true after moving, finish_task.\n   - If obstacle_ahead is true before moving, call_llm to request a new plan.\n\nNote: This plan assumes no obstacles are present within 10 meters ahead of Spot, and the initial heading of Spot is 0 (facing +x).",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -90\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 3.0\n              }\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\"",
+      "plan_results": {
+        "error": "Invalid JSON: Expecting ',' delimiter: line 44 column 41 (char 947)"
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n\n1. Execute a rotate_spot(-45) to orient Spot towards the left quadrant where the closest target \"goal_close\" is located.\n2. Execute a move_spot(1.0) to move Spot toward the closest target.\n3. Verify if at_goal is true. If true, execute finish_task().\n4. If obstacle_ahead is true while moving, execute rotate_spot(-90) to reorient Spot away from the obstacle, then call_llm to request a new plan.\n5. If obstacle_left persists, adjust the strategy by executing rotate_spot(-90) and then move_spot(1.0) to circle around any potential obstacles in the left quadrant.\n6. If obstacle_right appears, reorient Spot by executing rotate_spot(90) and then move_spot(1.0) to adjust course towards the right.\n7. Recompute the target center (cx, cy) for \"goal_close\" and repeat the process from step 1 until Spot reaches the target or a new strategy is requested from call_llm.\n\nFallbacks:\n- If at_goal is true after any action, execute finish_task.\n- If encountering persistent obstacles without a clear path, call_llm to replan.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\n            \"degrees\": -45\n          }\n        }\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"move_spot\",\n          \"arguments\": {\n            \"meters\": 1.0\n          }\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"at_goal\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"finish_task\"",
+      "plan_results": {
+        "error": "Invalid JSON: Expecting ',' delimiter: line 36 column 37 (char 705)"
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "1. Compute the Euclidean distance from Spot to each target:\n   - Distance to goal_close: sqrt((2.5-0.0)^2 + (-0.5-0.0)^2) = 2.64575 meters\n   - Distance to goal_far: sqrt((6.5-0.0)^2 + (3.5-0.0)^2) = 7.07107 meters\n\n2. Since goal_close is closer, determine the optimal rotation and movement:\n   - Relative position to goal_close: (cx - x, cy - y) = (1.25, -0.5)\n   - Desired bearing: atan2(-0.5, 1.25) \u2248 -22.984 degrees\n   - Spot's forward bearing: 0 degrees\n   - Rotate_spot degrees: normalize(-(-22.984 - 0)) \u2248 -22.984 degrees (within [-180, 180])\n   - Move_spot meters: min(2.64575, 2.0) = 2.0 meters\n\n3. Execute the plan:\n   1. rotate_spot(-22.984)\n   2. move_spot(2.0)\n\n4. Verify progress:\n   - If at_goal is true, finish_task.\n   - If obstacle_ahead is true before moving, rotate_spot to an alternative angle or call_llm for further instructions.\n   - If obstacle_left or obstacle_right is true, adjust rotation strategy accordingly before moving; call_llm if necessary.\n\n5. If the first attempt fails, revise the strategy:\n   - Rotate to a different angle based on the detected obstacle.\n   - Move_spot with a smaller distance (e.g., 1.0 meter) if necessary to avoid obstacles.\n   - Call_llm if the situation remains unresolved.\n\nFallback Plan:\n- If at_goal is true, finish_task.\n- If both obstacle_ahead and target_ahead are false and at_goal is false, rotate_spot to adjust heading strategy before moving again.\n- If two unsuccessful consecutive attempts occur with target_ahead being false, call_llm for a new plan.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"sequence\",\n    \"children\": [\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\n            \"degrees\": -22.984\n          }\n        }\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"move_spot\",\n          \"arguments\": {\n            \"meters\": 2.0\n          }\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": 2.4,
+          "y": 1.2,
+          "heading": 329.0
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "bt_count": 3,
+  "perfect_structure": false,
+  "valid_structure_count": 1,
+  "task_completion": false,
+  "avg_planner_inference_time_s": 3.100819365994539,
+  "avg_verifier_inference_time_s": 0.04036854350124486,
+  "avg_decoder_inference_time_s": 33.215916770665594,
+  "avg_inference_time_s": 36.35710468016138,
+  "final_spot": {
+    "x": -5.2,
+    "y": 6.8,
+    "heading": 137.6
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Compute the distance to each target from Spot's initial position:\n   - Distance to goal_1: sqrt((2.5-0)^2 + (1.0-0)^2) = 2.73 meters\n   - Distance to goal_2: sqrt((5.5-0)^2 + (1.0-0)^2) = 6.71 meters\n2. Choose the nearest target: goal_1 (2.73 meters)\n3. Compute the desired bearing to goal_1 from Spot's initial heading: \n   - Desired bearing: atan2(1-0, 2.5-0) = 22.62 degrees\n4. Compute Spot's forward bearing:\n   - Spot's forward bearing: 0 degrees\n5. Determine the rotation needed to face goal_1:\n   - rotate_spot(22.62 degrees)\n6. Move Spot forward by a bounded distance towards goal_1:\n   - move_spot(min(2.73, 2.0)) = move_spot(2.0 meters)\n7. Verify progress:\n   - If at_goal is true for goal_1, finish_task(); otherwise, if obstacle_ahead is true, call_llm(); otherwise, repeat from step 2 with the next nearest target (goal_2).\n\nFallbacks:\n- If at_goal is true for goal_1, finish_task.\n- If obstacle_ahead is detected before moving, call_llm.\n\nNote: The plan assumes that the initial state and target positions are such that no immediate obstacle blocks the path to the nearest target. If an obstacle is encountered, the call_llm fallback instructs Spot to request a new behavior tree from the planner.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"condition\",\n        \"observation\": \"at_goal\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 22.62\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"move_spot\",\n              \"arguments\": {\n                \"meters\": 2.0\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"call_llm\"",
+      "plan_results": {
+        "error": "Invalid JSON: Expecting ',' delimiter: line 39 column 38 (char 869)"
+      }
+    },
+    {
+      "bt_index": 2,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Compute the Euclidean distance to each target and identify the nearest target, which is \"goal_1\" with a distance of 2.5 meters.\n2. Rotate Spot to face \"goal_1\":\n   - dx = goal_1.cx - Spot.x = (2.5+3.5)/2 - 0 = 3.0 meters\n   - dy = goal_1.cy - Spot.y = (1.0+2.0)/2 - 0 = 1.5 meters\n   - Desired bearing = atan2(dy, dx) = atan2(1.5, 3.0) \u2248 31.6 degrees\n   - Forward bearing = 0 degrees (Spot initially faces +x)\n   - rotate_spot degrees = normalize(-(31.6 - 0)) \u2248 -31.6 degrees (normalize to [-180, 180])\n3. Execute the rotate action:\n   - rotate_spot(-31.6)\n4. Move Spot toward \"goal_1\":\n   - move_spot(2.5) meters\n5. Verify progress:\n   - Check if at_goal is true. If true, finish the task.\n   - If obstacle_ahead is true before moving, reconsider heading strategy.\n   - If target_ahead is false, rotate before moving.\n\n6. If not at goal, recompute the nearest target from the current Spot position and repeat the process from step 2, now targeting \"goal_2\".\n\nFallbacks:\n- If at_goal is true after reaching a target, finish_task.\n- If obstacle_ahead is detected before moving, adjust the rotation strategy or call_llm for assistance.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"sequence\",\n    \"children\": [\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\n            \"degrees\": -31.6\n          }\n        }\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"move_spot\",\n          \"arguments\": {\n            \"meters\": 2.5\n          }\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"at_goal\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"finish_task\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": false,
+          "at_goal": false
+        },
+        "final_spot": {
+          "x": -5.2,
+          "y": 6.8,
+          "heading": 137.6
+        },
+        "collided": false,
+        "success": false,
+        "replan_requested": false
+      }
+    },
+    {
+      "bt_index": 3,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "1. Rotate Spot to face the nearest unvisited target, which is currently \"goal_2\":\n   - dx = goal_2.cx - Spot.x = (5.5+6.5)/2 - (-5.2) \u2248 11.0 meters\n   - dy = goal_2.cy - Spot.y = (1.0+2.0)/2 - 6.8 \u2248 -4.3 meters\n   - Desired bearing = atan2(dy, dx) = atan2(-4.3, 11.0) \u2248 -21.6 degrees\n   - Forward bearing = 137.6 degrees (Spot's current heading)\n   - rotate_spot degrees = normalize(-(137.6 - (-21.6))) \u2248 159.2 degrees (normalize to [-180, 180])\n2. Execute the rotate action:\n   - rotate_spot(159.2)\n3. Move Spot toward \"goal_2\":\n   - move_spot(2.0) meters\n4. Verify progress:\n   - Check if at_goal is true. If true, finish the task.\n   - If obstacle_ahead is true before moving, reconsider heading strategy.\n   - If target_ahead is false, rotate before moving.\n\n5. If not at goal, recompute the nearest target from the current Spot position and repeat the process from step 1, now targeting the newly identified nearest target.\n\n6. If the next useful action remains unclear, call_llm for assistance.\n\nFallbacks:\n- If at_goal is true after reaching a target, finish_task.\n- If obstacle_ahead is detected before moving, adjust the rotation strategy or call_llm for assistance.",
+          "verifier_output": "fail: move_spot lacks numeric meters; rotate_spot lacks numeric degrees"
+        },
+        {
+          "planner_output": "1. Rotate Spot to face \"goal_2\":\n   - rotate_spot(159.2)\n2. Move Spot toward \"goal_2\":\n   - move_spot(2.0)\n3. Verify progress:\n   - Check if at_goal is true. If true, finish the task.\n   - If obstacle_ahead is true before moving, reconsider heading strategy.\n   - If target_ahead is false, rotate before moving.\n\n4. If not at goal, recompute the nearest target from the current Spot position and repeat the process from step 1, now targeting the newly identified nearest target.\n\n5. If the next useful action remains unclear, call_llm for assistance.\n\nFallbacks:\n- If at_goal is true after reaching a target, finish_task.\n- If obstacle_ahead is detected before moving, adjust the rotation strategy or call_llm for assistance.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"condition\",\n        \"observation\": \"obstacle_ahead\",\n        \"expected\": false\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"rotate_spot\",\n          \"arguments\": {\n            \"degrees\": -100\n          }\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"target_ahead\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"move_spot\",\n          \"arguments\": {\n            \"meters\": 2.0\n          }\n        }\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"at_goal\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"finish_task\"",
+      "plan_results": {
+        "error": "Invalid JSON: Expecting ',' delimiter: line 41 column 37 (char 816)"
+      }
+    }
+  ]
+}

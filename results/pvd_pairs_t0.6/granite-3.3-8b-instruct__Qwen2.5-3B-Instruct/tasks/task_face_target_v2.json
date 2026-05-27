@@ -1,0 +1,45 @@
+{
+  "bt_count": 1,
+  "perfect_structure": true,
+  "valid_structure_count": 1,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 3.355074880993925,
+  "avg_verifier_inference_time_s": 0.030137138906866312,
+  "avg_decoder_inference_time_s": 3.425729164038785,
+  "avg_inference_time_s": 6.810941183939576,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 0.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 0,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Since the task is to face the target, directly rotate Spot to align with the target's heading.\n2. Calculate the desired bearing to the target:\n   - Desired x-offset = (x1 + x2) / 2 - Spot.x = (4.5 + 5.5) / 2 - 0 = 5.0 meters.\n   - Desired y-offset = (y1 + y2) / 2 - Spot.y = (-0.5 + 0.5) - 0 = 0 meters.\n   - Desired bearing = atan2(5.0, 0) = 90 degrees.\n3. Compute the current forward bearing:\n   - Current forward bearing = -Spot.heading = 0 degrees (since Spot starts facing +x).\n4. Compute the rotation required to face the target:\n   - Rotate_spot degrees = normalize(-(90 - 0)) = 90 degrees (clockwise).\n5. Execute the rotation: rotate_spot(90).\n6. Verify if Spot is now facing the target by checking if target_ahead is true in runtime observations.\n7. If not facing the target and no obstacle is ahead, adjust by rotating an additional 45 degrees in the same direction (clockwise).\n8. If still not facing the target and no obstacle is ahead, call_llm to request a new plan.\n\nFallbacks:\n- If at_goal is true: finish_task.\n- If obstacle_ahead is true before rotating: call_llm for assistance.",
+          "verifier_output": "pass"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": 90\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"target_ahead\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"sequence\",\n            \"children\": [\n              {\n                \"type\": \"action\",\n                \"call\": {\n                  \"tool_name\": \"finish_task\",\n                  \"arguments\": {}\n                }\n              }\n            ]\n          },\n          {\n            \"type\": \"sequence\",\n            \"children\": [\n              {\n                \"type\": \"action\",\n                \"call\": {\n                  \"tool_name\": \"rotate_spot\",\n                  \"arguments\": {\n                    \"degrees\": 45\n                  }\n                }\n              },\n              {\n                \"type\": \"condition\",\n                \"observation\": \"target_ahead\",\n                \"expected\": true\n              },\n              {\n                \"type\": \"sequence\",\n                \"children\": [\n                  {\n                    \"type\": \"action\",\n                    \"call\": {\n                      \"tool_name\": \"finish_task\",\n                      \"arguments\": {}\n                    }\n                  }\n                ]\n              },\n              {\n                \"type\": \"sequence\",\n                \"children\": [\n                  {\n                    \"type\": \"action\",\n                    \"call\": {\n                      \"tool_name\": \"call_llm\",\n                      \"arguments\": {}\n                    }\n                  }\n                ]\n              }\n            ]\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"call_llm\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"condition\",\n        \"observation\": \"at_goal\",\n        \"expected\": true\n      },\n      {\n        \"type\": \"action\",\n        \"call\": {\n          \"tool_name\": \"finish_task\",\n          \"arguments\": {}\n        }\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 0.0
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}

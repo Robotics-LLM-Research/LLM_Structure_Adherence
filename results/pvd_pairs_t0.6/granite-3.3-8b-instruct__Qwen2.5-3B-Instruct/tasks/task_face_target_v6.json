@@ -1,0 +1,49 @@
+{
+  "bt_count": 1,
+  "perfect_structure": true,
+  "valid_structure_count": 1,
+  "task_completion": true,
+  "avg_planner_inference_time_s": 1.7816238175146282,
+  "avg_verifier_inference_time_s": 0.3982869594474323,
+  "avg_decoder_inference_time_s": 2.0363637789851055,
+  "avg_inference_time_s": 4.216274555947166,
+  "final_spot": {
+    "x": 0.0,
+    "y": 0.0,
+    "heading": 180.0
+  },
+  "behavior_trees": [
+    {
+      "bt_index": 1,
+      "verify_count": 1,
+      "Plans": [
+        {
+          "planner_output": "Main plan:\n1. Rotate Spot to face the target.\n   - Compute desired bearing to target using the given geometry recipe.\n   - Compute current forward bearing (-heading).\n   - Calculate rotate_spot degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180].\n   - Execute rotate_spot with the calculated degrees.\n\nFallbacks:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before rotating, call_llm for a new plan.\n\nNote: Since the task is to directly face the target without specific distance constraints, this plan focuses on rotating Spot to align with the target's heading. If an obstacle is detected in front, the plan falls back on calling the LLM for further instructions due to the current limitations in handling obstacles.",
+          "verifier_output": "fail: Rotation calculation is vague and lacks numeric degrees; it should specify the degrees to rotate.; Rotation calculation is vague and lacks numeric degrees; it should specify the degrees to rotate."
+        },
+        {
+          "planner_output": "1. Rotate Spot to face the target by 45 degrees clockwise.\n   - Compute desired bearing to target using the given geometry recipe.\n   - Compute current forward bearing (-heading).\n   - Calculate rotate_spot degrees = normalize(-(desired_bearing - forward_bearing)) into [-180, 180].\n   - Since we aim for a 45-degree clockwise rotation, adjust the calculated rotate_spot degrees to ensure it's within the range of -45 to 45. If the initial calculation yields a value outside this range, use the nearest value within the range.\n   - Execute rotate_spot with the adjusted degrees.\n\nFallbacks:\n- If at_goal is true, finish_task.\n- If obstacle_ahead is true before rotating, call_llm for a new plan.",
+          "verifier_output": "fail: Rotate to a target requires numeric degrees; current implementation uses a flexible calculation; rotate_spot(degrees: -45.0); rotate_spot(degrees: 45.0);; rotate_spot(degrees: -90.0); rotate_spot(degrees: 90.0);"
+        }
+      ],
+      "decoder_output": "{\n  \"root\": {\n    \"type\": \"fallback\",\n    \"children\": [\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"condition\",\n            \"observation\": \"at_goal\",\n            \"expected\": true\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      },\n      {\n        \"type\": \"sequence\",\n        \"children\": [\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -45\n              }\n            }\n          },\n          {\n            \"type\": \"condition\",\n            \"observation\": \"obstacle_ahead\",\n            \"expected\": false\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"rotate_spot\",\n              \"arguments\": {\n                \"degrees\": -45\n              }\n            }\n          },\n          {\n            \"type\": \"action\",\n            \"call\": {\n              \"tool_name\": \"finish_task\",\n              \"arguments\": {}\n            }\n          }\n        ]\n      }\n    ]\n  }\n}",
+      "plan_results": {
+        "observations": {
+          "obstacle_ahead": false,
+          "obstacle_left": false,
+          "obstacle_right": false,
+          "target_ahead": true,
+          "at_goal": true
+        },
+        "final_spot": {
+          "x": 0.0,
+          "y": 0.0,
+          "heading": 180.0
+        },
+        "collided": false,
+        "success": true,
+        "replan_requested": false
+      }
+    }
+  ]
+}
